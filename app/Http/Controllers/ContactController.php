@@ -15,9 +15,9 @@ class ContactController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = Contact::with(['userDetail','contactUserDetail'])->get();
+            $data = Contact::with(['userDetail','contactUserDetail'])->orderBy('id','desc')->get();
         }else{
-            $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->get();
+            $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
         }
        
 
