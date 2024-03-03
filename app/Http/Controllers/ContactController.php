@@ -39,7 +39,7 @@ class ContactController extends Controller
             $existingContact = Contact::where('contact_user_id', $contact_user_id)->first();
             if ($existingContact) {
                 return response()->json([
-                    'message' => 'Error: Contact already added in contacts list.'
+                    'message' => 'Contact already in contacts list.'
                 ], 400);
             }
 
@@ -91,7 +91,7 @@ class ContactController extends Controller
         $data = Contact::with(['userDetail','contactUserDetail'])->where('id', $id)->where('user_id', $userId)->first();
         if(!$data){
             return response()->json([
-                'message' => 'Error: No data available.'
+                'message' => 'No data available.'
             ], 400);
         }
 
@@ -112,7 +112,7 @@ class ContactController extends Controller
 
         if(!$data){
             return response()->json([
-                'message' => 'Error: No data available.'
+                'message' => 'No data available.'
             ], 400);
         }
 
@@ -167,7 +167,7 @@ class ContactController extends Controller
 
         if(!$data){
             return response()->json([
-                'message' => 'Error: No data available.'
+                'message' => 'No data available.'
             ], 400);
         }
         $data->delete();
@@ -191,7 +191,7 @@ class ContactController extends Controller
         }
     
         return response()->json([
-            'message' => 'Error: Data not imported'
+            'message' => 'Data not imported'
         ], 401);
     }
 

@@ -151,7 +151,7 @@ class AuthController extends Controller
         $user = User::where('email',$request->email)->first();
 
         if(!$user){
-            return response(["status" => 400, "message" => "Error: No any user available with this email."]); 
+            return response(["status" => 400, "message" => "No any user available with this email."]); 
 
         }
 
@@ -198,11 +198,11 @@ class AuthController extends Controller
         $otpdata = ResetOTP::where('email',$request->email)->first();
 
         if(!$otpdata){
-            return response(["status" => 400, "message" => "Error: No OTP available with this email."]); 
+            return response(["status" => 400, "message" => "No OTP available with this email."]); 
         }
 
         if($otpdata->otp != $request->otp){
-            return response(["status" => 400, "message" => "Error: OTP missmatched."]); 
+            return response(["status" => 400, "message" => "OTP missmatched."]); 
         }
 
         $otpdata->delete();
