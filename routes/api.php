@@ -33,6 +33,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/profile_data', [App\Http\Controllers\ProfileManagementController::class, 'profileData']); 
     Route::post('/update_profile_data', [App\Http\Controllers\ProfileManagementController::class, 'updateProfileData']); 
     Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::post('change-profile-img', [AuthController::class, 'changeProfileImg']);
 
     Route::get('logout', [AuthController::class, 'logout']);
 
