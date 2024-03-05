@@ -40,4 +40,33 @@ class ProfileManagementController extends Controller
         ], 200);
 
     }
+
+    public function changeProfileImg(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
+        ]);
+
+        // Get the authenticated user
+        $user = Auth::user();
+
+        // Store the new profile image
+        if ($request->hasFile('profile_img')) {
+            $image = $request->file('profile_img');
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $image->move(public_path('profile_images'), $imageName);
+
+           
+            $user->profile_img = 'profile_images/'.$imageName;
+            $user->save();
+
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Failed to update profile image'], 400);
+    }
 }
