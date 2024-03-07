@@ -22,6 +22,7 @@ return new class extends Migration
             $table->integer('status')->default(1);
             $table->string('phone')->nullable();
             $table->string('language')->default('en');
+            $table->string('company')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

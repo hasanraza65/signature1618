@@ -33,3 +33,5 @@ Route::get('/dump-autoload', function () {
     
     return 'Autoload optimized!';
 });
+
+Route::get('/generate_sign/{name}', [App\Http\Controllers\ProfileManagementController::class, 'generateSignature']); 
