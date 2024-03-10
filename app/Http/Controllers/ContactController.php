@@ -50,6 +50,7 @@ class ContactController extends Controller
             $user->name = $request->first_name.' '.$request->last_name;
             $user->language = $request->language;
             $user->phone = $request->phone;
+            $user->unique_id = $request->user_unique_id;
             $user->contact_type = 1; //if this user only for contact at the moment and not registered officially here
             
             // Generate a random password
@@ -75,6 +76,7 @@ class ContactController extends Controller
         $data->contact_last_name = $request->last_name;
         $data->contact_phone = $request->phone;
         $data->contact_language = $request->language;
+        $data->unique_id = $request->contact_unique_id;
         $data->save();
     
         return response()->json([
@@ -88,7 +90,7 @@ class ContactController extends Controller
         $userId = getUserId($request);
 
         // Find the contact by ID and user ID
-        $data = Contact::with(['userDetail','contactUserDetail'])->where('id', $id)->where('user_id', $userId)->first();
+        $data = Contact::with(['userDetail','contactUserDetail'])->where('unique_id', $id)->where('user_id', $userId)->first();
         if(!$data){
             return response()->json([
                 'message' => 'No data available.'
@@ -108,7 +110,7 @@ class ContactController extends Controller
         $userId = getUserId($request);
 
         // Find the contact by ID and user ID
-        $data = Contact::where('id', $id)->where('user_id', $userId)->first();
+        $data = Contact::where('unique_id', $id)->where('user_id', $userId)->first();
 
         if(!$data){
             return response()->json([

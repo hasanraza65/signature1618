@@ -38,6 +38,7 @@ class AuthController extends Controller
         if($usercheck && $usercheck->contact_type == 1){
 
             $usercheck->name = $request->name;
+            $usercheck->last_name = $request->last_name;
             $usercheck->password = bcrypt($request->password);
             $usercheck->contact_type = 0;
             $usercheck->update();

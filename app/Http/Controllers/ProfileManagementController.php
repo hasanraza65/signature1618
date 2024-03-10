@@ -30,6 +30,7 @@ class ProfileManagementController extends Controller
         }
 
         $data->name = $request->name;
+        $data->last_name = $request->last_name;
         $data->phone = $request->phone;
         $data->language = $request->language;
         $data->company = $request->company;
