@@ -24,7 +24,7 @@ Route::post('/signin', [AuthController::class, 'login']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
 Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
 
-
+Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'testConvert']); 
 
 
 Route::middleware('auth:api')->group(function () {
@@ -36,6 +36,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('change-profile-img', [App\Http\Controllers\ProfileManagementController::class, 'changeProfileImg']);
 
     Route::get('logout', [AuthController::class, 'logout']);
+
+    Route::get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
 

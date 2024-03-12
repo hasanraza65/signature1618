@@ -1,0 +1,8 @@
+ErrorDocument 404 "Not Found"
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block access to all files in pdf_images directory
+    RewriteRule ^ - [R=404,L]
+</IfModule>

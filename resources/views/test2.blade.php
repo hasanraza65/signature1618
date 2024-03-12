@@ -94,6 +94,7 @@
 </div>
 <div id="container">
     <div id="stage-container"></div>
+    <div id="stage-container-2"></div>
 </div>
 <button id="export-image" class="export-button">Export Image</button>
 <button id="export-pdf" class="export-button">Export PDF</button>
