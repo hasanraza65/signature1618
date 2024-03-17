@@ -20,7 +20,6 @@ class ContactController extends Controller
             $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
         }
        
-
         return response()->json([
             'data' => $data,
             'message' => 'Success'

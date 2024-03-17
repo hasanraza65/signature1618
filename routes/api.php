@@ -49,6 +49,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/convert-to-png', [App\Http\Controllers\ManagePDFController::class, 'convertToPng']);
         Route::post('/add_image_element', [App\Http\Controllers\ManagePDFController::class, 'addImageElement']);
 
+        //User Request Module
+        Route::resource('/user_request', App\Http\Controllers\RequestController::class);
+
     } );
 
 
