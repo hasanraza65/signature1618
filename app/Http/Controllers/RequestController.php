@@ -47,11 +47,12 @@ class RequestController extends Controller
             $userRequest->user_id = Auth::id();
             $userRequest->file = $filePath;
             $userRequest->thumbnail = $thumbnailPath;
+            $userRequest->unique_id = $request->unique_id;
             $userRequest->save();
     
             //creating signers
             if ($request->has('signerId')) {
-                $this->createSigners($request->signerId, $request->signer_status, $userRequest->id);
+                $this->createSigners($request->signerId, $request->signer_status, $userRequest->id, $request->signer_unique_id);
             }
             //ending creating signers
     
@@ -72,17 +73,35 @@ class RequestController extends Controller
         return "$directory/$fileName";
     }
     
-    public function createSigners(array $signerIds, array $signerStatuses, $requestId){
+    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId){
         $signers = [];
     
         foreach ($signerIds as $index => $signerId) {
             $signers[] = [
                 'user_id' => $signerId,
                 'request_id' => $requestId,
-                'status' => $signerStatuses[$index]
+                'status' => $signerStatuses[$index],
+                'unique_id' => $signerUniqueId[$index]
             ];
         }
     
         DB::table('signers')->insert($signers);
+    }
+
+    public function fetchReceivedRequest($id){
+
+        $data = Request::where('unique_id',$id)->first();
+        
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
     }
 }

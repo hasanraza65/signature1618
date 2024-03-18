@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('file')->nullable();
             $table->string('thumbnail')->nullable();
             $table->string('status')->default('draft');
+            $table->string('unique_id')->nullable();
             $table->timestamps();
         });
     }
