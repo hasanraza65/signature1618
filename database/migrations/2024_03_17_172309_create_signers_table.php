@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('signers', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id')->nullable();
+            $table->integer('recipient_user_id')->nullable();
+            $table->integer('recipient_contact_id')->nullable();
+            $table->string('recipient_unique_id')->nullable();
             $table->integer('request_id')->nullable();
             $table->string('unique_id')->nullable();
             $table->string('status')->default('awaiting');

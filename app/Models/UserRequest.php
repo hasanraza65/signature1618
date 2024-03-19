@@ -15,4 +15,11 @@ class UserRequest extends Model
     {
         return $this->belongsTo(User::class,'user_id');
     }
+
+    public function signers()
+    {
+        return $this->hasMany(Signer::class,'request_id','id');
+    }
+
+    
 }

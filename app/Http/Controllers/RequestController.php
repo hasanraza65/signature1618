@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\UserRequest;
 use App\Models\Signer;
+use App\Models\Contact;
 use Auth;
 use DB;
 
@@ -13,9 +14,9 @@ class RequestController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = UserRequest::with(['userDetail'])->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail'])->orderBy('id','desc')->get();
         }else{
-            $data = UserRequest::with(['userDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
         }
        
         return response()->json([
@@ -51,8 +52,8 @@ class RequestController extends Controller
             $userRequest->save();
     
             //creating signers
-            if ($request->has('signerId')) {
-                $this->createSigners($request->signerId, $request->signer_status, $userRequest->id, $request->signer_unique_id);
+            if ($request->has('recipientId')) {
+                $this->createSigners($request->recipientId, $request->signer_status, $userRequest->id, $request->signer_unique_id, $request->type, $request->x, $request->y, $request->height, $request->width, $request->recipientId, $request->question, $request->is_required, $request->page_index);
             }
             //ending creating signers
     
@@ -73,24 +74,51 @@ class RequestController extends Controller
         return "$directory/$fileName";
     }
     
-    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId){
+    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId, array $type, array $x, array $y, array $height, array $width, array $recipientId, array $question, array $is_required, array $page_index){
         $signers = [];
+        $requestFields = [];
     
         foreach ($signerIds as $index => $signerId) {
+
+            //get userid
+            $userId = Contact::where('unique_id',$signerId)->first();
+            //ending get userid
+
             $signers[] = [
-                'user_id' => $signerId,
+                'recipient_unique_id' => $signerId,
+                'recipient_user_id' => $userId->user_id,
+                'recipient_contact_id' => $userId->id,
                 'request_id' => $requestId,
                 'status' => $signerStatuses[$index],
                 'unique_id' => $signerUniqueId[$index]
             ];
+    
+            $requestFields[] = [
+                'request_id' => $requestId,
+                'type' => $type[$index],
+                'x' => $x[$index],
+                'y' => $y[$index],
+                'height' => $height[$index],
+                'width' => $width[$index],
+                'recipientId' => $recipientId[$index],
+                'page_index' => $page_index[$index],
+                'question' => $question[$index],
+                'is_required' => $is_required[$index]
+            ];
         }
     
+        // Insert signers
         DB::table('signers')->insert($signers);
+    
+        // Insert request fields
+        DB::table('request_fields')->insert($requestFields);
     }
 
-    public function fetchReceivedRequest($id){
+    public function fetchRequest(Request $request){
 
-        $data = Request::where('unique_id',$id)->first();
+        $data = UserRequest::with(['signers','signers.requestFields'])
+        ->where('unique_id',$request->request_unique_id)
+        ->first();
         
         if(!$data){
             return response()->json([

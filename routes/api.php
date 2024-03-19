@@ -51,6 +51,7 @@ Route::middleware('auth:api')->group(function () {
 
         //User Request Module
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
+        Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
 
     } );
 
