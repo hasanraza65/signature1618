@@ -8,6 +8,8 @@ use App\Models\Signer;
 use App\Models\Contact;
 use Auth;
 use DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class RequestController extends Controller
 {
@@ -26,7 +28,7 @@ class RequestController extends Controller
 
     }
     public function store(Request $request){
-
+        
         try {
             // Validate incoming request
             $request->validate([
@@ -39,6 +41,7 @@ class RequestController extends Controller
     
             // Store file
             $filePath = $this->storeFile($request->file('file'), 'files');
+            $originalFileName = $request->file('file')->getClientOriginalName();
     
             // Store thumbnail
             $thumbnailPath = $this->storeFile($request->file('thumbnail'), 'thumbnails');
@@ -49,6 +52,7 @@ class RequestController extends Controller
             $userRequest->file = $filePath;
             $userRequest->thumbnail = $thumbnailPath;
             $userRequest->unique_id = $request->unique_id;
+            $userRequest->file_name = $originalFileName;
             $userRequest->save();
     
             //creating signers
@@ -92,6 +96,12 @@ class RequestController extends Controller
                 'status' => $signerStatuses[$index],
                 'unique_id' => $signerUniqueId[$index]
             ];
+
+            if($is_required[$index] == true){
+                $isrequired = 1;
+            }else{
+                $isrequired = 0;
+            }
     
             $requestFields[] = [
                 'request_id' => $requestId,
@@ -103,7 +113,7 @@ class RequestController extends Controller
                 'recipientId' => $recipientId[$index],
                 'page_index' => $page_index[$index],
                 'question' => $question[$index],
-                'is_required' => $is_required[$index]
+                'is_required' => $isrequired
             ];
         }
     
@@ -117,19 +127,34 @@ class RequestController extends Controller
     public function fetchRequest(Request $request){
 
         $data = UserRequest::with(['signers','signers.requestFields'])
-        ->where('unique_id',$request->request_unique_id)
-        ->first();
+            ->where('unique_id',$request->request_unique_id)
+            ->first();
         
         if(!$data){
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
         }
-
+    
+        // Retrieve the file path
+        $filePath = public_path($data->file);
+    
+        // Check if the file exists
+        if (!File::exists($filePath)) {
+            return response()->json([
+                'message' => 'File not found.'
+            ], 404);
+        }
+    
+        // Read the file content
+        $fileContent = File::get($filePath);
+    
+        // Generate response with file content and other data
         return response()->json([
             'data' => $data,
+            'pdf_file' => base64_encode($fileContent), // Convert file content to base64
             'message' => 'Success'
         ], 200);
-
+    
     }
 }

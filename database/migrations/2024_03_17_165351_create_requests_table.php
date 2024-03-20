@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('user_id')->nullable();
             $table->string('file')->nullable();
             $table->string('thumbnail')->nullable();
+            $table->string('file_name')->nullable();
             $table->string('status')->default('draft');
             $table->string('unique_id')->nullable();
             $table->timestamps();

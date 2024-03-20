@@ -25,7 +25,7 @@ Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
 Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
 
 Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'testConvert']); 
-
+Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
 
 Route::middleware('auth:api')->group(function () {
 
@@ -51,7 +51,7 @@ Route::middleware('auth:api')->group(function () {
 
         //User Request Module
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
-        Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
+        
 
     } );
 
