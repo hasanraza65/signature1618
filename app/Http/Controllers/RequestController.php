@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\UserRequest;
 use App\Models\Signer;
+use App\Models\RequestField;
 use App\Models\Contact;
 use Auth;
 use DB;
@@ -72,56 +73,37 @@ class RequestController extends Controller
         }
     }
     
-    private function storeFile($file, $directory){
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $file->move(public_path($directory), $fileName);
-        return "$directory/$fileName";
-    }
     
-    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId, array $type, array $x, array $y, array $height, array $width, array $recipientId, array $question, array $is_required, array $page_index){
-        $signers = [];
-        $requestFields = [];
     
-        foreach ($signerIds as $index => $signerId) {
+    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId, array $type, array $x, array $y, array $height, array $width, array $recipientId, array $question, array $is_required, array $page_index)
+    {
+        for ($i = 0; $i < count($signerIds); $i++) {
+            $userId = Contact::where('unique_id', $recipientId[$i])->first();
 
-            //get userid
-            $userId = Contact::where('unique_id',$signerId)->first();
-            //ending get userid
+            $signer = new Signer();
+            $signer->request_id = $requestId;
+            $signer->recipient_unique_id = $recipientId[$i];
+            $signer->recipient_user_id = $userId->user_id;
+            $signer->recipient_contact_id = $userId->id;
+            $signer->status = $signerStatuses[$i];
+            $signer->unique_id = $signerUniqueId[$i];
+            $signer->save();
 
-            $signers[] = [
-                'recipient_unique_id' => $signerId,
-                'recipient_user_id' => $userId->user_id,
-                'recipient_contact_id' => $userId->id,
-                'request_id' => $requestId,
-                'status' => $signerStatuses[$index],
-                'unique_id' => $signerUniqueId[$index]
-            ];
-
-            if($is_required[$index] == true){
-                $isrequired = 1;
-            }else{
-                $isrequired = 0;
+            for ($j = 0; $j < count($x); $j++) {
+                $requestField = new RequestField();
+                $requestField->request_id = $requestId;
+                $requestField->type = $type[$j];
+                $requestField->x = $x[$j];
+                $requestField->y = $y[$j];
+                $requestField->height = $height[$j];
+                $requestField->width = $width[$j];
+                $requestField->recipientId = $signer->id;
+                $requestField->page_index = $page_index[$j];
+                $requestField->question = $question[$j];
+                $requestField->is_required = $is_required[$j] ? 1 : 0;
+                $requestField->save();
             }
-    
-            $requestFields[] = [
-                'request_id' => $requestId,
-                'type' => $type[$index],
-                'x' => $x[$index],
-                'y' => $y[$index],
-                'height' => $height[$index],
-                'width' => $width[$index],
-                'recipientId' => $recipientId[$index],
-                'page_index' => $page_index[$index],
-                'question' => $question[$index],
-                'is_required' => $isrequired
-            ];
         }
-    
-        // Insert signers
-        DB::table('signers')->insert($signers);
-    
-        // Insert request fields
-        DB::table('request_fields')->insert($requestFields);
     }
 
     public function fetchRequest(Request $request){
@@ -156,5 +138,48 @@ class RequestController extends Controller
             'message' => 'Success'
         ], 200);
     
+    }
+
+    public function answerRequest(Request $request){
+
+        $requestdata = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        
+        if($requestdata) {
+        $filePath = $this->storeFile($request->file('signed_file'), 'files');
+        $requestdata->signed_file = $filePath;
+        $requestdata->status =  'Done';
+        $requestdata->update();
+        }
+
+        /*
+        for($i=0; $i<count($request->field_id); $i++){
+
+            $data = RequestField::find($request->field_id[$i]);
+            if($data){
+                $data->answer = $request->answer[$i];
+                $data->update();
+            }
+            
+
+            $signer = Signer::find($data->recipientId);
+            if($signer){
+                $signer->status = "done";
+                $signer->update();
+            }
+            
+
+        } */
+
+        return response()->json([
+           
+            'message' => 'Request answered successfully.'
+        ], 200);
+
+    }
+
+    private function storeFile($file, $directory){
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $file->move(public_path($directory), $fileName);
+        return "$directory/$fileName";
     }
 }

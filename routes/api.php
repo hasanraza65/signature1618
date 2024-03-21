@@ -27,6 +27,8 @@ Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
 Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'testConvert']); 
 Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
 
+Route::post('/answer_request', [App\Http\Controllers\RequestController::class, 'answerRequest']);
+
 Route::middleware('auth:api')->group(function () {
 
     //profile management

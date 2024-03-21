@@ -12,7 +12,7 @@ class Signer extends Model
 
     public function requestFields()
     {
-        return $this->hasMany(RequestField::class,'recipientId','recipient_unique_id');
+        return $this->hasMany(RequestField::class,'recipientId','id');
     }
 
     public function signerContactDetail(){
