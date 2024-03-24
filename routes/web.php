@@ -41,3 +41,5 @@ Route::get('/dump-autoload', function () {
 Route::get('/generate_sign/{name}', [App\Http\Controllers\ProfileManagementController::class, 'generateSignature']); 
 
 Route::middleware('auth')->get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
+
+Route::get('/test-mail', [App\Http\Controllers\RequestController::class, 'sendMail']); 

@@ -7,6 +7,7 @@ use App\Models\UserRequest;
 use App\Models\Signer;
 use App\Models\RequestField;
 use App\Models\Contact;
+use App\Models\User;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -79,6 +80,8 @@ class RequestController extends Controller
     {
         for ($i = 0; $i < count($signerIds); $i++) {
             $userId = Contact::where('unique_id', $recipientId[$i])->first();
+            $contactmaildata = User::find($userId->contact_user_id);
+            $usermail = $contactmaildata->email;
 
             $signer = new Signer();
             $signer->request_id = $requestId;
@@ -88,6 +91,10 @@ class RequestController extends Controller
             $signer->status = $signerStatuses[$i];
             $signer->unique_id = $signerUniqueId[$i];
             $signer->save();
+
+            //sending mail to signer
+            $this->sendMail($signerUniqueId[$i],$requestId,$usermail);
+            //ending sending mail to signer
 
             for ($j = 0; $j < count($x); $j++) {
                 $requestField = new RequestField();
@@ -108,7 +115,7 @@ class RequestController extends Controller
 
     public function fetchRequest(Request $request){
 
-        $data = UserRequest::with(['signers','signers.requestFields'])
+        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail'])
             ->where('unique_id',$request->request_unique_id)
             ->first();
         
@@ -117,6 +124,19 @@ class RequestController extends Controller
                 'message' => 'No data available.'
             ], 400);
         }
+
+        //check signer status
+        $signercheck = Signer::where('request_id',$data->id)
+        ->where('unique_id',$request->recipient_unique_id)
+        ->first();
+
+        if($signercheck && $signercheck->status == 'signed'){
+            return response()->json([
+                'pdf_file' => '', // Convert file content to base64
+                'message' => 'Already signed'
+            ], 200);
+        }
+        //ending check signer status
     
         // Retrieve the file path
         $filePath = public_path($data->file);
@@ -147,28 +167,24 @@ class RequestController extends Controller
         if($requestdata) {
         $filePath = $this->storeFile($request->file('signed_file'), 'files');
         $requestdata->signed_file = $filePath;
-        $requestdata->status =  'Done';
+        //$requestdata->status =  'Done';
         $requestdata->update();
         }
 
-        /*
-        for($i=0; $i<count($request->field_id); $i++){
+        Signer::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->recipient_unique_id)
+        ->update(['status'=>'signed']);
 
-            $data = RequestField::find($request->field_id[$i]);
-            if($data){
-                $data->answer = $request->answer[$i];
-                $data->update();
-            }
-            
+        //update status for request
+        $signercheck = Signer::where('request_id',$requestdata->id)
+        ->where('status','pending')
+        ->first();
 
-            $signer = Signer::find($data->recipientId);
-            if($signer){
-                $signer->status = "done";
-                $signer->update();
-            }
-            
+        if(!$signercheck){
+            UserRequest::where('unique_id',$request->request_unique_id)->update(['status'=>'done']);
+        }
 
-        } */
+        //ending update status for request
 
         return response()->json([
            
@@ -181,5 +197,26 @@ class RequestController extends Controller
         $fileName = time() . '_' . $file->getClientOriginalName();
         $file->move(public_path($directory), $fileName);
         return "$directory/$fileName";
+    }
+
+    private function sendMail($signerUId, $requestId, $email){
+
+        $userrequest = UserRequest::where('id', $requestId)->first();
+        $requestUid = $userrequest->unique_id;
+
+        \Log::info('request u id '.$requestUid);
+
+        $dataUser = [
+            'email'=>$email,
+            'signerUID'=>$signerUId,
+            'requestUID'=>$requestUid,
+         
+       ];
+        
+
+        \Mail::to($email)->send(new \App\Mail\NewRequest($dataUser));
+
+        return "mail sent";
+
     }
 }

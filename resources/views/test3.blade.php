@@ -1,179 +1,202 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer</title>
+<html>
+    <head>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
+        body, html {
+    height: 100%;
+    overflow: hidden;
+    }
 
-        #pdfContainer {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            max-width: 90vw; /* Limit container width */
-            position: relative; /* Relative positioning for absolute elements */
-        }
+    body {
+        background-color: #3a3d55;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Roboto', sans-serif;
+    }
 
-        canvas {
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-            max-width: 100%; /* Limit canvas width */
-            height: auto; /* Maintain aspect ratio */
-            position: relative; /* Relative positioning for absolute elements */
-        }
+    #button-background {
+        position: relative;
+        background-color: rgba(255,255,255,0.3);
+        width: 400px;
+        height: 80px;
+        border-radius: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        #toolbox {
-            margin-top: 20px;
-        }
+    #slider {
+        transition: width 0.3s, border-radius 0.3s, height 0.3s;
+        position: absolute;
+        left: -10px;
+        background-color: white;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .pdf-page {
-            position: relative;
-        }
+    #slider.unlocked {
+        transition: all 0.3s;
+        width: inherit;
+        left: 0 !important;
+        height: inherit;
+        border-radius: inherit;
+    }
 
-        .pdf-image {
-            position: absolute;
-            pointer-events: none; /* Prevent interaction with image */
-            transition: transform 0.2s ease-out; /* Smooth transition */
-        }
+    .material-icons {
+        color: black;
+        font-size: 50px;
+        user-select: none;
+        cursor: default;
+    }
+
+    .slide-text {
+        color: #3a3d55;
+        font-size: 24px;
+        text-transform: uppercase;
+        user-select: none;
+        cursor: default;
+    }
+
+    .bottom {
+        position: fixed;
+        bottom: 0;
+        font-size: 14px;
+        color: white;
+    }
+
+    .bottom a {
+        color: white;
+    }
+
+    #myImage {
+        opacity: 0.3; /* Initial low opacity */
+        transition: opacity 0.3s; /* Smooth transition for opacity change */
+    }
+
     </style>
-</head>
-<body>
-    <input type="file" id="fileInput" accept=".pdf">
-    <div id="pdfContainer"></div>
 
-    <div id="toolbox">
-        <input type="file" id="imageInput" accept="image/*">
+        <body>
+
+    <img id="myImage" src="profile_images/1709578897.png" alt="Your Image">
+   
+
+        <div id="button-background">
+        <span class="slide-text">Swipe</span>
+        <div id="slider">
+            <i id="locker" class="material-icons">lock_open</i>
+        </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
-    <script>
-        // Initialize PDF.js
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    
 
-        // Function to render PDF pages
-        function renderPDF(pdf) {
-            const container = document.getElementById('pdfContainer');
 
-            // Loop through each page of the PDF document
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                // Create a container div for each page
-                const pageContainer = document.createElement('div');
-                pageContainer.classList.add('pdf-page');
-                container.appendChild(pageContainer);
 
-                // Create a canvas element for each page
-                const canvas = document.createElement('canvas');
-                pageContainer.appendChild(canvas);
+<script>
+    var initialMouse = 0;
+var slideMovementTotal = 0;
+var mouseIsDown = false;
+var slider = document.getElementById('slider');
 
-                // Fetch the page
-                pdf.getPage(pageNum).then(page => {
-                    const viewport = page.getViewport({ scale: 1 });
-                    const canvasContext = canvas.getContext('2d');
+slider.addEventListener('mousedown', handleMouseDown);
+slider.addEventListener('touchstart', handleMouseDown);
 
-                    // Set canvas dimensions
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
+document.addEventListener('mouseup', handleMouseUp);
+document.addEventListener('touchend', handleMouseUp);
 
-                    // Render PDF page into canvas context
-                    const renderContext = {
-                        canvasContext,
-                        viewport
-                    };
-                    page.render(renderContext);
-                });
-            }
-        }
+document.addEventListener('mousemove', handleMouseMove);
+document.addEventListener('touchmove', handleMouseMove);
 
-        // Handle file input change event for PDF file
-        document.getElementById('fileInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-
-            // Check if a file is selected
-            if (file) {
-                const fileReader = new FileReader();
-
-                // Read the file as ArrayBuffer
-                fileReader.readAsArrayBuffer(file);
-
-                // When file is loaded, open the PDF
-                fileReader.onload = function() {
-                    const container = document.getElementById('pdfContainer');
-                    container.innerHTML = ''; // Clear previous content
-
-                    const loadingTask = pdfjsLib.getDocument({ data: this.result });
-                    loadingTask.promise.then(pdf => {
-                        renderPDF(pdf);
-                    }).catch(error => {
-                        console.error('Error loading PDF:', error);
-                    });
-                };
-            }
-        });
-
-        // Handle file input change event for image file
-        document.getElementById('imageInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-
-            // Check if a file is selected
-            if (file) {
-                // Create a new image element
-                const image = document.createElement('img');
-                image.classList.add('pdf-image');
-                image.style.maxWidth = '100px'; // Set initial width for the image
-                image.style.height = 'auto'; // Maintain aspect ratio
-
-                // Set the image source to the selected file
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    image.src = event.target.result;
-
-                    // Append the image to the PDF container
-                    const container = document.getElementById('pdfContainer');
-                    container.appendChild(image);
-
-                    // Handle drag event for the image
-                    let offsetX, offsetY;
-                    let isDragging = false;
-                    image.addEventListener('mousedown', startDrag);
-                    document.addEventListener('mousemove', drag);
-                    document.addEventListener('mouseup', endDrag);
-
-                    function startDrag(e){
-    e.preventDefault();
-    isDragging = true;
-    const rect = image.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
+function handleMouseDown(event) {
+    mouseIsDown = true;
+    slideMovementTotal = document.getElementById('button-background').offsetWidth - slider.offsetWidth + 10;
+    initialMouse = event.clientX || event.touches[0].pageX;
 }
 
-function drag(e) {
-    if (isDragging) {
-        e.preventDefault();
-        const x = e.clientX - offsetX;
-        const y = e.clientY - offsetY;
-        image.style.left = x + 'px';
-        image.style.top = y + 'px';
+function handleMouseUp(event) {
+    if (!mouseIsDown) return;
+    mouseIsDown = false;
+    var currentMouse = event.clientX || event.changedTouches[0].pageX;
+    var relativeMouse = currentMouse - initialMouse;
+
+    if (relativeMouse < slideMovementTotal) {
+        document.querySelector('.slide-text').style.opacity = 1;
+        slider.style.left = "-10px";
+        return;
     }
+    slider.classList.add('unlocked');
+    document.getElementById('locker').textContent = 'lock_outline';
+    setTimeout(function() {
+        slider.addEventListener('click', handleSliderClick);
+    }, 0);
 }
 
-function endDrag(e) {
-    e.preventDefault();
-    isDragging = false;
+function handleMouseMove(event) {
+    if (!mouseIsDown) return;
+    var currentMouse = event.clientX || event.touches[0].pageX;
+    var relativeMouse = currentMouse - initialMouse;
+    var slidePercent = 1 - (relativeMouse / slideMovementTotal);
+    document.querySelector('.slide-text').style.opacity = slidePercent;
+
+    if (relativeMouse <= 0) {
+        slider.style.left = '-10px';
+        return;
+    }
+    if (relativeMouse >= slideMovementTotal + 10) {
+        slider.style.left = slideMovementTotal + 'px';
+        return;
+    }
+    slider.style.left = relativeMouse - 10 + 'px';
 }
 
+function handleSliderClick(event) {
+    if (!slider.classList.contains('unlocked')) return;
+    slider.classList.remove('unlocked');
+    document.getElementById('locker').innerHTML = 'lock_open';
+    document.getElementById('myImage').style.opacity = 1; // Change image opacity to fully visible
+    slider.removeEventListener('click', handleSliderClick);
 }
-                reader.readAsDataURL(file);
-            }
-        });
-    </script>
-</body>
+
+function handleMouseDown(event) {
+    mouseIsDown = true;
+    slideMovementTotal = document.getElementById('button-background').offsetWidth - slider.offsetWidth + 10;
+    initialMouse = event.clientX || event.touches[0].pageX;
+}
+
+function handleMouseMove(event) {
+    if (!mouseIsDown) return;
+    var currentMouse = event.clientX || event.touches[0].pageX;
+    var relativeMouse = currentMouse - initialMouse;
+    var slidePercent = 1 - (relativeMouse / slideMovementTotal);
+    document.querySelector('.slide-text').style.opacity = slidePercent;
+
+    if (relativeMouse <= 0) {
+        slider.style.left = '-10px';
+        return;
+    }
+    if (relativeMouse >= slideMovementTotal + 10) {
+        slider.style.left = slideMovementTotal + 'px';
+        return;
+    }
+    slider.style.left = relativeMouse - 10 + 'px';
+
+    // Adjust the opacity of the image dynamically based on the slide percentage
+    var imageOpacity = 1 - slidePercent;
+    if (imageOpacity < 0.3) {
+        imageOpacity = 0.3; // Set a minimum opacity value
+    }
+    document.getElementById('myImage').style.opacity = imageOpacity;
+}
+
+</script>
+
+        </body>
+    </head>
 </html>
