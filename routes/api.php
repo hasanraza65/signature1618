@@ -29,6 +29,9 @@ Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'f
 
 Route::post('/answer_request', [App\Http\Controllers\RequestController::class, 'answerRequest']);
 
+Route::post('/send_otp', [App\Http\Controllers\RequestController::class, 'sendOTP']);
+Route::post('/verify_otp', [App\Http\Controllers\RequestController::class, 'verifyOTP']);
+
 Route::middleware('auth:api')->group(function () {
 
     //profile management
@@ -53,6 +56,7 @@ Route::middleware('auth:api')->group(function () {
 
         //User Request Module
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
+        Route::post('/create_request_draft', [App\Http\Controllers\RequestController::class, 'createDraft']);
         
 
     } );
