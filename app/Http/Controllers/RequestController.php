@@ -79,10 +79,7 @@ class RequestController extends Controller
 
             $requestData = $requestData['data'];
 
-            // Return the decoded data
-            //return $requestData['data']['status'];
             
-            //return response()->json($request->all());
             
             // Check if 'status' key is present
             if (!isset($requestData['status'])) {
@@ -110,6 +107,13 @@ class RequestController extends Controller
     
                 // Process recipient data and save to database
                 $requestId = UserRequest::where('unique_id', $uniqueId)->first()->id;
+                $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
+
+                $userRequestData->email_otp = $requestData['email_otp'];
+                $userRequestData->sms_otp = $requestData['sms_otp'];
+                $userRequestData->file_name = $requestData['file_name'];
+                $userRequestData->status = "pending";
+                $userRequestData->update();
     
                 $signer = new Signer();
                 $signer->request_id = $requestId;
