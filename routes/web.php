@@ -43,3 +43,10 @@ Route::get('/generate_sign/{name}', [App\Http\Controllers\ProfileManagementContr
 Route::middleware('auth')->get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
 
 Route::get('/test-mail', [App\Http\Controllers\RequestController::class, 'sendMail']); 
+
+//Route::get('/test-sms', [App\Http\Controllers\RequestController::class, 'sendSMSOTP']); 
+
+Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSOTP']); 
+
+
+Route::get('/create-client', [App\Http\Controllers\RequestController::class, 'createPhoneNumber']);

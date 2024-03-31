@@ -32,6 +32,10 @@ Route::post('/answer_request', [App\Http\Controllers\RequestController::class, '
 Route::post('/send_otp', [App\Http\Controllers\RequestController::class, 'sendOTP']);
 Route::post('/verify_otp', [App\Http\Controllers\RequestController::class, 'verifyOTP']);
 
+Route::get('/test', [App\Http\Controllers\RequestController::class, 'testLaravel']); 
+
+Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSOTP']); 
+
 Route::middleware('auth:api')->group(function () {
 
     //profile management

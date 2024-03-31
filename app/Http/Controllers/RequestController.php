@@ -9,13 +9,25 @@ use App\Models\RequestField;
 use App\Models\Contact;
 use App\Models\User;
 use App\Models\RequestOtp;
+use App\Models\RequestReminderDate;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use App\Services\TwilioService;
+use Twilio\Rest\Client;
+use Carbon\Carbon;
 
 class RequestController extends Controller
 {
+
+    protected $twilio;
+
+    public function __construct(TwilioService $twilio)
+    {
+        $this->twilio = $twilio;
+    }
+
     public function index(){
 
         if(Auth::user()->user_role == 1){
@@ -67,6 +79,7 @@ class RequestController extends Controller
     }
 
     public function store(Request $request){
+       
         try {
             // Validate incoming request
            
@@ -79,8 +92,6 @@ class RequestController extends Controller
 
             $requestData = $requestData['data'];
 
-            
-            
             // Check if 'status' key is present
             if (!isset($requestData['status'])) {
                 throw new \Exception("Status key is missing in the request data.");
@@ -90,6 +101,29 @@ class RequestController extends Controller
             $status = $requestData['status'];
             $uniqueId = $requestData['unique_id'];
             $recipients = $requestData['recipients'];
+            $reminder_dates = $requestData['reminder_dates'];
+
+            $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
+
+            $userRequestData->email_otp = $requestData['email_otp'];
+            $userRequestData->sms_otp = $requestData['sms_otp'];
+            $userRequestData->file_name = $requestData['file_name'];
+            $userRequestData->status = "pending";
+            $userRequestData->expiry_date = $requestData['expiry_date'];
+            $userRequestData->custom_message = $requestData['custom_message'];
+            $userRequestData->update();
+
+            //create reminder dates
+            foreach($reminder_dates as $date){
+
+                $reminderdate_obj = new RequestReminderDate();
+                $reminderdate_obj->request_id = $userRequestData->id;
+                $reminderdate_obj->date = $date['reminder_date'];
+                $reminderdate_obj->save();
+
+            }
+            //ending create reminder dates
+
     
             // Now you can iterate over recipients and process each one
             foreach ($recipients as $recipient) {
@@ -107,13 +141,7 @@ class RequestController extends Controller
     
                 // Process recipient data and save to database
                 $requestId = UserRequest::where('unique_id', $uniqueId)->first()->id;
-                $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
-
-                $userRequestData->email_otp = $requestData['email_otp'];
-                $userRequestData->sms_otp = $requestData['sms_otp'];
-                $userRequestData->file_name = $requestData['file_name'];
-                $userRequestData->status = "pending";
-                $userRequestData->update();
+                
     
                 $signer = new Signer();
                 $signer->request_id = $requestId;
@@ -159,44 +187,6 @@ class RequestController extends Controller
         }
     }
     
-    
-    
-    public function createSigners(array $signerIds, array $signerStatuses, $requestId, array $signerUniqueId, array $type, array $x, array $y, array $height, array $width, array $recipientId, array $question, array $is_required, array $page_index)
-    {
-        for ($i = 0; $i < count($signerIds); $i++) {
-            $userId = Contact::where('unique_id', $recipientId[$i])->first();
-            $contactmaildata = User::find($userId->contact_user_id);
-            $usermail = $contactmaildata->email;
-
-            $signer = new Signer();
-            $signer->request_id = $requestId;
-            $signer->recipient_unique_id = $recipientId[$i];
-            $signer->recipient_user_id = $userId->user_id;
-            $signer->recipient_contact_id = $userId->id;
-            $signer->status = $signerStatuses[$i];
-            $signer->unique_id = $signerUniqueId[$i];
-            $signer->save();
-
-            //sending mail to signer
-            $this->sendMail($signerUniqueId[$i],$requestId,$usermail);
-            //ending sending mail to signer
-
-            for ($j = 0; $j < count($x); $j++) {
-                $requestField = new RequestField();
-                $requestField->request_id = $requestId;
-                $requestField->type = $type[$j];
-                $requestField->x = $x[$j];
-                $requestField->y = $y[$j];
-                $requestField->height = $height[$j];
-                $requestField->width = $width[$j];
-                $requestField->recipientId = $signer->id;
-                $requestField->page_index = $page_index[$j];
-                $requestField->question = $question[$j];
-                $requestField->is_required = $is_required[$j] ? 1 : 0;
-                $requestField->save();
-            }
-        }
-    }
 
     public function fetchRequest(Request $request){
 
@@ -217,26 +207,31 @@ class RequestController extends Controller
         if($data->email_otp == 1){
 
             if($signer->otp_verified == 0){
-                
+                    
                 return response()->json([
-                    'message' => 'Email OTP required to access this request.'
-                ], 401);
-
-            }
-
+                        'message' => 'Email OTP.'
+                ], 200);
+    
+                }
         }
-
+    
         if($data->sms_otp == 1){
-
+    
             if($signer->otp_verified == 0){
-                
-                return response()->json([
-                    'message' => 'Email OTP required to access this request.'
-                ], 401);
-
+                    
+                    return response()->json([
+                        'message' => 'SMS OTP.'
+                    ], 200);
+    
+                }
+    
             }
 
-        }
+        if (Carbon::parse($data->expiry_date)->isPast()) {
+            return response()->json([
+                'message' => 'This link has been expired.'
+            ], 401);
+        } 
 
         //check signer status
         $signercheck = Signer::where('request_id',$data->id)
@@ -307,6 +302,13 @@ class RequestController extends Controller
 
         }elseif($request->type == 'sms'){
 
+            $phone = $getContact->contact_phone;
+
+            if($phone!= null && $phone != ""){
+                $this->sendSMSOTP($phone, $otp);
+            }
+
+           
         }
 
         return response()->json([
@@ -405,4 +407,22 @@ class RequestController extends Controller
         return "mail sent";
 
     }
+
+
+    public function sendSMSOTP($phone, $otp)
+    {
+        $to = $phone;
+        $message = 'Your OTP for Signature1618: '.$otp;
+        //$senderName = 'Signature1618'; // Replace 'YourSenderName' with your desired sender name
+
+
+        $this->twilio->sendSMS($to, $message);
+
+        return true;
+
+        //return response()->json(['message' => 'SMS sent successfully']);
+    }
+
+    
+    
 }
