@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\User;
 use App\Models\RequestOtp;
 use App\Models\RequestReminderDate;
+use App\Models\Approver;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -81,16 +82,8 @@ class RequestController extends Controller
     public function store(Request $request){
        
         try {
-            // Validate incoming request
-           
             // Process your data here
-            //$requestData = $request->all();
-            $rawData = $request->getContent();
-
-            // Decode the JSON data
-            $requestData = json_decode($rawData, true);
-
-            $requestData = $requestData['data'];
+            $requestData = $request->all();
 
             // Check if 'status' key is present
             if (!isset($requestData['status'])) {
@@ -101,7 +94,13 @@ class RequestController extends Controller
             $status = $requestData['status'];
             $uniqueId = $requestData['unique_id'];
             $recipients = $requestData['recipients'];
-            $reminder_dates = $requestData['reminder_dates'];
+            if(isset($requestData['reminder_dates']) && $requestData['reminder_dates'] != null){
+                $reminder_dates = $requestData['reminder_dates'];
+            }
+            
+            if(isset($requestData['approvers']) && $requestData['approvers'] != null){
+                $approvers = $requestData['approvers'];
+            }
 
             $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
 
@@ -111,18 +110,57 @@ class RequestController extends Controller
             $userRequestData->status = "pending";
             $userRequestData->expiry_date = $requestData['expiry_date'];
             $userRequestData->custom_message = $requestData['custom_message'];
+            if(isset($approvers) && $approvers != null){
+                $userRequestData->approve_status = 0;
+            }
             $userRequestData->update();
 
             //create reminder dates
-            foreach($reminder_dates as $date){
+            if(isset($reminder_dates) && $reminder_dates != null){
+                foreach($reminder_dates as $date){
 
-                $reminderdate_obj = new RequestReminderDate();
-                $reminderdate_obj->request_id = $userRequestData->id;
-                $reminderdate_obj->date = $date['reminder_date'];
-                $reminderdate_obj->save();
+                    $reminderdate_obj = new RequestReminderDate();
+                    $reminderdate_obj->request_id = $userRequestData->id;
+                    $reminderdate_obj->date = $date['reminder_date'];
+                    $reminderdate_obj->save();
+
+                }
+            }
+            
+            //ending create reminder dates
+
+            // Process recipient data and save to database
+            $requestId = UserRequest::where('unique_id', $uniqueId)->first()->id;
+
+            //create approver 
+            if(isset($requestData['approvers']) && $requestData['approvers'] != null){
+           
+                foreach($approvers as $approver){
+
+                    $recipientId = $approver['recipientId'];
+
+                    $userId = Contact::where('unique_id', $recipientId)->first();
+                    $contactmaildata = User::find($userId->contact_user_id);
+                    $usermail = $contactmaildata->email;
+
+                    
+                    $approverStatus = $approver['approver_status'];
+                    $approverUniqueId = $approver['approver_unique_id'];
+
+                    $approver_obj = new Approver();
+                    $approver_obj->request_id = $requestId;
+                    $approver_obj->recipient_unique_id = $recipientId; // Assuming this is recipientId
+                    $approver_obj->recipient_user_id = $userId->contact_user_id;
+                    $approver_obj->recipient_contact_id = $userId->id;
+                    $approver_obj->status = $approverStatus;
+                    $approver_obj->unique_id = $approverUniqueId;
+                    $approver_obj->save();
+                    
+                    $this->sendMail($approverUniqueId,$requestId,$usermail,$type=2);
+                }
 
             }
-            //ending create reminder dates
+            //ending create approver
 
     
             // Now you can iterate over recipients and process each one
@@ -137,11 +175,7 @@ class RequestController extends Controller
                 $contactmaildata = User::find($userId->contact_user_id);
                 $usermail = $contactmaildata->email;
                 
-              
-    
-                // Process recipient data and save to database
-                $requestId = UserRequest::where('unique_id', $uniqueId)->first()->id;
-                
+         
     
                 $signer = new Signer();
                 $signer->request_id = $requestId;
@@ -149,13 +183,17 @@ class RequestController extends Controller
                 // You may need to adjust the following based on your database structure
                 // Assuming you have a mapping between recipientId and user_id and contact_id
                 $userId = Contact::where('unique_id', $recipientId)->first();
-                $signer->recipient_user_id = $userId->user_id;
+                $signer->recipient_user_id = $userId->contact_user_id;
                 $signer->recipient_contact_id = $userId->id;
                 $signer->status = $signerStatus;
                 $signer->unique_id = $signerUniqueId;
                 $signer->save();
-                
-                $this->sendMail($signerUniqueId,$requestId,$usermail);
+
+                if(isset($approvers) && $approvers != null){
+
+                }else{
+                    $this->sendMail($signerUniqueId,$requestId,$usermail,$type=1);
+                }
     
                 // Assuming you need to iterate over fields for each recipient
                 foreach ($fields as $field) {
@@ -175,6 +213,8 @@ class RequestController extends Controller
                     $requestField->save();
                 }
             }
+
+            
     
             // Return response
             return response()->json([
@@ -200,6 +240,12 @@ class RequestController extends Controller
             ], 400);
         }
 
+        if($data->approve_status == 0){
+            return response()->json([
+                'message' => 'Approve pending.'
+            ], 200);
+        }
+
         $signer = Signer::where('unique_id',$request->recipient_unique_id)
             ->where('request_id',$data->id)
             ->first();
@@ -207,25 +253,25 @@ class RequestController extends Controller
         if($data->email_otp == 1){
 
             if($signer->otp_verified == 0){
-                    
+                
                 return response()->json([
-                        'message' => 'Email OTP.'
+                    'message' => 'Email OTP.'
                 ], 200);
-    
-                }
-        }
-    
-        if($data->sms_otp == 1){
-    
-            if($signer->otp_verified == 0){
-                    
-                    return response()->json([
-                        'message' => 'SMS OTP.'
-                    ], 200);
-    
-                }
-    
+
             }
+        }
+
+        if($data->sms_otp == 1){
+
+            if($signer->otp_verified == 0){
+                
+                return response()->json([
+                    'message' => 'SMS OTP.'
+                ], 200);
+
+            }
+
+        }
 
         if (Carbon::parse($data->expiry_date)->isPast()) {
             return response()->json([
@@ -242,6 +288,59 @@ class RequestController extends Controller
             return response()->json([
                 'pdf_file' => '', // Convert file content to base64
                 'message' => 'Already signed'
+            ], 200);
+        }
+        //ending check signer status
+    
+        // Retrieve the file path
+        $filePath = public_path($data->file);
+    
+        // Check if the file exists
+        if (!File::exists($filePath)) {
+            return response()->json([
+                'message' => 'File not found.'
+            ], 404);
+        }
+    
+        // Read the file content
+        $fileContent = File::get($filePath);
+    
+        // Generate response with file content and other data
+        return response()->json([
+            'data' => $data,
+            'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'message' => 'Success'
+        ], 200);
+    
+    }
+
+    public function approverFetchRequest(Request $request){
+
+        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail'])
+            ->where('unique_id',$request->request_unique_id)
+            ->first();
+        
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+
+        if (Carbon::parse($data->expiry_date)->isPast()) {
+            return response()->json([
+                'message' => 'This link has been expired.'
+            ], 401);
+        } 
+
+        //check signer status
+        $approvercheck = Approver::where('request_id',$data->id)
+        ->where('unique_id',$request->recipient_unique_id)
+        ->first();
+
+        if($approvercheck && $approvercheck->status == 'approved'){
+            return response()->json([
+                'pdf_file' => '', // Convert file content to base64
+                'message' => 'Already approved'
             ], 200);
         }
         //ending check signer status
@@ -321,6 +420,7 @@ class RequestController extends Controller
 
         $data = RequestOtp::where('otp',$request->otp)
         ->where('recipient_unique_id',$request->recipient_unique_id)
+        ->orderBy('id','desc')
         ->first();
 
         if(!$data){
@@ -340,11 +440,36 @@ class RequestController extends Controller
 
         $signer->otp_verified = 1;
         $signer->update();
-
-
+        
+        
+        $uRequestdata = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail'])
+            ->where('unique_id',$request->request_unique_id)
+            ->first();
+            
+            // Retrieve the file path
+        $filePath = public_path($uRequestdata->file);
+    
+        // Check if the file exists
+        if (!File::exists($filePath)) {
+            return response()->json([
+                'message' => 'File not found.'
+            ], 404);
+        }
+    
+        // Read the file content
+        $fileContent = File::get($filePath);
+    
+        // Generate response with file content and other data
         return response()->json([
+            'data' => $uRequestdata,
+            'pdf_file' => base64_encode($fileContent), // Convert file content to base64
             'message' => 'OTP Matched'
         ], 200);
+
+    /*
+        return response()->json([
+            'message' => 'OTP Matched'
+        ], 200); */
         
     }
 
@@ -381,13 +506,60 @@ class RequestController extends Controller
 
     }
 
+    public function approveRequest(Request $request){
+
+        $requestdata = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        
+        if($requestdata) {
+        //$requestdata->status =  'Done';
+        //$requestdata->update();
+        }
+
+
+        $checkng = Approver::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->approver_unique_id)
+        ->update(['status'=>'approved']);
+
+
+        //update status for request
+        $approvercheck = Approver::where('request_id',$requestdata->id)
+        ->where('status','pending')
+        ->first();
+
+        if(!$approvercheck){
+            UserRequest::where('unique_id',$request->request_unique_id)->update(['approve_status'=>1]);
+        }
+
+        //ending update status for request
+
+        //sending mail to signers 
+        $signers = Signer::where('request_id',$requestdata->id)->get();
+        foreach($signers as $signer){
+
+            $signer_user = User::find($signer->recipient_user_id);
+
+            //return $signer_user->email;
+
+            $this->sendMail($signer->unique_id,$requestdata->id,$signer_user->email,$type=1);
+
+        }
+        
+        //ending sending mail to signers
+
+        return response()->json([
+           
+            'message' => 'Request answered successfully.'
+        ], 200);
+
+    }
+
     private function storeFile($file, $directory){
         $fileName = time() . '_' . $file->getClientOriginalName();
         $file->move(public_path($directory), $fileName);
         return "$directory/$fileName";
     }
 
-    private function sendMail($signerUId, $requestId, $email){
+    private function sendMail($signerUId, $requestId, $email, $type){
 
         $userrequest = UserRequest::where('id', $requestId)->first();
         $requestUid = $userrequest->unique_id;
@@ -401,8 +573,12 @@ class RequestController extends Controller
          
        ];
         
-
+       if($type == 1){
         \Mail::to($email)->send(new \App\Mail\NewRequest($dataUser));
+       }elseif($type==2){
+        \Mail::to($email)->send(new \App\Mail\ApproverMail($dataUser));
+       }
+       
 
         return "mail sent";
 

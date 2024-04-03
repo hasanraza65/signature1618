@@ -26,6 +26,8 @@ Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
 
 Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'testConvert']); 
 Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
+Route::post('/approver_fetch_request', [App\Http\Controllers\RequestController::class, 'approverFetchRequest']);
+Route::post('/approve_request', [App\Http\Controllers\RequestController::class, 'approveRequest']);
 
 Route::post('/answer_request', [App\Http\Controllers\RequestController::class, 'answerRequest']);
 

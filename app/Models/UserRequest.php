@@ -21,5 +21,10 @@ class UserRequest extends Model
         return $this->hasMany(Signer::class,'request_id','id');
     }
 
+    public function approvers()
+    {
+        return $this->hasMany(Approver::class,'request_id','id');
+    }
+
     
 }
