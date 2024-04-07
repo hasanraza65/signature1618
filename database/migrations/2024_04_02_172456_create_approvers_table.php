@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('request_id')->nullable();
             $table->string('unique_id')->nullable();
             $table->string('status')->default('pending');
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }

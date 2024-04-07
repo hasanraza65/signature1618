@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ApproverMail extends Mailable
+class RejectedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -28,15 +28,13 @@ class ApproverMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Approver Mail',
+            subject: 'Rejected Mail',
         );
     }
 
     /**
      * Get the message content definition.
      */
-  
-
     /**
      * Get the attachments for the message.
      *
@@ -50,6 +48,6 @@ class ApproverMail extends Mailable
     public function build()
     {
         $user_d = $this->data;
-        return $this->subject("Document need your approval - Signature1618")->view('mail_templates.approver_mail',compact('user_d'));
+        return $this->subject("Document rejected - Signature1618")->view('mail_templates.rejected_mail',compact('user_d'));
     }
 }

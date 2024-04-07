@@ -32,9 +32,9 @@ class RequestController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail'])->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])->orderBy('id','desc')->get();
         }else{
-            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
         }
        
         return response()->json([
@@ -244,6 +244,12 @@ class RequestController extends Controller
             return response()->json([
                 'message' => 'Approve pending.'
             ], 200);
+        }elseif($data->approve_status == 2){
+
+            return response()->json([
+                'message' => 'File rejected.'
+            ], 200);
+
         }
 
         $signer = Signer::where('unique_id',$request->recipient_unique_id)
@@ -316,7 +322,7 @@ class RequestController extends Controller
 
     public function approverFetchRequest(Request $request){
 
-        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail'])
+        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
             ->where('unique_id',$request->request_unique_id)
             ->first();
         
@@ -330,6 +336,12 @@ class RequestController extends Controller
             return response()->json([
                 'message' => 'This link has been expired.'
             ], 401);
+        } 
+
+        if ($data->approve_status == 1 || $data->approve_status == 2) {
+            return response()->json([
+                'message' => 'Already answered.'
+            ], 200);
         } 
 
         //check signer status
@@ -553,6 +565,41 @@ class RequestController extends Controller
 
     }
 
+    public function rejectRequest(Request $request){
+
+        $requestdata = UserRequest::where('unique_id',$request->request_unique_id)->first();
+       
+
+        Approver::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->approver_unique_id)
+        ->update(['status'=>'rejected', 'comment'=>$request->comment]);
+
+
+        //update status for request
+        $approvercheck = Approver::where('request_id',$requestdata->id)
+        ->where('status','pending')
+        ->first();
+
+        if(!$approvercheck){
+            UserRequest::where('unique_id',$request->request_unique_id)->update(['approve_status'=>2]);
+        }
+
+        //ending update status for request
+
+        //sending mail to signers 
+        $sender = User::where('id',$requestdata->user_id)->first();
+        $this->sendMail($sender->unique_id,$requestdata->id,$sender->email,$type=3);
+       
+        
+        //ending sending mail to signers
+
+        return response()->json([
+           
+            'message' => 'Request answered successfully.'
+        ], 200);
+
+    }
+
     private function storeFile($file, $directory){
         $fileName = time() . '_' . $file->getClientOriginalName();
         $file->move(public_path($directory), $fileName);
@@ -577,6 +624,8 @@ class RequestController extends Controller
         \Mail::to($email)->send(new \App\Mail\NewRequest($dataUser));
        }elseif($type==2){
         \Mail::to($email)->send(new \App\Mail\ApproverMail($dataUser));
+       }elseif($type==3){
+        \Mail::to($email)->send(new \App\Mail\RejectedMail($dataUser));
        }
        
 

@@ -28,6 +28,7 @@ Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'test
 Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);
 Route::post('/approver_fetch_request', [App\Http\Controllers\RequestController::class, 'approverFetchRequest']);
 Route::post('/approve_request', [App\Http\Controllers\RequestController::class, 'approveRequest']);
+Route::post('/reject_request', [App\Http\Controllers\RequestController::class, 'rejectRequest']);
 
 Route::post('/answer_request', [App\Http\Controllers\RequestController::class, 'answerRequest']);
 
