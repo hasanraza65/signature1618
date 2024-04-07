@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\RequestOtp;
 use App\Models\RequestReminderDate;
 use App\Models\Approver;
+use App\Models\RadioButton;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -200,17 +201,34 @@ class RequestController extends Controller
                     $requestField = new RequestField();
                     $requestField->request_id = $requestId;
                     $requestField->type = $field['type'];
-                    $requestField->x = $field['x'];
-                    $requestField->y = $field['y'];
-                    $requestField->height = $field['height'];
-                    $requestField->width = $field['width'];
-                    // Assuming these fields are nullable in your database
-                    $requestField->question = $field['question'] ?? null;
+                    if($field['type'] != "radio"){
+                        $requestField->x = $field['x'];
+                        $requestField->y = $field['y'];
+                        $requestField->height = $field['height'];
+                        $requestField->width = $field['width'];
+                
+                        $requestField->question = $field['question'] ?? null;
+                    }
+
                     $requestField->is_required = $field['is_required'] == 'true' ? 1 : 0;
                     $requestField->page_index = $field['page_index'];
                     // Assuming recipientId here refers to signer's id, you may need to adjust this
                     $requestField->recipientId = $signer->id;
                     $requestField->save();
+
+                    if($field['type'] == "radio"){
+
+                        foreach($field['radioOptions'] as $optionquestion){
+                            $radio =  new RadioButton();    
+                            $radio->option_question = $optionquestion['option_question'];
+                            $radio->x = $optionquestion['option_x'];
+                            $radio->y = $optionquestion['option_x'];
+                            $radio->field_id = $requestField->id;
+                            $radio->save();
+                        }
+                        
+
+                    }
                 }
             }
 
