@@ -15,7 +15,7 @@
    
     
     <div style="margin-top:20px;text-align:center;">
-    <a href="http://localhost:3000/approve/?d={{$user_d['requestUID']}}&a={{$user_d['signerUID']}}" style="background:#2baadf;color:#ffffff;text-align:center;text-decoration:none;width:150px;margin:0px auto;font-size: 16px;padding: 15px;border-radius:4px;border:3px solid #0fde20;">Open Document</a>
+    <a href="{{ env('APP_URL') }}/approve/?d={{$user_d['requestUID']}}&a={{$user_d['signerUID']}}" style="background:#2baadf;color:#ffffff;text-align:center;text-decoration:none;width:150px;margin:0px auto;font-size: 16px;padding: 15px;border-radius:4px;border:3px solid #0fde20;">Open Document</a>
     </div>
     
     <h3></h3>

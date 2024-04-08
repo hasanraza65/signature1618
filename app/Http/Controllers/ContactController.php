@@ -47,7 +47,7 @@ class ContactController extends Controller
             $user = new User();
             $user->email = $request->email;
             $user->name = $request->first_name.' '.$request->last_name;
-            $user->language = $request->language;
+            $user->language = $request->language ? $request->language : "en";
             $user->phone = $request->phone;
             $user->unique_id = $request->user_unique_id;
             $user->contact_type = 1; //if this user only for contact at the moment and not registered officially here
@@ -74,7 +74,7 @@ class ContactController extends Controller
         $data->contact_first_name = $request->first_name;
         $data->contact_last_name = $request->last_name;
         $data->contact_phone = $request->phone;
-        $data->contact_language = $request->language;
+        $data->contact_language = $request->language ? $request->language : "en";
         $data->unique_id = $request->contact_unique_id;
         $data->save();
     
