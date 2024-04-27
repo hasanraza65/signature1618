@@ -50,3 +50,33 @@ Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSO
 
 
 Route::get('/create-client', [App\Http\Controllers\RequestController::class, 'createPhoneNumber']);
+
+Route::get('/run-scheduler', function () {
+    // Run the scheduler
+    Artisan::call('schedule:run');
+
+    // Return a message indicating the scheduler has been run
+    return 'Scheduler has been executed.';
+});
+
+Route::get('/clear-cache', function () {
+    // Clear application cache
+    Artisan::call('cache:clear');
+    
+    // Clear configuration cache
+    Artisan::call('config:clear');
+
+    // Clear route cache
+    Artisan::call('route:clear');
+
+    // Clear view cache
+    Artisan::call('view:clear');
+
+    // Clear compiled class cache
+    Artisan::call('clear-compiled');
+
+    // Clear optimized class loader
+    Artisan::call('optimize:clear');
+    
+    return 'Cache cleared!';
+});

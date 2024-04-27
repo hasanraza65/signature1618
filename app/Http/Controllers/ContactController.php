@@ -159,6 +159,30 @@ class ContactController extends Controller
         ], 200);
     }
 
+    public function updatePhones(Request $request){
+
+        for($i=0; $i<count($request->contact_unique_id); $i++){
+
+            $data = Contact::where('unique_id',$request->contact_unique_id[$i])->first();
+            
+            if(!$data){
+                return response()->json([
+                    'message' => 'No data available.'
+                ], 400);
+            }
+
+            $data->contact_phone = $request->contact_phone[$i];
+            $data->update();
+
+        }
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
     public function destroy(Request $request,$id){
 
         $userId = getUserId($request);

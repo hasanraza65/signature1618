@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use App\Services\TwilioService;
 use Twilio\Rest\Client;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class RequestController extends Controller
@@ -33,9 +34,16 @@ class RequestController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('is_trash',0)
+            ->orderBy('id','desc')
+            ->get();
         }else{
-            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('user_id',Auth::user()->id)
+            ->where('is_trash',0)
+            ->orderBy('id','desc')
+            ->get();
         }
        
         return response()->json([
@@ -80,6 +88,7 @@ class RequestController extends Controller
             }
     }
 
+    
     public function store(Request $request){
        
         try {
@@ -105,15 +114,26 @@ class RequestController extends Controller
 
             $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
 
-            $userRequestData->email_otp = $requestData['email_otp'];
-            $userRequestData->sms_otp = $requestData['sms_otp'];
+            $userRequestData->email_otp = $requestData['email_otp'] ?? 0;
+            $userRequestData->sms_otp = $requestData['sms_otp'] ?? 0;
             $userRequestData->file_name = $requestData['file_name'];
-            $userRequestData->status = "pending";
-            $userRequestData->expiry_date = $requestData['expiry_date'];
+            $userRequestData->status = $request->status;
+            if(isset($requestData['expiry_date']) && $requestData['expiry_date'] != null){
+                $userRequestData->expiry_date = $requestData['expiry_date'];
+            }
+            
             $userRequestData->custom_message = $requestData['custom_message'];
             if(isset($approvers) && $approvers != null){
                 $userRequestData->approve_status = 0;
             }
+
+            $userRequestData->expiry_type = $request->expiry_type;
+            $userRequestData->expiry_data_count = $request->expiry_data_count;
+            $userRequestData->expiry_data_type = $request->expiry_data_type;
+            $userRequestData->automatic_reminders = $request->automatic_reminders;
+            $userRequestData->reminder_data_type = $request->reminder_data_type;
+            $userRequestData->reminder_data_count = $request->reminder_data_count;
+
             $userRequestData->update();
 
             //create reminder dates
@@ -134,6 +154,9 @@ class RequestController extends Controller
             $requestId = UserRequest::where('unique_id', $uniqueId)->first()->id;
 
             //create approver 
+            if(isset($requestData['approvers']) && count($requestData['approvers'])>0){
+                Approver::where('request_id',$requestId)->delete();
+            }
             if(isset($requestData['approvers']) && $requestData['approvers'] != null){
            
                 foreach($approvers as $approver){
@@ -157,7 +180,9 @@ class RequestController extends Controller
                     $approver_obj->unique_id = $approverUniqueId;
                     $approver_obj->save();
                     
+                    if($request->status != "draft"){
                     $this->sendMail($approverUniqueId,$requestId,$usermail,$type=2);
+                    }
                 }
 
             }
@@ -165,6 +190,9 @@ class RequestController extends Controller
 
     
             // Now you can iterate over recipients and process each one
+            if(isset($requestData['recipients']) && count($recipients)>0){
+                Signer::where('request_id',$requestId)->delete();
+            }
             foreach ($recipients as $recipient) {
                 // Access recipient data
                 $recipientId = $recipient['recipientId'];
@@ -176,7 +204,6 @@ class RequestController extends Controller
                 $contactmaildata = User::find($userId->contact_user_id);
                 $usermail = $contactmaildata->email;
                 
-         
     
                 $signer = new Signer();
                 $signer->request_id = $requestId;
@@ -193,10 +220,18 @@ class RequestController extends Controller
                 if(isset($approvers) && $approvers != null){
 
                 }else{
-                    $this->sendMail($signerUniqueId,$requestId,$usermail,$type=1);
+                    if($request->status != "draft"){
+                        $this->sendMail($signerUniqueId,$requestId,$usermail,$type=1);
+                    }
+                    
                 }
     
                 // Assuming you need to iterate over fields for each recipient
+                if(isset($recipient['fields']) && count($fields)>0){
+                    RequestField::where('request_id',$requestId)
+                    ->where('recipientId',$signer->id)
+                    ->delete();
+                }
                 foreach ($fields as $field) {
                     $requestField = new RequestField();
                     $requestField->request_id = $requestId;
@@ -222,7 +257,7 @@ class RequestController extends Controller
                             $radio =  new RadioButton();    
                             $radio->option_question = $optionquestion['option_question'];
                             $radio->x = $optionquestion['option_x'];
-                            $radio->y = $optionquestion['option_x'];
+                            $radio->y = $optionquestion['option_y'];
                             $radio->field_id = $requestField->id;
                             $radio->save();
                         }
@@ -248,7 +283,7 @@ class RequestController extends Controller
 
     public function fetchRequest(Request $request){
 
-        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail'])
+        $data = UserRequest::with(['signers','signers.requestFields','signers.requestFields.radioFields','signers.signerContactDetail'])
             ->where('unique_id',$request->request_unique_id)
             ->first();
         
@@ -338,9 +373,43 @@ class RequestController extends Controller
     
     }
 
+    public function show($id){
+
+        $data = UserRequest::with(['signers','signers.requestFields','signers.requestFields.radioFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('unique_id',$id)
+            ->first();
+        
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+    
+        // Retrieve the file path
+        $filePath = public_path($data->file);
+    
+        // Check if the file exists
+        if (!File::exists($filePath)) {
+            return response()->json([
+                'message' => 'File not found.'
+            ], 404);
+        }
+    
+        // Read the file content
+        $fileContent = File::get($filePath);
+    
+        // Generate response with file content and other data
+        return response()->json([
+            'data' => $data,
+            'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'message' => 'Success'
+        ], 200);
+    
+    }
+
     public function approverFetchRequest(Request $request){
 
-        $data = UserRequest::with(['signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+        $data = UserRequest::with(['signers','signers.requestFields','signers.requestFields.radioFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
             ->where('unique_id',$request->request_unique_id)
             ->first();
         
@@ -399,6 +468,10 @@ class RequestController extends Controller
 
     public function sendOTP(Request $request){
 
+        RequestOtp::where('request_unique_id',$request->request_unique_id)
+        ->where('recipient_unique_id',$request->recipient_unique_id)
+        ->delete();
+
         $data = new RequestOtp();
         $data->recipient_unique_id = $request->recipient_unique_id;
         $otp = rand(100000, 999999);
@@ -426,7 +499,10 @@ class RequestController extends Controller
                 'otp'=>$otp
            ];
 
-        \Mail::to($email)->send(new \App\Mail\OTPEmail($dataUser));
+        $subject = $getContact->contact_first_name." your OTP for request file";
+
+        \Mail::to($email)->send(new \App\Mail\OTPEmail($dataUser, $subject));
+
 
 
         }elseif($request->type == 'sms'){
@@ -624,33 +700,46 @@ class RequestController extends Controller
         return "$directory/$fileName";
     }
 
-    private function sendMail($signerUId, $requestId, $email, $type){
-
-        $userrequest = UserRequest::where('id', $requestId)->first();
-        $requestUid = $userrequest->unique_id;
-
-        \Log::info('request u id '.$requestUid);
-
+    private function sendMail($signerUId, $requestId, $email, $type) {
+        $userRequest = UserRequest::where('id', $requestId)->first();
+        $requestUid = $userRequest->unique_id;
+    
         $dataUser = [
-            'email'=>$email,
-            'signerUID'=>$signerUId,
-            'requestUID'=>$requestUid,
-         
-       ];
-        
-       if($type == 1){
-        \Mail::to($email)->send(new \App\Mail\NewRequest($dataUser));
-       }elseif($type==2){
-        \Mail::to($email)->send(new \App\Mail\ApproverMail($dataUser));
-       }elseif($type==3){
-        \Mail::to($email)->send(new \App\Mail\RejectedMail($dataUser));
-       }
-       
-
-        return "mail sent";
-
+            'email' => $email,
+            'signerUID' => $signerUId,
+            'requestUID' => $requestUid,
+        ];
+    
+        $subject = '';
+        switch ($type) {
+            case 1:
+                $subject = 'New Request';
+                break;
+            case 2:
+                $subject = 'Approver Mail';
+                break;
+            case 3:
+                $subject = 'Rejected Mail';
+                break;
+            default:
+                // Handle default case
+                break;
+        }
+    
+        // Append current timestamp to subject
+        $subject .= ' - ' . Carbon::now()->toDateTimeString();
+    
+        // Send email
+        if ($type == 1) {
+            Mail::to($email)->send(new \App\Mail\NewRequest($dataUser, $subject));
+        } elseif ($type == 2) {
+            Mail::to($email)->send(new \App\Mail\ApproverMail($dataUser, $subject));
+        } elseif ($type == 3) {
+            Mail::to($email)->send(new \App\Mail\RejectedMail($dataUser, $subject));
+        }
+    
+        return "Mail sent";
     }
-
 
     public function sendSMSOTP($phone, $otp)
     {
@@ -666,6 +755,155 @@ class RequestController extends Controller
         //return response()->json(['message' => 'SMS sent successfully']);
     }
 
+    public function destroy(Request $request,$id){
+
+        $userId = getUserId($request);
+
+        // Find the contact by ID and user ID
+        $data = UserRequest::where('id', $id)->where('user_id', $userId)->first();
+
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+
+        //deleting signers
+        Signer::where('request_id',$id)->delete();
+        //deleting fields
+        RequestField::where('request_id',$id)->delete();
+        //deleing approvers
+        Approver::where('request_id',$id)->delete();
+        //otps
+        RequestOtp::where('request_unique_id',$data->unique_id)->delete();
+        //radio buttons
+
+        $data->delete();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
+    public function addToTrash(Request $request){
+
+        $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+        $data->is_trash = 1;
+        $data->update();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
+    public function removeFromTrash(Request $request){
+
+        $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+        $data->is_trash = 0;
+        $data->update();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
+    public function allTrashItems(){
+
+        if(Auth::user()->user_role == 1){
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('is_trash',1)
+            ->orderBy('id','desc')
+            ->get();
+        }else{
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('user_id',Auth::user()->id)
+            ->where('is_trash',1)
+            ->orderBy('id','desc')
+            ->get();
+        }
+       
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ],200);
+
+    }
+
+    public function allBookmarkedItems(){
+
+        if(Auth::user()->user_role == 1){
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('is_trash',0)
+            ->where('is_bookmark',1)
+            ->orderBy('id','desc')
+            ->get();
+        }else{
+            $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('user_id',Auth::user()->id)
+            ->where('is_trash',0)
+            ->where('is_bookmark',1)
+            ->orderBy('id','desc')
+            ->get();
+        }
+       
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ],200);
+
+    }
+
+    public function addToBookmarks(Request $request){
+
+        $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+        $data->is_bookmark = 1;
+        $data->update();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
+    public function removeFromBookmarks(Request $request){
+
+        $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+        $data->is_bookmark = 0;
+        $data->update();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
     
     
 }

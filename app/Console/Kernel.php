@@ -30,8 +30,14 @@ class Kernel extends ConsoleKernel
                 \Log::info('today date '.Carbon::today());
                 if ($reminderDate->isSameDay(Carbon::today())) {
 
-                    $request_obj = UserRequest::find($date->request_id);
-                    $signer_obj = Signer::where('request_id',$request_obj->id)->get();
+                    $request_obj = UserRequest::where('id',$date->request_id)
+                    ->where('approve_status',1)
+                    ->where('status','pending')
+                    ->first();
+
+                    $signer_obj = Signer::where('request_id',$request_obj->id)
+                    ->where('status','pending')
+                    ->get();
 
                     foreach($signer_obj as $signer){
 

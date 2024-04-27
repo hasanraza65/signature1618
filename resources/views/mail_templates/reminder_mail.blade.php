@@ -204,7 +204,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
             <td align="center" height="50" style="height:50px;">
            
               
-                <a href="/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}" target="_blank"  style="font-family:'Roboto Slab',Arial,Helvetica,sans-serif;font-size:16px;line-height:19px;font-weight:700;font-style:normal;color:#000000;text-decoration:none;letter-spacing:0px;padding: 20px 50px 20px 50px;display: inline-block;"><span>Sign Document</span></a> 
+                <a href="{{ env('APP_URL') }}/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}" target="_blank"  style="font-family:'Roboto Slab',Arial,Helvetica,sans-serif;font-size:16px;line-height:19px;font-weight:700;font-style:normal;color:#000000;text-decoration:none;letter-spacing:0px;padding: 20px 50px 20px 50px;display: inline-block;"><span>Sign Document</span></a> 
             
             </td>
             <td align="center" width="50"></td>

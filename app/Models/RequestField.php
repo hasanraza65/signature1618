@@ -10,4 +10,9 @@ class RequestField extends Model
     use HasFactory;
     protected $guarded = [];
 
+    public function radioFields()
+    {
+        return $this->hasMany(RadioButton::class,'field_id','id');
+    }
+
 }
