@@ -39,6 +39,8 @@ Route::get('/test', [App\Http\Controllers\RequestController::class, 'testLaravel
 
 Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSOTP']); 
 
+//Route::post('/add_request_log', [App\Http\Controllers\RequestController::class, 'addRequestLog']);
+
 Route::middleware('auth:api')->group(function () {
 
     //profile management

@@ -26,5 +26,15 @@ class UserRequest extends Model
         return $this->hasMany(Approver::class,'request_id','id');
     }
 
+    public function logs()
+    {
+        return $this->hasMany(RequestLog::class,'request_id','id');
+    }
+
+    public function reminders()
+    {
+        return $this->hasMany(RequestReminderDate::class,'request_id','id');
+    }
+
     
 }

@@ -12,6 +12,7 @@ use App\Models\RequestOtp;
 use App\Models\RequestReminderDate;
 use App\Models\Approver;
 use App\Models\RadioButton;
+use App\Models\RequestLog;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -75,6 +76,10 @@ class RequestController extends Controller
             $userRequest->unique_id = $request->unique_id;
             $userRequest->file_name = $originalFileName;
             $userRequest->save();
+
+            //adding activity log 
+            $this->addRequestLog("new_request", "Created signature request", Auth::user()->name, $userRequest->id);
+            //ending adding activity log
 
             return response()->json([
                 'data' => $userRequest,
@@ -267,7 +272,12 @@ class RequestController extends Controller
                 }
             }
 
-            
+             
+            //adding activity log 
+            if($request->status != "draft"){
+            $this->addRequestLog("sent_request", "Sent signature request", Auth::user()->name, $userRequestData->id);
+            }
+            //ending adding activity log
     
             // Return response
             return response()->json([
@@ -308,6 +318,14 @@ class RequestController extends Controller
         $signer = Signer::where('unique_id',$request->recipient_unique_id)
             ->where('request_id',$data->id)
             ->first();
+
+        $contact = Contact::where('id',$signer->recipient_contact_id)->first();
+
+        $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+        //adding activity log 
+        $this->addRequestLog("consulted_request", "Consulted document", $full_name, $data->id);
+        //ending adding activity log
 
         if($data->email_otp == 1){
 
@@ -375,7 +393,7 @@ class RequestController extends Controller
 
     public function show($id){
 
-        $data = UserRequest::with(['signers','signers.requestFields','signers.requestFields.radioFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+        $data = UserRequest::with(['reminders','logs','signers','signers.requestFields','signers.requestFields.radioFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
             ->where('unique_id',$id)
             ->first();
         
@@ -443,6 +461,15 @@ class RequestController extends Controller
             ], 200);
         }
         //ending check signer status
+
+
+        $contact = Contact::where('id',$approvercheck->recipient_contact_id)->first();
+
+        $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+        //adding activity log 
+        $this->addRequestLog("consulted_request", "Consulted document", $full_name, $data->id);
+        //ending adding activity log
     
         // Retrieve the file path
         $filePath = public_path($data->file);
@@ -605,6 +632,18 @@ class RequestController extends Controller
 
         //ending update status for request
 
+        $signer = Signer::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->recipient_unique_id)
+        ->first();
+
+        $contact = Contact::where('id',$signer->recipient_contact_id)->first();
+
+        $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+        //adding activity log 
+        $this->addRequestLog("signed_request", "Signed document", $full_name, $requestdata->id);
+        //ending adding activity log
+
         return response()->json([
            
             'message' => 'Request answered successfully.'
@@ -652,6 +691,18 @@ class RequestController extends Controller
         
         //ending sending mail to signers
 
+        $approver = Approver::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->approver_unique_id)
+        ->first();
+
+        $contact = Contact::where('id',$approver->recipient_contact_id)->first();
+
+        $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+        //adding activity log 
+        $this->addRequestLog("approved_request", "Approved document", $full_name, $requestdata->id);
+        //ending adding activity log
+
         return response()->json([
            
             'message' => 'Request answered successfully.'
@@ -684,8 +735,19 @@ class RequestController extends Controller
         $sender = User::where('id',$requestdata->user_id)->first();
         $this->sendMail($sender->unique_id,$requestdata->id,$sender->email,$type=3);
        
-        
         //ending sending mail to signers
+
+        $approver = Approver::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->approver_unique_id)
+        ->first();
+
+        $contact = Contact::where('id',$approver->recipient_contact_id)->first();
+
+        $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+        //adding activity log 
+        $this->addRequestLog("rejected_request", "Rejected document", $full_name, $requestdata->id);
+        //ending adding activity log
 
         return response()->json([
            
@@ -902,6 +964,19 @@ class RequestController extends Controller
             'data' => $data,
             'message' => 'Success'
         ], 200);
+
+    }
+
+    private function addRequestLog($type=null, $message=null, $user_name=null, $request_id=null) {
+
+        $data = new RequestLog();
+        $data->request_id = $request_id;
+        $data->type = $type;
+        $data->message = $message;
+        $data->user_name = $user_name;
+        $data->save();
+
+        return true;
 
     }
     
