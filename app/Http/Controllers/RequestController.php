@@ -303,6 +303,14 @@ class RequestController extends Controller
             ], 400);
         }
 
+        if($data->status == 'cancelled'){
+
+            return response()->json([
+                'message' => 'Request has been cancelled.'
+            ], 200);
+
+        }
+
         if($data->approve_status == 0){
             return response()->json([
                 'message' => 'Approve pending.'
@@ -435,6 +443,14 @@ class RequestController extends Controller
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
+        }
+
+        if($data->status == 'cancelled'){
+
+            return response()->json([
+                'message' => 'Request has been cancelled.'
+            ], 200);
+
         }
 
         if (Carbon::parse($data->expiry_date)->isPast()) {
@@ -609,6 +625,14 @@ class RequestController extends Controller
     public function answerRequest(Request $request){
 
         $requestdata = UserRequest::where('unique_id',$request->request_unique_id)->first();
+
+        if($requestdata->status == 'cancelled'){
+
+            return response()->json([
+                'message' => 'Request has been cancelled.'
+            ], 200);
+
+        }
         
         if($requestdata) {
         $filePath = $this->storeFile($request->file('signed_file'), 'files');
@@ -659,6 +683,15 @@ class RequestController extends Controller
         //$requestdata->status =  'Done';
         //$requestdata->update();
         }
+
+        if($requestdata->status == 'cancelled'){
+
+            return response()->json([
+                'message' => 'Request has been cancelled.'
+            ], 200);
+
+        }
+        
 
 
         $checkng = Approver::where('request_id',$requestdata->id)
@@ -967,6 +1000,107 @@ class RequestController extends Controller
 
     }
 
+    
+
+    public function sendReminder(Request  $request) {
+
+        //reminder 
+        $subject = "Reminder to sign the document";
+        
+        $request_obj_approver = UserRequest::where('unique_id',$request->request_unique_id)
+            ->where('approve_status',0)
+            ->where('status','pending')
+            ->orWhere('status','in progress')
+            ->first();
+
+            if($request_obj_approver){
+
+                $subject = "Reminder to approve the document";
+
+                $approver_obj = Approver::where('request_id',$request_obj_approver->id)
+                ->where('status','pending')
+                ->get();
+
+                foreach($approver_obj as $approver){
+
+                    $user_obj = User::find($approver->recipient_user_id);
+
+                    $email = $user_obj->email;
+
+                    $dataUser = [
+                        'email' => $email,
+                        'requestUID'=>$request_obj_approver->unique_id,
+                        'signerUID'=>$approver->unique_id,
+                        'custom_message'=>$request_obj_approver->custom_message,
+                    ];
+
+                    \Mail::to($email)->send(new \App\Mail\ReminderEmailApprover($dataUser, $subject));
+
+                }
+
+                $contact = Contact::where('id',$approver->recipient_contact_id)->first();
+
+                $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+                //adding activity log 
+                $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name,  $request_obj_approver->id);
+                //ending adding activity log
+
+                return response()->json([
+                    'message' => 'Success'
+                ], 200);
+
+            }
+
+        $request_obj = UserRequest::where('unique_id',$request->request_unique_id)
+        ->where('approve_status',1)
+        ->where('status','pending')
+        ->orWhere('status','in progress')
+        ->first();
+        
+        if($request_obj){
+
+            $signer_obj = Signer::where('request_id',$request_obj->id)
+            ->where('status','pending')
+            ->get();
+
+            foreach($signer_obj as $signer){
+
+                $user_obj = User::find($signer->recipient_user_id);
+
+                $email = $user_obj->email;
+
+                $dataUser = [
+                    'email' => $email,
+                    'requestUID'=>$request_obj->unique_id,
+                    'signerUID'=>$signer->unique_id,
+                    'custom_message'=>$request_obj->custom_message,
+                ];
+
+                \Mail::to($email)->send(new \App\Mail\ReminderEmail($dataUser, $subject));
+
+
+                $contact = Contact::where('id',$signer->recipient_contact_id)->first();
+
+                $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+                //adding activity log 
+                $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name, $request_obj->id);
+                //ending adding activity log
+
+            }
+
+        }
+        
+
+        //ending reminder
+
+        return response()->json([
+            'message' => 'Success'
+        ], 200);
+
+    }
+
     private function addRequestLog($type=null, $message=null, $user_name=null, $request_id=null) {
 
         $data = new RequestLog();
@@ -977,6 +1111,25 @@ class RequestController extends Controller
         $data->save();
 
         return true;
+
+    }
+
+    public function changeRequestStatus(Request $request){
+
+        $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
+
+        if(!$data){
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+
+        $data->status = $request->request_status;
+        $data->update();
+
+        return response()->json([
+            'message' => 'Success'
+        ], 200);
 
     }
     

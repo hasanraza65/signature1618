@@ -10,6 +10,7 @@ use DB;
 use Carbon\Carbon;
 use App\Models\UserRequest;
 use App\Models\Signer;
+use App\Models\Approver;
 use App\Models\User;
 
 
@@ -24,37 +25,81 @@ class Kernel extends ConsoleKernel
 
             //reminder 
             $data = RequestReminderDate::all();
+            $subject = "Reminder to sign the document";
             foreach($data as $date){
                 $reminderDate = Carbon::parse($date->date);
                 \Log::info('reminder date '.$reminderDate);
                 \Log::info('today date '.Carbon::today());
                 if ($reminderDate->isSameDay(Carbon::today())) {
+                    
+                    // APPROVER NOTIFICATION
+                    $request_obj_approver = UserRequest::where('id',$date->request_id)
+                    ->where('approve_status',0)
+                    ->where('status','pending')
+                    ->orWhere('status','in progress')
+                    ->first();
+
+                    if($request_obj_approver){
+
+                        $subject = "Reminder to approve the document";
+
+                        $approver_obj = Approver::where('request_id',$request_obj_approver->id)
+                        ->where('status','pending')
+                        ->get();
+
+                        foreach($approver_obj as $approver){
+
+                            $user_obj = User::find($approver->recipient_user_id);
+
+                            $email = $user_obj->email;
+
+                            $dataUser = [
+                                'email' => $email,
+                                'requestUID'=>$request_obj_approver->unique_id,
+                                'signerUID'=>$approver->unique_id,
+                                'custom_message'=>$request_obj_approver->custom_message,
+                            ];
+
+                            \Mail::to($email)->send(new \App\Mail\ReminderEmailApprover($dataUser, $subject));
+
+                        }
+                        
+                    }
+
+                    // APPROVER NOTIFICATION ENDING
 
                     $request_obj = UserRequest::where('id',$date->request_id)
                     ->where('approve_status',1)
                     ->where('status','pending')
+                    ->orWhere('status','in progress')
                     ->first();
 
-                    $signer_obj = Signer::where('request_id',$request_obj->id)
-                    ->where('status','pending')
-                    ->get();
+                    if($request_obj){
 
-                    foreach($signer_obj as $signer){
+                        $signer_obj = Signer::where('request_id',$request_obj->id)
+                        ->where('status','pending')
+                        ->get();
 
-                        $user_obj = User::find($signer->recipient_user_id);
+                        foreach($signer_obj as $signer){
 
-                        $email = $user_obj->email;
+                            $user_obj = User::find($signer->recipient_user_id);
 
-                        $dataUser = [
-                            'email' => $email,
-                            'requestUID'=>$request_obj->unique_id,
-                            'signerUID'=>$signer->unique_id,
-                            'custom_message'=>$request_obj->custom_message,
-                        ];
+                            $email = $user_obj->email;
 
-                        \Mail::to($email)->send(new \App\Mail\ReminderEmail($dataUser));
+                            $dataUser = [
+                                'email' => $email,
+                                'requestUID'=>$request_obj->unique_id,
+                                'signerUID'=>$signer->unique_id,
+                                'custom_message'=>$request_obj->custom_message,
+                            ];
+
+                            \Mail::to($email)->send(new \App\Mail\ReminderEmail($dataUser,$subject));
+
+                        }
 
                     }
+
+                    
 
                 }
 

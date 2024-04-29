@@ -68,6 +68,7 @@ Route::middleware('auth:api')->group(function () {
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
         Route::post('/create_request_draft', [App\Http\Controllers\RequestController::class, 'createDraft']);
         Route::post('/store_request_fields', [App\Http\Controllers\RequestController::class, 'fieldsDraft']);
+        Route::post('/change_request_status', [App\Http\Controllers\RequestController::class, 'changeRequestStatus']);
         //request trash module
         Route::post('/add_to_trash', [App\Http\Controllers\RequestController::class, 'addToTrash']);
         Route::post('/remove_from_trash', [App\Http\Controllers\RequestController::class, 'removeFromTrash']);
@@ -79,6 +80,10 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/remove_from_bookmarks', [App\Http\Controllers\RequestController::class, 'removeFromBookmarks']);
         Route::get('/all_bookmarked_items', [App\Http\Controllers\RequestController::class, 'allBookmarkedItems']);
         //ending req bookmark module
+
+        //reminder
+        Route::post('/send_reminder', [App\Http\Controllers\RequestController::class, 'sendReminder']);
+        //ending reminder
 
         
 
