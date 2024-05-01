@@ -35,8 +35,7 @@ class Kernel extends ConsoleKernel
                     // APPROVER NOTIFICATION
                     $request_obj_approver = UserRequest::where('id',$date->request_id)
                     ->where('approve_status',0)
-                    ->where('status','pending')
-                    ->orWhere('status','in progress')
+                    ->where('status','in progress')
                     ->first();
 
                     if($request_obj_approver){
@@ -70,8 +69,7 @@ class Kernel extends ConsoleKernel
 
                     $request_obj = UserRequest::where('id',$date->request_id)
                     ->where('approve_status',1)
-                    ->where('status','pending')
-                    ->orWhere('status','in progress')
+                    ->where('status','in progress')
                     ->first();
 
                     if($request_obj){

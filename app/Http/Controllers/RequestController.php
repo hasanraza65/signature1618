@@ -303,6 +303,14 @@ class RequestController extends Controller
             ], 400);
         }
 
+        if($data->is_trash == 1){
+
+            return response()->json([
+                'message' => 'Request has been trashed.'
+            ], 200);
+
+        }
+
         if($data->status == 'cancelled'){
 
             return response()->json([
@@ -443,6 +451,14 @@ class RequestController extends Controller
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
+        }
+
+        if($data->is_trash == 1){
+
+            return response()->json([
+                'message' => 'Request has been trashed.'
+            ], 200);
+
         }
 
         if($data->status == 'cancelled'){
@@ -640,6 +656,18 @@ class RequestController extends Controller
         //$requestdata->status =  'Done';
         $requestdata->update();
         }
+        
+        //storing fields answers
+        
+        for($i=0; $i<count($request->field_id); $i++){
+            $data = RequestField::find($request->field_id[$i]);
+            if($data){
+                $data->answer = $request->answer[$i];
+                $data->update();
+            }  
+            
+        } 
+        //ending storing fields answers
 
         Signer::where('request_id',$requestdata->id)
         ->where('unique_id',$request->recipient_unique_id)
@@ -706,23 +734,26 @@ class RequestController extends Controller
 
         if(!$approvercheck){
             UserRequest::where('unique_id',$request->request_unique_id)->update(['approve_status'=>1]);
+
+            //sending mail to signers 
+            $signers = Signer::where('request_id',$requestdata->id)->get();
+            foreach($signers as $signer){
+
+                $signer_user = User::find($signer->recipient_user_id);
+
+                //return $signer_user->email;
+
+                $this->sendMail($signer->unique_id,$requestdata->id,$signer_user->email,$type=1);
+
+            }
+            
+            //ending sending mail to signers
+
         }
 
         //ending update status for request
 
-        //sending mail to signers 
-        $signers = Signer::where('request_id',$requestdata->id)->get();
-        foreach($signers as $signer){
-
-            $signer_user = User::find($signer->recipient_user_id);
-
-            //return $signer_user->email;
-
-            $this->sendMail($signer->unique_id,$requestdata->id,$signer_user->email,$type=1);
-
-        }
         
-        //ending sending mail to signers
 
         $approver = Approver::where('request_id',$requestdata->id)
         ->where('unique_id',$request->approver_unique_id)
@@ -893,6 +924,10 @@ class RequestController extends Controller
         $data->is_trash = 1;
         $data->update();
 
+        //adding activity log 
+        $this->addRequestLog("trashed_request", "Request moved to trash", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+        //ending adding activity log
+
         return response()->json([
             'data' => $data,
             'message' => 'Success'
@@ -1009,8 +1044,7 @@ class RequestController extends Controller
         
         $request_obj_approver = UserRequest::where('unique_id',$request->request_unique_id)
             ->where('approve_status',0)
-            ->where('status','pending')
-            ->orWhere('status','in progress')
+            ->where('status','in progress')
             ->first();
 
             if($request_obj_approver){
@@ -1036,16 +1070,18 @@ class RequestController extends Controller
 
                     \Mail::to($email)->send(new \App\Mail\ReminderEmailApprover($dataUser, $subject));
 
+                    $contact = Contact::where('id',$approver->recipient_contact_id)->first();
+
+                    $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
+
+                    //adding activity log 
+                    $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name,  $request_obj_approver->id);
+                    //ending adding activity log
+
+
                 }
 
-                $contact = Contact::where('id',$approver->recipient_contact_id)->first();
-
-                $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
-
-                //adding activity log 
-                $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name,  $request_obj_approver->id);
-                //ending adding activity log
-
+                
                 return response()->json([
                     'message' => 'Success'
                 ], 200);
@@ -1054,8 +1090,7 @@ class RequestController extends Controller
 
         $request_obj = UserRequest::where('unique_id',$request->request_unique_id)
         ->where('approve_status',1)
-        ->where('status','pending')
-        ->orWhere('status','in progress')
+        ->where('status','in progress')
         ->first();
         
         if($request_obj){
@@ -1101,18 +1136,6 @@ class RequestController extends Controller
 
     }
 
-    private function addRequestLog($type=null, $message=null, $user_name=null, $request_id=null) {
-
-        $data = new RequestLog();
-        $data->request_id = $request_id;
-        $data->type = $type;
-        $data->message = $message;
-        $data->user_name = $user_name;
-        $data->save();
-
-        return true;
-
-    }
 
     public function changeRequestStatus(Request $request){
 
@@ -1127,9 +1150,30 @@ class RequestController extends Controller
         $data->status = $request->request_status;
         $data->update();
 
+        if($request->request_status == "cancelled"){
+
+            //adding activity log 
+            $this->addRequestLog("cancelled_request", "Request has been cancelled", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+            //ending adding activity log
+
+        }
+
         return response()->json([
             'message' => 'Success'
         ], 200);
+
+    }
+
+    private function addRequestLog($type=null, $message=null, $user_name=null, $request_id=null) {
+
+        $data = new RequestLog();
+        $data->request_id = $request_id;
+        $data->type = $type;
+        $data->message = $message;
+        $data->user_name = $user_name;
+        $data->save();
+
+        return true;
 
     }
     
