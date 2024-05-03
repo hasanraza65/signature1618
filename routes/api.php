@@ -41,8 +41,12 @@ Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSO
 
 //Route::post('/add_request_log', [App\Http\Controllers\RequestController::class, 'addRequestLog']);
 
+Route::post('/verify_user_otp', [App\Http\Controllers\AuthController::class, 'otpVerification']); 
+Route::post('/resend_user_otp', [App\Http\Controllers\AuthController::class, 'resendOtp']); 
+
 Route::middleware('auth:api')->group(function () {
 
+    
     //profile management
     Route::get('/profile_data', [App\Http\Controllers\ProfileManagementController::class, 'profileData']); 
     Route::post('/update_profile_data', [App\Http\Controllers\ProfileManagementController::class, 'updateProfileData']); 

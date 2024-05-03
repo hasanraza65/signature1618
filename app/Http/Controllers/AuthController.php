@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use Mail;
 use Carbon\Carbon;
 use App\Models\ResetOTP;
+use App\Models\UserOtp;
 use DB;
 
 
@@ -44,25 +45,128 @@ class AuthController extends Controller
             $usercheck->update();
 
             $accessToken = $usercheck->createToken('LaravelAuthApp')->accessToken;
-            return response(['user' => $usercheck, 'access_token' => $accessToken]);
+
+            //sending email otp verification
+                $otp = new UserOtp();
+                $otp->user_id = $usercheck->id;
+                $otpcode = rand(100000, 999999);
+                $otp->otp = $otpcode;
+                $otp->save();
+
+                $dataUser = [
+                    'email'=>$usercheck->email,
+                    'otp'=>$otpcode
+            ];
+
+                $subject = $usercheck->name." your OTP for registration";
+
+            Mail::to($usercheck->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
+
+                //ending email otp verification sending
+
+
+            //return response(['user' => $usercheck, 'access_token' => $accessToken]);
+            return response(['user' => $usercheck, 'message' => 'OTP sent to your email id']);
 
         }
+        
         //ending check user
 
-        $input = $request->all();
-        $rules = array(
-            'name' => 'required|max:55',
-            'email' => 'required|unique:users',
-            'password' => 'required'
-        );
-        $validator = Validator::make($input, $rules);
-        if ($validator->fails()) {
-            return response(["status" => 400, "message" => $validator->errors()->first(), "data" => array()]);
+            $input = $request->all();
+            $rules = array(
+                'name' => 'required|max:55',
+                'email' => 'required|unique:users',
+                'password' => 'required'
+            );
+            $validator = Validator::make($input, $rules);
+            if ($validator->fails()) {
+                return response(["status" => 400, "message" => $validator->errors()->first(), "data" => array()],400);
+            }
+            $input['password'] = bcrypt($request->password);
+            $user = User::create($input);
+            $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
+
+            //sending email otp verification
+            $otp = new UserOtp();
+            $otp->user_id = $user->id;
+            $otpcode = rand(100000, 999999);
+            $otp->otp = $otpcode;
+            $otp->save();
+
+            $dataUser = [
+                'email'=>$user->email,
+                'otp'=>$otpcode
+        ];
+
+            $subject = $user->name." your OTP for registration";
+
+        Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
+
+        //ending email otp verification sending
+
+        //return response(["status" => 200, 'user' => $user, 'access_token' => $accessToken]);
+        return response(["status" => 200, 'user' => $user, 'message' => 'OTP sent to your email id']);
+    }
+
+    public function otpVerification(Request $request){
+
+        $otp = $request->otp;
+        $user_id = $request->user_id;
+
+        $data = UserOtp::where('user_id',$user_id)->where('otp',$otp)->first();
+        if($data){
+
+            $data->delete();
+
+            $user = User::find($user_id);
+            $user->is_verified = 1;
+            $user->update();
+
+            $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
+
+            return response(["status" => 200, 'user' => $user, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
+            
+
         }
-        $input['password'] = bcrypt($request->password);
-        $user = User::create($input);
-        $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
-        return response(['user' => $user, 'access_token' => $accessToken]);
+
+        return response(["message" => "OTP Not Matched"],401);
+
+    }
+
+    public function resendOtp(Request $request){
+
+        //$otp = $request->otp;
+        $user_id = $request->user_id;
+        $user = User::find($user_id);
+
+        $data = UserOtp::where('user_id',$user_id)->first();
+        if($data){
+
+            $data->delete();
+
+        }
+
+        //sending email otp verification
+        $otp = new UserOtp();
+        $otp->user_id = $user->id;
+        $otpcode = rand(100000, 999999);
+        $otp->otp = $otpcode;
+        $otp->save();
+
+        $dataUser = [
+            'email'=>$user->email,
+            'otp'=>$otpcode
+        ];
+
+        $subject = $user->name." your OTP for registration";
+
+        Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
+
+        //ending email otp verification sending
+
+
+        return response(["status" => 200, 'user' => $user, 'message' => 'OTP sent to your email id']);
+
     }
 
     public function login(Request $request)
@@ -72,7 +176,7 @@ class AuthController extends Controller
         $usercheck = User::where('email',$request->email)->first();
         if($usercheck && $usercheck->contact_type == 1){
 
-            return response()->json(['error' => 'Unauthorised'], 401);
+            return response()->json(['error' => "You don't have any account here"], 401);
 
         }
         //ending check user
@@ -86,6 +190,11 @@ class AuthController extends Controller
 
         if (auth()->attempt($data)) {
             $user = Auth::user();
+
+            if($user->is_verified == 0){
+                return response()->json(['error' => "Please verify your account first", 'user_id'=>$user->id], 401);
+            }
+
             $token = $user->createToken('LaravelAuthApp')->accessToken;
 
             return response()->json([
@@ -93,7 +202,7 @@ class AuthController extends Controller
                 'user' => $user,
             ], 200);
         } else {
-            return response()->json(['error' => 'Unauthorised'], 401);
+            return response()->json(['error' => 'Please check your email & password again'], 401);
         }
     }
 

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('language')->default('en');
             $table->string('company')->nullable();
             $table->string('unique_id')->nullable();
+            $table->integer('is_verified')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });
