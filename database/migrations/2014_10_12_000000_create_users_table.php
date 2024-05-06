@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('company')->nullable();
             $table->string('unique_id')->nullable();
             $table->integer('is_verified')->default(0);
+            $table->integer('plan_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

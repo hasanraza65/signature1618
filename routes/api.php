@@ -89,7 +89,19 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/send_reminder', [App\Http\Controllers\RequestController::class, 'sendReminder']);
         //ending reminder
 
-        
+
+    } );
+
+    //********************************** */
+    ///////////////////////////////////////
+    ///ADMIN API ROUTES////////////////
+    ///////////////////////////////////////
+    //******************************* */
+
+    Route::prefix('admin')->middleware(['role:1'])->group(function () {
+
+        Route::resource('/admin_user_request', App\Http\Controllers\RequestController::class);
+        Route::resource('/plan', App\Http\Controllers\PlanController::class);
 
     } );
 
