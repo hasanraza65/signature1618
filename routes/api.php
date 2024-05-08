@@ -45,6 +45,13 @@ Route::get('/otp_sms', [App\Http\Controllers\RequestController::class, 'sendSMSO
 Route::post('/verify_user_otp', [App\Http\Controllers\AuthController::class, 'otpVerification']); 
 Route::post('/resend_user_otp', [App\Http\Controllers\AuthController::class, 'resendOtp']); 
 
+
+//stripe testing
+Route::post('confirm_payment', [App\Http\Controllers\SubscriptionController::class, 'confirmPayment']);
+Route::get('get_payment', [App\Http\Controllers\SubscriptionController::class, 'retreivePayment']);
+Route::get('complete_payment', [App\Http\Controllers\SubscriptionController::class, 'completePayment']);
+//ending stripe testing
+
 Route::middleware('auth:api')->group(function () {
 
     
@@ -94,6 +101,7 @@ Route::middleware('auth:api')->group(function () {
         Route::resource('/subscription', App\Http\Controllers\SubscriptionController::class);
         Route::post('/cancel_subscription', [App\Http\Controllers\SubscriptionController::class, 'cancelSubscription']);
         Route::post('charge_payment', [App\Http\Controllers\SubscriptionController::class, 'charge']);
+        Route::post('create_payment_intent', [App\Http\Controllers\SubscriptionController::class, 'createPaymentIntent']);
         //ending subscription api's
 
 

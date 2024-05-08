@@ -38,6 +38,12 @@ Route::get('/dump-autoload', function () {
     return 'Autoload optimized!';
 });
 
+
+Route::get('/charge', function () {
+    return view('charge');
+});
+
+
 Route::get('/generate_sign/{name}', [App\Http\Controllers\ProfileManagementController::class, 'generateSignature']); 
 
 Route::middleware('auth')->get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
