@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -88,6 +89,12 @@ Route::middleware('auth:api')->group(function () {
         //reminder
         Route::post('/send_reminder', [App\Http\Controllers\RequestController::class, 'sendReminder']);
         //ending reminder
+
+        //subscription api's
+        Route::resource('/subscription', App\Http\Controllers\SubscriptionController::class);
+        Route::post('/cancel_subscription', [App\Http\Controllers\SubscriptionController::class, 'cancelSubscription']);
+        Route::post('charge_payment', [App\Http\Controllers\SubscriptionController::class, 'charge']);
+        //ending subscription api's
 
 
     } );

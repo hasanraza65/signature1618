@@ -12,4 +12,8 @@ class Subscription extends Model
     public function plan(){
         return $this->belongsTo(Plan::class,'plan_id');
     }
+
+    public function userDetail(){
+        return $this->belongsTo(User::class,'user_id');
+    }
 }
