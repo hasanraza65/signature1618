@@ -150,7 +150,37 @@ class AuthController extends Controller
 
             $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
 
-            return response(["status" => 200, 'user' => $user, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
+            //plan detail
+            $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
+            if(!$plan){
+                //adding trial subscription
+                $trialplan = Plan::where('is_trial',1)->first();
+                if(!$trialplan){
+                    $plan_id = 1;
+                }else{
+                    $plan_id = $trialplan->id;  
+                    
+                }
+
+                    $subscription = new Subscription();
+                    $subscription->user_id = $user->id;
+                    $subscription->plan_id = $plan_id;
+                    $subscription->price = 0;
+
+                    //get expiry date
+                    $today = Carbon::now();
+                    $dateAfter14Days = $today->addDays(14)->toDateString();
+                    //ending get expiry date
+
+                    $subscription->expiry_date = $dateAfter14Days;
+                    $subscription->save();
+                    //ending adding trial subscription
+
+                    $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
+            }
+            //ending plan detail
+
+            return response(["status" => 200, 'user' => $user,'plan'=>$plan, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
             
 
         }

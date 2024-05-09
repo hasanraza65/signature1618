@@ -49,7 +49,10 @@ Route::post('/resend_user_otp', [App\Http\Controllers\AuthController::class, 're
 //stripe testing
 Route::post('confirm_payment', [App\Http\Controllers\SubscriptionController::class, 'confirmPayment']);
 Route::get('get_payment', [App\Http\Controllers\SubscriptionController::class, 'retreivePayment']);
+Route::get('get_payment_2', [App\Http\Controllers\SubscriptionController::class, 'getPayment']);
 Route::get('complete_payment', [App\Http\Controllers\SubscriptionController::class, 'completePayment']);
+
+Route::post('create_payment_intent_2', [App\Http\Controllers\SubscriptionController::class, 'createPaymentIntent']);
 //ending stripe testing
 
 Route::middleware('auth:api')->group(function () {

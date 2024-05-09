@@ -42,68 +42,6 @@ class SubscriptionController extends Controller
 
     }
 
-    public function store(Request $request){
-
-        $userId = getUserId($request);
-
-        //confirm payment
-        $paymentstatus = $this->confirmPayment($request->payment_intent_id);
-
-        if ($paymentstatus != 'succeeded') {
-            // Payment succeeded, handle it here
-            return response()->json(['success' => false, 'message' => 'Payment failed or is still processing']);
-        } 
-
-        //ending confirm payment
-
-        $data = Subscription::where('user_id',$userId)->first();
-        
-        if(!$data){
-            $data = new Subscription();
-        }
-        
-        $data->user_id = $userId;
-        $data->plan_id = $request->plan_id;
-        $data->price = $request->price;
-        $data->payment_cycle = $request->payment_cycle;
-
-        $days = 30;
-        if ($request->payment_cycle == "monthly") {
-            $days = 30;
-        } elseif ($request->payment_cycle == "yearly") {
-            $days = 365;
-        }
-
-        $today = Carbon::now();
-        $expirydate = $today->addDays($days)->toDateString();
-
-        $data->expiry_date = $expirydate;
-
-        if(!$data){
-            $data->save();
-        }else{
-            $data->update();
-        }
-
-        //adding transaction
-        /*
-        $transaction = new Transaction();
-        $transaction->user_id = Auth::user()->id;
-        $transaction->transaction_id = $charge->id;
-        $transaction->card_last_4 = $charge->payment_method_details['card']['last4'];
-        $transaction->order_id = $request->order_id;
-        $transaction->amount = $request->input('amount');
-        $transaction->save(); */
-        //ending adding transaction
-
-        return response()->json([
-            'data' => $data,
-            'message' => 'Success'
-        ],200);
-
-
-    }
-
     public function charge(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -118,6 +56,11 @@ class SubscriptionController extends Controller
             'source' => $token,
         ]);
 
+        $user = Auth::user();
+        $user->stripe_token = $customer->id;
+        $user->update();
+
+
         $charge = Charge::create([
             'customer' => $customer->id,
             'amount' => $amount,
@@ -126,29 +69,67 @@ class SubscriptionController extends Controller
 
         //will create transactions from here
 
-       /*
-
         $transaction = new Transaction();
         $transaction->user_id = Auth::user()->id;
         $transaction->transaction_id = $charge->id;
         $transaction->card_last_4 = $charge->payment_method_details['card']['last4'];
-        $transaction->order_id = $request->order_id;
         $transaction->amount = $request->input('amount');
-        $transaction->save(); */
+        $transaction->save(); 
+
+        $this->createSubscribe($request->input('amount'), $transaction->id, $request->plan_id, $request->payment_cycle);
  
         //ending create transactions from here
-
-        
 
         // Handle successful payment
         //return response()->json($charge);
 
         return response()->json([
-            'message' => 'Payment was successful'
+            'message' => 'Payment was successful',
         ],200);
 
     } 
 
+
+    public function createSubscribe($amount, $transaction_id, $plan_id, $payment_cycle){
+
+        $userId = Auth::user()->id;
+
+        $data = Subscription::where('user_id',$userId)->first();
+        
+        if(!$data){
+            $data = new Subscription();
+        }
+        
+        $data->user_id = $userId;
+        $data->plan_id = $plan_id;
+        $data->price = $amount;
+        $data->payment_cycle = $payment_cycle;
+        $data->payment_id = $transaction_id;
+
+        $days = 30;
+        if ($payment_cycle == "monthly") {
+            $days = 30;
+        } elseif ($payment_cycle == "yearly") {
+            $days = 365;
+        }
+
+        $today = Carbon::now();
+        $expirydate = $today->addDays($days)->toDateString();
+
+        $data->expiry_date = $expirydate;
+
+        if(!$data){
+            $data->save();
+        }else{
+            $data->update();
+        }
+
+        return true;
+
+
+    }
+
+    
     public function cancelSubscription(Request $request){
 
         $userId = getUserId($request);
@@ -194,11 +175,20 @@ class SubscriptionController extends Controller
     public function createPaymentIntent(Request $request)
     {
         try {
-            //$items = $request->input('items', []);
+            // Create a customer on Stripe
+            $customer = $this->stripe->customers->create([
+                'email' => Auth::user()->email, // Assuming email is provided in the request
+                // You can include additional customer information here
+            ]);
 
-            // Create a PaymentIntent with amount and currency
+            $user = Auth::user();
+            $user->stripe_token = $customer->id;
+            $user->update();
+
+            // Create a PaymentIntent with customer ID, amount, and currency
             $paymentIntent = $this->stripe->paymentIntents->create([
-                'amount' => $request->amount*100,
+                'customer' => $customer->id, // Use the ID of the newly created customer
+                'amount' => $request->amount * 100,
                 'currency' => 'usd',
                 // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
                 'automatic_payment_methods' => [
@@ -217,28 +207,10 @@ class SubscriptionController extends Controller
     }
 
 
+
     public function completePayment(){
 
         return "payment done";
-
-    }
-
-    public function retreivePayment(Request $request){
-
-        try {
-            $paymentIntent = $this->stripe->paymentIntents->retrieve('pi_3PE8PLB0Nlv2z5Xg1j3QoUiv');
-            
-            // Access transaction details
-            $transactionId = $paymentIntent->charges->data[0]->id;
-            $amount = $paymentIntent->amount;
-            $currency = $paymentIntent->currency;
-            // Add more properties as needed
-        
-            // Do something with the transaction details
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            // Handle API errors
-            echo json_encode(['error' => $e->getMessage()]);
-        }
 
     }
     
@@ -270,6 +242,10 @@ class SubscriptionController extends Controller
         }
     }
 
+    
+    
+    
+    
     //ending testing stripe
 
 }
