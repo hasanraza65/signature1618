@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\Transaction;
+use App\Models\PaymentMethod;
 use Auth;
 use Mail;
 use Carbon\Carbon;
@@ -14,6 +15,8 @@ use Stripe\Customer;
 use Stripe\Charge;
 use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\CardException;
+use Stripe\PaymentIntent;
 
 
 class SubscriptionController extends Controller
@@ -23,8 +26,9 @@ class SubscriptionController extends Controller
 
     public function __construct(StripeClient $stripe)
     {
-        $this->stripe = new StripeClient(env('STRIPE_SECRET'));
+        $this->stripe = new StripeClient(['api_key' => config('services.stripe.secret')]);
     }
+
 
     public function index(){
 
@@ -45,49 +49,106 @@ class SubscriptionController extends Controller
     public function charge(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
-
+    
         $token = $request->input('stripeToken');
-        $amount = $request->input('amount');
-        $amount =  $amount*100;
+        $amount = $request->input('amount') * 100;
         $currency = $request->input('currency', 'USD');
-
-        $customer = Customer::create([
-            'email' => Auth::user()->email,
-            'source' => $token,
-        ]);
-
-        $user = Auth::user();
-        $user->stripe_token = $customer->id;
-        $user->update();
-
-
-        $charge = Charge::create([
-            'customer' => $customer->id,
+    
+        // Check if the user has a Stripe customer ID
+        if (Auth::user()->stripe_token == null) {
+            // Create a new customer on Stripe
+            $customer = Customer::create([
+                'email' => Auth::user()->email,
+                'source' => $token,
+            ]);
+            $customerid = $customer->id;
+            // Update user's stripe_token with the newly created customer id
+            $user = Auth::user();
+            $user->stripe_token = $customerid;
+            $user->save();
+        } else {
+            // Use existing customer ID if available
+            $customerid = Auth::user()->stripe_token;
+        }
+        
+    
+        // Create a charge on Stripe
+        $paymentMethodId = $request->payment_method_id;
+        $customerId = $customerid;
+        $intentParams = [
             'amount' => $amount,
             'currency' => $currency,
-        ]);
+            'customer' => $customerId,
+            'payment_method' => $paymentMethodId,
+            'confirm' => true, // Set to true to confirm the Payment Intent immediately
+            'return_url' => 'https://www.google.com/'
+        ];
+        $intent = PaymentIntent::create($intentParams);
+        $paymentMethodId = $intent->payment_method;
+        $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentMethodId);
+        //return $paymentMethod;
+        $card = $paymentMethod->card;
+        $cardLast4 = $card->last4;
+        $cardExpiryMonth = $card->exp_month;
+        $cardExpiryYear = $card->exp_year;
+        $cardBrand = $card->brand;
+        
+        // Get the status of the Payment Intent
+        $intentStatus = $intent->status;
+        
+        // Check if the Payment Intent is succeeded
+        if ($intentStatus === 'succeeded') {
+            
+        } else {
+            
+            $error = $intent->last_payment_error;
+            echo "Payment Error: " . $error->message;
+        }
+        
+       // return "chakkkaaa";
 
-        //will create transactions from here
-
+        // If it's a new card, add the source
+        if ($request->is_new_card == 1) {
+            //$chargeParams['source'] = $token;
+        }
+    
+        //$charge = Charge::create($chargeParams);
+    
+        // Store the transaction details
         $transaction = new Transaction();
         $transaction->user_id = Auth::user()->id;
-        $transaction->transaction_id = $charge->id;
-        $transaction->card_last_4 = $charge->payment_method_details['card']['last4'];
+        $transaction->transaction_id = $intent->id; // Use Payment Intent ID as the transaction ID
+        $transaction->card_last_4 = $cardLast4;
+        $transaction->card_expiry_month = $cardExpiryMonth;
+        $transaction->card_expiry_year = $cardExpiryYear;
+        $transaction->card_brand = $cardBrand;
         $transaction->amount = $request->input('amount');
-        $transaction->save(); 
-
+    
+        // Add additional transaction details
+        $transaction->first_name = $request->input('first_name');
+        $transaction->last_name = $request->input('last_name');
+        $transaction->email = $request->input('email');
+        $transaction->phone = $request->input('phone');
+        $transaction->organization = $request->input('organization');
+        $transaction->address_1 = $request->input('address_1');
+        $transaction->address_2 = $request->input('address_2');
+        $transaction->address_3 = $request->input('address_3');
+        $transaction->city = $request->input('city');
+        $transaction->postal = $request->input('postal');
+        $transaction->state = $request->input('state');
+        $transaction->country = $request->input('country');
+        $transaction->vat_number = $request->input('vat_number');
+    
+        $transaction->save();
+    
+        // Create subscription if necessary
         $this->createSubscribe($request->input('amount'), $transaction->id, $request->plan_id, $request->payment_cycle);
- 
-        //ending create transactions from here
-
-        // Handle successful payment
-        //return response()->json($charge);
-
+    
+        // Return success response
         return response()->json([
             'message' => 'Payment was successful',
-        ],200);
-
-    } 
+        ], 200);
+    }
 
 
     public function createSubscribe($amount, $transaction_id, $plan_id, $payment_cycle){
@@ -105,6 +166,7 @@ class SubscriptionController extends Controller
         $data->price = $amount;
         $data->payment_cycle = $payment_cycle;
         $data->payment_id = $transaction_id;
+        $data->status = 1;
 
         $days = 30;
         if ($payment_cycle == "monthly") {
@@ -123,6 +185,11 @@ class SubscriptionController extends Controller
         }else{
             $data->update();
         }
+
+        //update transaction
+        $transaction = Transaction::find($transaction_id);
+        $transaction->plan_id = $plan_id;
+        $transaction->update();
 
         return true;
 
@@ -144,8 +211,10 @@ class SubscriptionController extends Controller
         $data->status = 0;
         $data->update();
 
+        $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
+
         return response()->json([
-            'data' => $data,
+            'data' => $plan,
             'message' => 'Subscription has been cancelled. You can use your current plan until '.$data->expiry_date
         ],200);
 
@@ -241,9 +310,6 @@ class SubscriptionController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-    
-    
     
     
     //ending testing stripe

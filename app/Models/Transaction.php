@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     use HasFactory;
+
+    public function plan(){
+        return $this->belongsTo(Plan::class,'plan_id');
+    }
+
+    public function userDetail(){
+        return $this->belongsTo(User::class,'user_id');
+    }
+
 }

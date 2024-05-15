@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transactions', function (Blueprint $table) {
+        Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('transaction_id')->nullable();
+            $table->integer('user_id')->nullable();
             $table->string('card_last_4')->nullable();
             $table->string('card_expiry_month')->nullable();
             $table->string('card_expiry_year')->nullable();
-            $table->double('amount')->nullable();
-            $table->integer('user_id')->nullable();
             $table->string('card_brand')->nullable();
-            $table->integer('billing_id')->nullable();
+            $table->integer('is_default')->default(1);
+            $table->string('stripe_pm_id')->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transactions');
+        Schema::dropIfExists('payment_methods');
     }
 };

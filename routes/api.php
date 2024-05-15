@@ -53,6 +53,10 @@ Route::get('get_payment_2', [App\Http\Controllers\SubscriptionController::class,
 Route::get('complete_payment', [App\Http\Controllers\SubscriptionController::class, 'completePayment']);
 
 Route::post('create_payment_intent_2', [App\Http\Controllers\SubscriptionController::class, 'createPaymentIntent']);
+
+Route::post('testjson', [App\Http\Controllers\SubscriptionController::class, 'testJson']);
+Route::get('attach_payment', [App\Http\Controllers\SubscriptionController::class, 'attachPaymentMethod']);
+
 //ending stripe testing
 
 Route::middleware('auth:api')->group(function () {
@@ -106,6 +110,13 @@ Route::middleware('auth:api')->group(function () {
         Route::post('charge_payment', [App\Http\Controllers\SubscriptionController::class, 'charge']);
         Route::post('create_payment_intent', [App\Http\Controllers\SubscriptionController::class, 'createPaymentIntent']);
         //ending subscription api's
+
+        Route::resource('/transaction', App\Http\Controllers\TransactionController::class);
+
+        Route::get('get_billing_info', [App\Http\Controllers\BillingInfoController::class, 'index']);
+        Route::post('update_billing_info', [App\Http\Controllers\BillingInfoController::class, 'update']);
+
+        Route::resource('/payment_method', App\Http\Controllers\PaymentMethodController::class);
 
 
     } );
