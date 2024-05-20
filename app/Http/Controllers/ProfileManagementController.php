@@ -21,7 +21,7 @@ class ProfileManagementController extends Controller
 
     public function  updateProfileData(Request $request){
 
-        $data = User::find(Auth::user()->id)->first();
+        $data = Auth::user();
 
         if(!$data){
             return response()->json([
@@ -34,15 +34,6 @@ class ProfileManagementController extends Controller
         $data->phone = $request->phone;
         $data->language = $request->language;
         $data->company = $request->company;
-        if ($request->hasFile('company_logo')) {
-            $image = $request->file('company_logo');
-            $imageName = time().'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('company_logo'), $imageName);
-
-            $data->company_logo = 'company_logos/'.$imageName;
-
-           
-        }
         $data->update();
 
         return response()->json([
@@ -71,6 +62,34 @@ class ProfileManagementController extends Controller
            
             $user->profile_img = 'profile_images/'.$imageName;
             $user->save();
+
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Failed to update profile image'], 400);
+    }
+
+    public function changeLogoImg(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'company_logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
+        ]);
+
+        // Get the authenticated user
+        $user = Auth::user();
+
+        // Store the new profile image
+        if ($request->hasFile('company_logo')) {
+            $image = $request->file('company_logo');
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $image->move(public_path('company_logos'), $imageName);
+
+            $user->company_logo = 'company_logos/'.$imageName;
+            $user->update();
 
             return response()->json([
                 'data' => $user,

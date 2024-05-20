@@ -67,6 +67,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/update_profile_data', [App\Http\Controllers\ProfileManagementController::class, 'updateProfileData']); 
     Route::post('change-password', [AuthController::class, 'changePassword']);
     Route::post('change-profile-img', [App\Http\Controllers\ProfileManagementController::class, 'changeProfileImg']);
+    Route::post('change-logo-img', [App\Http\Controllers\ProfileManagementController::class, 'changeLogoImg']);
 
     Route::get('logout', [AuthController::class, 'logout']);
 
@@ -122,6 +123,9 @@ Route::middleware('auth:api')->group(function () {
 
         //global settings
         Route::post('/use_company', [App\Http\Controllers\GlobalSettingController::class, 'useCompany']);
+
+        //team members
+        Route::resource('/team', App\Http\Controllers\TeamController::class);
 
 
     } );
