@@ -914,6 +914,9 @@ class RequestController extends Controller
     }
 
     private function sendMail($signerUId, $requestId, $email, $type) {
+
+        $userName = getUserName();
+
         $userRequest = UserRequest::where('id', $requestId)->first();
         $requestUid = $userRequest->unique_id;
     
@@ -926,7 +929,7 @@ class RequestController extends Controller
         $subject = '';
         switch ($type) {
             case 1:
-                $subject = 'New Request';
+                $subject = 'New Request From '.$userName;
                 break;
             case 2:
                 $subject = 'Approver Mail';
@@ -1226,6 +1229,8 @@ class RequestController extends Controller
 
     public function changeRequestStatus(Request $request){
 
+        $userName = getUserName($request);
+
         $data = UserRequest::where('unique_id',$request->request_unique_id)->first();
 
         if(!$data){
@@ -1240,7 +1245,7 @@ class RequestController extends Controller
         if($request->request_status == "cancelled"){
 
             //adding activity log 
-            $this->addRequestLog("cancelled_request", "Request has been cancelled", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+            $this->addRequestLog("cancelled_request", "Request has been cancelled", $userName, $data->id);
             //ending adding activity log
 
         }elseif($request->request_status == "declined"){
@@ -1250,7 +1255,7 @@ class RequestController extends Controller
             $signer->update();
 
             //adding activity log 
-            $this->addRequestLog("declined_request", "Request has been declined", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+            $this->addRequestLog("declined_request", "Request has been declined", $userName, $data->id);
             //ending adding activity log
 
         }

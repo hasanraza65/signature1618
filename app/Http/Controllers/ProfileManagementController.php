@@ -34,6 +34,15 @@ class ProfileManagementController extends Controller
         $data->phone = $request->phone;
         $data->language = $request->language;
         $data->company = $request->company;
+        if ($request->hasFile('company_logo')) {
+            $image = $request->file('company_logo');
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $image->move(public_path('company_logo'), $imageName);
+
+            $data->company_logo = 'company_logos/'.$imageName;
+
+           
+        }
         $data->update();
 
         return response()->json([

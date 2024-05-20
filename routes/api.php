@@ -120,6 +120,9 @@ Route::middleware('auth:api')->group(function () {
 
         Route::resource('/payment_method', App\Http\Controllers\PaymentMethodController::class);
 
+        //global settings
+        Route::post('/use_company', [App\Http\Controllers\GlobalSettingController::class, 'useCompany']);
+
 
     } );
 
