@@ -35,7 +35,9 @@ class ContactController extends Controller
         if ($existingUser) {
             $contact_user_id = $existingUser->id;
 
-            $existingContact = Contact::where('contact_user_id', $contact_user_id)->first();
+            $existingContact = Contact::where('contact_user_id', $contact_user_id)
+            ->where('user_id',Auth::user()->id)
+            ->first();
             if ($existingContact) {
                 return response()->json([
                     'message' => 'Contact already in contacts list.'

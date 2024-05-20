@@ -54,6 +54,93 @@ class RequestController extends Controller
 
     }
 
+    public function inbox() {
+        $signers = Signer::where('recipient_user_id', Auth::user()->id)->pluck('request_id')->toArray();
+    
+        $data = UserRequest::with([
+            'signers.requestFields.radioFields', 'userDetail', 'signers', 'signers.requestFields', 
+            'signers.signerContactDetail', 'approvers', 'approvers.approverContactDetail', 
+            'approvers.approverContactDetail.contactUserDetail', 'signers.signerContactDetail.contactUserDetail'
+        ])
+        ->whereIn('id', $signers)
+        ->where('is_trash', 0)
+        ->whereNot('status', 'draft')
+        ->orderBy('id', 'desc')
+        ->get();
+    
+        $responseData = [];
+    
+        foreach ($data as $request) {
+            // Retrieve the file path for each request
+            $filePath = public_path($request->file);
+    
+            // Check if the file exists
+            if (!File::exists($filePath)) {
+                // If file not found, add a message to the response data
+                $request->pdf_file = null; // Set pdf_file to null if file not found
+                $responseData[] = $request;
+                continue; // Skip to the next iteration
+            }
+    
+            // Read the file content
+            $fileContent = File::get($filePath);
+    
+            // Compress the file content
+            $compressedContent = gzencode($fileContent, 9);
+    
+            // Encode compressed content to base64
+            $base64CompressedContent = base64_encode($compressedContent);
+    
+            // Append base64 compressed file content to the request object
+            $request->pdf_file = $base64CompressedContent;
+    
+            // Add the modified request object to the response data
+            $responseData[] = $request;
+        }
+    
+        // Generate response with modified data
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+    }
+
+    
+    public function getFileBase($request_id)
+    {
+        $responseData = [];
+        $requestdata = UserRequest::find($request_id);
+        
+        if (!$requestdata || !$requestdata->file) {
+            return response()->json([
+                'message' => 'File not found'
+            ], 200);
+        }
+    
+        $filePath = public_path($requestdata->file);
+        if (!File::exists($filePath)) {
+            return response()->json([
+                'message' => 'File not found'
+            ], 200);
+        }
+    
+        // Read the file content
+        $fileContent = File::get($filePath);
+        
+        // Compress the file content
+        $compressedContent = gzencode($fileContent, 9);
+        
+        // Encode compressed content to base64
+        $base64CompressedContent = base64_encode($compressedContent);
+        
+        return response()->json([
+            'data' => $base64CompressedContent,
+            'message' => 'Success'
+        ], 200);
+    }
+
+
+
     public function createDraft(Request $request){
 
         try {
@@ -1154,6 +1241,16 @@ class RequestController extends Controller
 
             //adding activity log 
             $this->addRequestLog("cancelled_request", "Request has been cancelled", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+            //ending adding activity log
+
+        }elseif($request->request_status == "declined"){
+
+            $signer = Signer::where('recipient_user_id',Auth::user()->id)->where('request_id',$data->id)->first();
+            $signer->status = "declined";
+            $signer->update();
+
+            //adding activity log 
+            $this->addRequestLog("declined_request", "Request has been declined", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
             //ending adding activity log
 
         }

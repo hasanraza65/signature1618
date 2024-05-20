@@ -81,7 +81,7 @@ class SubscriptionController extends Controller
             'customer' => $customerId,
             'payment_method' => $paymentMethodId,
             'confirm' => true, // Set to true to confirm the Payment Intent immediately
-            'return_url' => 'https://www.google.com/'
+            'return_url' => 'https://app.signature1618.com/'
         ];
         $intent = PaymentIntent::create($intentParams);
         $paymentMethodId = $intent->payment_method;

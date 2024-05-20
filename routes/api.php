@@ -85,6 +85,8 @@ Route::middleware('auth:api')->group(function () {
 
         //User Request Module
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
+        Route::get('/inbox', [App\Http\Controllers\RequestController::class, 'inbox']);
+        Route::get('/get_file/{id}', [App\Http\Controllers\RequestController::class, 'getFileBase']);
         Route::post('/create_request_draft', [App\Http\Controllers\RequestController::class, 'createDraft']);
         Route::post('/store_request_fields', [App\Http\Controllers\RequestController::class, 'fieldsDraft']);
         Route::post('/change_request_status', [App\Http\Controllers\RequestController::class, 'changeRequestStatus']);
