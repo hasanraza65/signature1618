@@ -23,6 +23,6 @@ class Team extends Model
     } 
 
     public function memberDetail(){
-        return $this->belongsTo(User::class,'member_user_id');
+        return $this->belongsTo(User::class,'email','email');
     } 
 }

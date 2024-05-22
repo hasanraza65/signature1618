@@ -126,6 +126,10 @@ Route::middleware('auth:api')->group(function () {
 
         //team members
         Route::resource('/team', App\Http\Controllers\TeamController::class);
+        Route::post('/join_team', [App\Http\Controllers\TeamController::class, 'joinTeam']);
+        Route::get('/join_requests', [App\Http\Controllers\TeamController::class, 'joinRequests']);
+        Route::post('/leave_team', [App\Http\Controllers\TeamController::class, 'leaveTeam']);
+        Route::post('/reject_team', [App\Http\Controllers\TeamController::class, 'rejectTeam']);
 
 
     } );

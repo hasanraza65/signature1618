@@ -18,6 +18,7 @@ use App\Models\ResetOTP;
 use App\Models\UserOtp;
 use App\Models\Subscription;
 use App\Models\Plan;
+use App\Models\Team;
 use DB;
 
 
@@ -151,6 +152,12 @@ class AuthController extends Controller
             $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
 
             //plan detail
+            /*
+            if(isset($request->join_team) && $request->join_team != null && $request->join_team != ""){
+                $team_member = Team::where('unique_id',$request->join_team)->first();
+                $team_member->member_user_id = $user_id;
+                $team_member->update();
+            } */
             $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
             if(!$plan){
                 //adding trial subscription
