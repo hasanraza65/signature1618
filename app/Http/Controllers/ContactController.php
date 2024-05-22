@@ -209,19 +209,91 @@ class ContactController extends Controller
     public function bulkImport(Request $request){
         if ($request->hasFile('excel_file')) {
             $file = $request->file('excel_file');
+            $extension = $file->getClientOriginalExtension();
     
+            // Validate file extension
+            if (!in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                return response()->json([
+                    'message' => 'Invalid file type. Supported file types are xlsx, xls, csv.',
+                ], 400);
+            }
+    
+            // Check if the header row is correct
+            $headerRow = Excel::toArray(new ContactsImport, $file)[0][0];
+    
+            $expectedHeader = [
+                'First name',
+                'Last name',
+                'Email address',
+                'Phone number',
+                'Company',
+                'Job title'
+            ];
+    
+            if ($headerRow !== $expectedHeader) {
+                return response()->json([
+                    'message' => 'Invalid header row. Make sure the file has the correct columns.',
+                ], 400);
+            }
+    
+            // Validate each row (excluding the header row)
+            $rows = Excel::toArray(new ContactsImport, $file)[0];
+            $invalidCells = [];
+            for ($rowIndex = 1; $rowIndex < count($rows); $rowIndex++) {
+                $row = $rows[$rowIndex];
+                $email = $row[2] ?? null; // Email address is in the third column (index 2)
+                $phone = $row[3] ?? null; // Phone number is in the fourth column (index 3)
+    
+                // Validate email address
+                $emailValidator = \Illuminate\Support\Facades\Validator::make(['Email address' => $email], [
+                    'Email address' => 'nullable|email',
+                ]);
+                if ($email && $emailValidator->fails()) {
+                    $invalidCells[] = [
+                        'row' => $rowIndex + 1,
+                        'column' => 'C', // Email address column
+                    ];
+                }
+    
+                // Custom phone number validation
+                if ($phone && !$this->validatePhoneNumber($phone)) {
+                    $invalidCells[] = [
+                        'row' => $rowIndex + 1,
+                        'column' => 'D', // Phone number column
+                    ];
+                }
+            }
+    
+            if (!empty($invalidCells)) {
+                return response()->json([
+                    'message' => 'Some cells contain invalid data.',
+                    'invalid_cells' => $invalidCells,
+                ], 400);
+            }
+    
+            // If validation passes, import the file
             Excel::import(new ContactsImport, $file);
     
             return response()->json([
-                'message' => 'Success'
+                'message' => 'Success',
             ], 200);
         }
     
         return response()->json([
-            'message' => 'Data not imported'
+            'message' => 'Data not imported',
         ], 401);
     }
+    
+    private function validatePhoneNumber($phoneNumber)
+    {
+        // Regex pattern to validate a US phone number without country code
+        $pattern = '/^\d{11}$/';
+        return preg_match($pattern, $phoneNumber);
+    }
 
+    
+    
+    
     public function bulkDelete(Request $request){
 
         $userId = getUserId($request);

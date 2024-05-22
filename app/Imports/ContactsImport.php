@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Str;
 use Auth;
 
+
 class ContactsImport implements ToModel
 {
     /**
@@ -26,16 +27,20 @@ class ContactsImport implements ToModel
                 $contact_user_id = $existingUser->id;
             } else {
                 // Create a new user
+                $user_uuid = Str::uuid()->toString();
                 $user = new User();
                 $user->email = $row[2]; // Email address
                 $user->name = $row[0] . ' ' . $row[1]; // First name + Last name
                 $user->password = bcrypt(Str::random(12)); // Generate random password
                 $user->contact_type = 1; // Assuming contact type 1 for non-registered users
+                $user->unique_id = $user_uuid;
                 $user->save();
                 $contact_user_id = $user->id;
             }
 
             $user_id = Auth::user()->id;
+
+            $contact_uuid = Str::uuid()->toString();
             
             // Create or update contact data for the user
             $contact = Contact::updateOrCreate(
@@ -48,6 +53,7 @@ class ContactsImport implements ToModel
                     'contact_first_name' => $row[0], // First name
                     'contact_last_name' => $row[1], // Last name
                     'contact_phone' => $row[3], // Phone number
+                    'unique_id' => $contact_uuid
                 ]
             );
 
