@@ -20,8 +20,20 @@ class TeamController extends Controller
             ->orderBy('id','desc')
             ->get();
         }else{
+
+            $team_plan = Subscription::where('user_id',Auth::user()->id)->first();
+            $team_data = Team::where('email',Auth::user()->email)->whereNot('status',2)->first();
+            
+
+            if($team_data){
+                $user_id = $team_data->user_id;
+            }else{
+                $user_id = Auth::user()->id;
+            }
+            
+
             $data = Team::with(['userDetail','memberDetail'])
-            ->where('user_id',Auth::user()->id)
+            ->where('user_id',$user_id)
             ->orderBy('id','desc')
             ->get();
         }
@@ -42,6 +54,23 @@ class TeamController extends Controller
             'email' => 'required|email|max:255|unique:teams,email',
             'job_title' => 'nullable|string|max:255',
         ]);
+
+        //check member plan
+        $admin_plan = Subscription::where('user_id',Auth::user()->id)->first();
+        if (!$admin_plan) {
+            return response()->json(['status_code' => 'no_subscription', 'message' => 'No subscription found for the user'], 401);
+        }
+    
+        // Check if admin plan expiry date is greater than or equal to today
+        if ($admin_plan->expiry_date < now()) {
+            return response()->json(['status_code' => 'subscription_expired', 'message' => 'Subscription has expired'], 401);
+        }
+    
+        // Check if admin plan's plan_id is 4
+        if ($admin_plan->plan_id != 4) {
+            return response()->json(['status_code' => 'invalid_plan', 'message' => 'Invalid subscription plan'], 401);
+        }
+        //ending check member plan
 
         // Check team member limit remaining
         $total_members = Team::where('user_id', Auth::user()->id)->count('id');
@@ -122,6 +151,8 @@ class TeamController extends Controller
             ], 400);
         }
 
+        $data->delete();
+
         return response()->json([
             'data' => $data,
             'message' => 'Success'
@@ -180,21 +211,26 @@ class TeamController extends Controller
             ], 400);
         }
 
-        $data->status = 0;
-        $data->update();
+        $data->delete();
+        //$data->update();
 
         Subscription::where('user_id',Auth::user()->id)->delete();
 
+        $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
+
         return response()->json([
             'data' => $data,
+            'plan' => $plan,
             'message' => 'Success'
         ], 200);
 
     }
 
+
     public function joinTeam(Request $request)
     {
         $user_id=Auth::user()->id;
+        //return "email ".Auth::user()->email.' '.'id: '.Auth::user()->id;
         if (isset($request->join_team) && !empty($request->join_team)) {
 
             // Get team admin subscription data
@@ -226,15 +262,33 @@ class TeamController extends Controller
             $team_admin->update();
 
             // Proceed to join the team
-            $subscription = new Subscription();
-            $subscription->user_id = $user_id;
+            $userId = Auth::user()->id;
+
+            $subscription_data = Subscription::where('user_id',$userId)->first();
+            
+            if(!$subscription_data){
+                $subscription = new Subscription();
+            }else{
+                $subscription = $subscription_data;
+            }
+
+            $subscription->user_id = $userId;
             $subscription->plan_id = 3;
             $subscription->team_id = $request->join_team;
             $subscription->price = 0;
             $subscription->expiry_date = $admin_plan->expiry_date;
-            $subscription->save();
+            if(!$subscription_data){
+               
+                $subscription->save();
+               
+            }else{
+                $subscription->update();
+            }
 
-            return response()->json(['success' => 'User has successfully joined the team.'], 200);
+            $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
+            
+
+            return response()->json(['plan'=>$plan, 'success' => 'User has successfully joined the team.'], 200);
         } else {
             return response()->json(['error' => 'Invalid request.'], 400);
         }

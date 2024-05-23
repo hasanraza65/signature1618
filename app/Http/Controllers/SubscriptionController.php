@@ -314,4 +314,32 @@ class SubscriptionController extends Controller
     
     //ending testing stripe
 
+    
+    public function customCharge()
+    {
+        try {
+            // Set the Stripe API key
+            Stripe::setApiKey(env('STRIPE_SECRET'));
+
+            // Amount to be charged (in cents)
+            $amount = 3000 * 100; // Example amount in cents
+
+            // Create a Payment Intent and immediately confirm it
+            $paymentIntent = PaymentIntent::create([
+                'amount' => $amount,
+                'currency' => 'usd',
+                'customer' => 'cus_Q4fFMKEFwWmISu',
+                'description' => 'Charge for subscription',
+                'payment_method' => 'pm_1PJe5IB0Nlv2z5XgE9XPJ4fO', // Payment method ID
+                'confirm' => true, // Set to true to confirm the Payment Intent immediately
+                'return_url' => 'https://app.signature1618.com/'
+            ]);
+
+            return "Payment intent created and confirmed successfully.";
+        } catch (\Exception $e) {
+            \Log::error('Stripe Payment Intent Error: ' . $e->getMessage());
+            return "Error: " . $e->getMessage();
+        }
+    }
+
 }

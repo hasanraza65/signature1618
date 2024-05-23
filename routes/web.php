@@ -86,3 +86,19 @@ Route::get('/clear-cache', function () {
     
     return 'Cache cleared!';
 });
+
+
+
+Route::get('/paris-time', function () {
+    // Set the timezone to Paris
+    $parisTime = Carbon\Carbon::now('Europe/Paris');
+    
+    // Return the current time in Paris timezone as a response
+    return response()->json([
+        'current_time' => $parisTime->toDateTimeString(),
+        'timezone' => 'Europe/Paris'
+    ]);
+});
+
+
+//Route::get('/custom-charge', [App\Http\Controllers\SubscriptionController::class, 'customCharge']);
