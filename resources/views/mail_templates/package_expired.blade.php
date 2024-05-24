@@ -142,7 +142,7 @@
 <w:anchorlock/>
 <v:textbox inset="0px,0px,0px,0px">
 <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:30px">
-<![endif]--><a href="{{ env('APP_URL') }}/?join_team={{$user_d['unique_id']}}" style="text-decoration:none;display:inline-block;color:#ffffff;background-color:#111111;border-radius:10px;width:auto;border-top:0px solid transparent;font-weight:400;border-right:0px solid transparent;border-bottom:0px solid transparent;border-left:0px solid transparent;padding-top:5px;padding-bottom:5px;font-family:Arial, Helvetica, sans-serif;font-size:30px;text-align:center;mso-border-alt:none;word-break:keep-all;" target="_blank"><span style="padding-left:20px;padding-right:20px;font-size:30px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 60px;">Join now</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+<![endif]--><a href="{{ env('APP_URL') }}" style="text-decoration:none;display:inline-block;color:#ffffff;background-color:#111111;border-radius:10px;width:auto;border-top:0px solid transparent;font-weight:400;border-right:0px solid transparent;border-bottom:0px solid transparent;border-left:0px solid transparent;padding-top:5px;padding-bottom:5px;font-family:Arial, Helvetica, sans-serif;font-size:30px;text-align:center;mso-border-alt:none;word-break:keep-all;" target="_blank"><span style="padding-left:20px;padding-right:20px;font-size:30px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 60px;">Login now</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
 </td>
 </tr>
 </table>
@@ -150,7 +150,7 @@
 <tr>
 <td class="pad">
 <div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-<p style="margin: 0;">Please login to your account to renew your package.</p>
+<p style="margin: 0;">There is no any payment method attached. Please login to your account to add a new payment method.</p>
 </div>
 </td>
 </tr>

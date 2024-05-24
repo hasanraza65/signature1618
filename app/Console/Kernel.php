@@ -133,7 +133,6 @@ class Kernel extends ConsoleKernel
 
                 foreach($subscriptions as $sub_data){
 
-
                     $userdata = User::find($sub_data->user_id);
                     $email2 = $userdata->email;
                     $subject2 = "Your package has been expired";
@@ -163,7 +162,7 @@ class Kernel extends ConsoleKernel
                         
                         if($payment_method){
 
-                            \Log::info('Running the midnight job');
+                            //\Log::info('Running the midnight job');
 
                             // Create a Payment Intent and immediately confirm it
                             $paymentIntent = PaymentIntent::create([
@@ -177,7 +176,7 @@ class Kernel extends ConsoleKernel
                             ]);
                             
 
-                            \Log::info('payment intent worked');
+                            //\Log::info('payment intent worked');
 
                             $paymentMethodId = $paymentIntent->payment_method;
                             $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentMethodId);
@@ -237,6 +236,10 @@ class Kernel extends ConsoleKernel
                             $update_sub->update();
 
                             
+
+                        }else{
+
+                            \Mail::to($email2)->send(new \App\Mail\PackageExpiredEmail($dataUser2,$subject2));
 
                         }
                         

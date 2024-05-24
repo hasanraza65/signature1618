@@ -28,12 +28,27 @@ class PaymentMethodController extends Controller
     {
         // Set your Stripe API key
         Stripe::setApiKey(config('services.stripe.secret'));
-        
-        // Replace with your payment method id and customer id
+
+        // Replace with your payment method id
         $paymentMethodId = $request->payment_method_id;
-        $customerId = Auth::user()->stripe_token;
+        $user = Auth::user();
 
         try {
+            // Check if the user has a Stripe customer ID
+            if (!$user->stripe_token) {
+                // Create a new Stripe customer
+                $customer = Customer::create([
+                    'email' => $user->email,
+                    'name' => $user->name,
+                ]);
+
+                // Save the Stripe customer ID to the user
+                $user->stripe_token = $customer->id;
+                $user->save();
+            }
+
+            $customerId = $user->stripe_token;
+
             // Attach the payment method to the customer
             $paymentMethod = \Stripe\PaymentMethod::retrieve($paymentMethodId);
             $paymentMethod->attach(['customer' => $customerId]);
@@ -45,16 +60,18 @@ class PaymentMethodController extends Controller
                 ],
             ]);
 
-            PaymentMethod::where('user_id',Auth::user()->id)->update(['is_default'=>0]);
+            // Update existing payment methods for the user to be non-default
+            PaymentMethod::where('user_id', $user->id)->update(['is_default' => 0]);
 
+            // Save the new payment method details to the database
             $data = new PaymentMethod();
             $data->card_last_4 = $paymentMethod->card->last4;
             $data->card_expiry_month = $paymentMethod->card->exp_month;
             $data->card_expiry_year = $paymentMethod->card->exp_year;
             $data->card_brand = $paymentMethod->card->brand;
             $data->is_default = 1;
-            $data->user_id = Auth::user()->id;
-            $data->stripe_pm_id = $paymentMethod->payment_method;
+            $data->user_id = $user->id;
+            $data->stripe_pm_id = $paymentMethod->id; // Use $paymentMethod->id instead of $paymentMethod->payment_method
             $data->save();
 
             return response()->json(['success' => true, 'message' => 'Payment method attached successfully']);
@@ -63,6 +80,7 @@ class PaymentMethodController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
 
     public function show($id){
 
