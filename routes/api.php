@@ -131,6 +131,12 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/leave_team', [App\Http\Controllers\TeamController::class, 'leaveTeam']);
         Route::post('/reject_team', [App\Http\Controllers\TeamController::class, 'rejectTeam']);
 
+        //user global setting
+        Route::resource('/user_global_setting', App\Http\Controllers\UserGlobalSettingController::class);
+
+        //support email
+        Route::post('/send_support_mail', [App\Http\Controllers\UserGlobalSettingController::class, 'supportMail']);
+
 
     } );
 
