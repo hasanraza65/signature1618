@@ -135,7 +135,9 @@ Route::middleware('auth:api')->group(function () {
         Route::resource('/user_global_setting', App\Http\Controllers\UserGlobalSettingController::class);
 
         //support email
-        Route::post('/send_support_mail', [App\Http\Controllers\UserGlobalSettingController::class, 'supportMail']);
+        //Route::post('/send_support_mail', [App\Http\Controllers\UserGlobalSettingController::class, 'supportMail']);
+
+        Route::resource('/send_support_mail', App\Http\Controllers\SupportMailController::class);
 
 
     } );

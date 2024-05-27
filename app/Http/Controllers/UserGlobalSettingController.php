@@ -69,6 +69,7 @@ class UserGlobalSettingController extends Controller
 
     }
 
+    /*
     public function supportMail(Request $request)
     {
         $email = 'ranahasanraza24@gmail.com';
@@ -92,6 +93,6 @@ class UserGlobalSettingController extends Controller
         return response()->json([
             'message' => 'Email sent successfully.'
         ], 200);
-    }
+    } */
 
 }
