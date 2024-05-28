@@ -870,15 +870,20 @@ class RequestController extends Controller
         ->where('unique_id',$request->approver_unique_id)
         ->update(['status'=>'rejected', 'comment'=>$request->comment]);
 
+        Approver::where('request_id',$requestdata->id)
+        ->update(['status'=>'rejected']);
+
 
         //update status for request
         $approvercheck = Approver::where('request_id',$requestdata->id)
         ->where('status','pending')
         ->first();
 
-        if(!$approvercheck){
+        UserRequest::where('unique_id',$request->request_unique_id)->update(['approve_status'=>2,'status'=>'rejected']);
+
+        /*if(!$approvercheck){
             UserRequest::where('unique_id',$request->request_unique_id)->update(['approve_status'=>2]);
-        }
+        } */
 
         //ending update status for request
 
@@ -901,7 +906,6 @@ class RequestController extends Controller
         //ending adding activity log
 
         return response()->json([
-           
             'message' => 'Request answered successfully.'
         ], 200);
 

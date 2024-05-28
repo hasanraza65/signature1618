@@ -15,10 +15,12 @@ if (!function_exists('getUserId')) {
 
 if (!function_exists('getUserName')) {
     function getUserName($request=null){
-        if(Auth::user()->use_company == 1){
-            return Auth::user()->company;
-        }else{
-            return Auth::user()->name.' '.Auth::user()->last_name;
+        if(Auth::check()){
+            if(Auth::user()->use_company == 1){
+                return Auth::user()->company;
+            }else{
+                return Auth::user()->name.' '.Auth::user()->last_name;
+            }
         }
     }
 }

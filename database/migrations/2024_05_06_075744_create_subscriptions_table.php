@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('payment_cycle')->default('monthly');
             $table->date('expiry_date')->nullable();
             $table->integer('payment_id')->nullable();
+            $table->integer('old_plan_id')->nullable();
             $table->timestamps();
         });
     }

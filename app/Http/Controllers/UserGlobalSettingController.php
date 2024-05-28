@@ -49,6 +49,7 @@ class UserGlobalSettingController extends Controller
         $data->decline_sign = $request->decline_sign;
         }
 
+
         $data->save();
 
         $user = Auth::user();

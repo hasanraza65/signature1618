@@ -214,7 +214,41 @@ class TeamController extends Controller
         $data->delete();
         //$data->update();
 
-        Subscription::where('user_id',Auth::user()->id)->delete();
+        $userId = Auth::user()->id;
+
+        $subscription = Subscription::where('user_id',Auth::user()->id)->first();
+        
+        //return $subscription;
+    
+
+
+        $subscription->user_id = $userId;
+        $subscription->team_id = null;
+        
+        if($subscription->old_plan_id != null){
+            $subscription->price = $subscription->old_plan_price;
+            $subscription->plan_id = $subscription->old_plan_id;
+            $subscription->expiry_date = $subscription->old_expiry_date;
+            
+            if (isset($subscription->old_expiry_date) && Carbon::parse($subscription->old_expiry_date)->isPast()) {
+            $subscription->status = 0;
+            }else{
+                $subscription->status = 1;
+            }
+        }else{
+            $subscription->price = null;
+            $subscription->plan_id = null;
+            $subscription->expiry_date = null;
+        }
+        
+        $subscription->old_plan_id = null;
+        $subscription->old_expiry_date = null;
+        $subscription->old_plan_price = null;
+        
+        
+        // Check if old_expiry_date is smaller than today
+        
+        $subscription->update();
 
         $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
 
@@ -273,9 +307,12 @@ class TeamController extends Controller
             }
 
             $subscription->user_id = $userId;
-            $subscription->plan_id = 3;
             $subscription->team_id = $request->join_team;
+            $subscription->old_plan_id = $subscription_data->plan_id;
+            $subscription->old_expiry_date = $subscription_data->expiry_date;
+            $subscription->old_plan_price = $subscription_data->price;
             $subscription->price = 0;
+            $subscription->plan_id = 3;
             $subscription->expiry_date = $admin_plan->expiry_date;
             if(!$subscription_data){
                

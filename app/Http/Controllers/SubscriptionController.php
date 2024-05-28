@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\PaymentMethod;
+use App\Models\Team;
 use Auth;
 use Mail;
 use Carbon\Carbon;
@@ -33,13 +34,34 @@ class SubscriptionController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = Subscription::with(['plan','plan.planFeatures','userDetail'])->orderBy('id','desc')->get();
+            $subscription = Subscription::with(['plan','plan.planFeatures','userDetail'])->orderBy('id','desc')->get();
         }else{
-            $data = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
+            // Retrieve the single subscription with its associated plans and plan features
+            $subscription = Subscription::with(['plan', 'plan.planFeatures'])
+                ->where('user_id', Auth::user()->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+                // Check if the subscription is not null and has a team_id
+                if ($subscription) {
+                if ($subscription->team_id != null) {
+                    $team_data = Team::with(['userDetail', 'memberDetail'])
+                        ->where('unique_id', $subscription->team_id)
+                        ->whereNot('status', 2)
+                        ->first();
+                    
+                    // Add team data to the subscription object
+                    $subscription->team_data = $team_data;
+                } else {
+                    // Ensure team_data is set to null if there is no team_id
+                    $subscription->team_data = null;
+                }
+            }
+            
         }
        
         return response()->json([
-            'data' => $data,
+            'data' => $subscription,
             'message' => 'Success'
         ],200);
 
