@@ -24,6 +24,8 @@ Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/signin', [AuthController::class, 'login']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
 Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
+Route::post('update-password', [AuthController::class, 'updatePassword']);
+Route::post('/check_mail', [App\Http\Controllers\AuthController::class, 'checkMail']); 
 
 Route::post('/test-pdf', [App\Http\Controllers\ManagePDFController::class, 'testConvert']); 
 Route::post('/fetch_request', [App\Http\Controllers\RequestController::class, 'fetchRequest']);

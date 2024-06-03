@@ -15,9 +15,12 @@ class ContactController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 1){
-            $data = Contact::with(['userDetail','contactUserDetail'])->orderBy('id','desc')->get();
+            $data = Contact::with(['userDetail','contactUserDetail'])
+            ->where('is_deleted',0)
+            ->orderBy('id','desc')
+            ->get();
         }else{
-            $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->orderBy('id','desc')->get();
+            $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->where('is_deleted',0)->orderBy('id','desc')->get();
         }
        
         return response()->json([
@@ -37,6 +40,7 @@ class ContactController extends Controller
 
             $existingContact = Contact::where('contact_user_id', $contact_user_id)
             ->where('user_id',Auth::user()->id)
+            ->where('is_deleted',0)
             ->first();
             if ($existingContact) {
                 return response()->json([
@@ -91,7 +95,11 @@ class ContactController extends Controller
         $userId = getUserId($request);
 
         // Find the contact by ID and user ID
-        $data = Contact::with(['userDetail','contactUserDetail'])->where('unique_id', $id)->where('user_id', $userId)->first();
+        $data = Contact::with(['userDetail','contactUserDetail'])
+        ->where('unique_id', $id)
+        ->where('user_id', $userId)
+        ->where('is_deleted',0)
+        ->first();
         if(!$data){
             return response()->json([
                 'message' => 'No data available.'
@@ -111,7 +119,7 @@ class ContactController extends Controller
         $userId = getUserId($request);
 
         // Find the contact by ID and user ID
-        $data = Contact::where('unique_id', $id)->where('user_id', $userId)->first();
+        $data = Contact::where('unique_id', $id)->where('user_id', $userId)->where('is_deleted',0)->first();
 
         if(!$data){
             return response()->json([
@@ -190,14 +198,14 @@ class ContactController extends Controller
         $userId = getUserId($request);
 
         // Find the contact by ID and user ID
-        $data = Contact::where('id', $id)->where('user_id', $userId)->first();
+        $data = Contact::where('id', $id)->where('user_id', $userId)->where('is_deleted',0)->first();
 
         if(!$data){
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
         }
-        $data->delete();
+        $data->update(['is_deleted'=>1]);
 
         return response()->json([
             'data' => $data,

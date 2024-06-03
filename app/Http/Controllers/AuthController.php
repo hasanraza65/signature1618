@@ -365,6 +365,8 @@ class AuthController extends Controller
 
         }
 
+        $otpdata = ResetOTP::where('email', $request->email)->delete();
+    
 
             ///********** *///////
             //sending email
@@ -379,21 +381,31 @@ class AuthController extends Controller
             $otpData->save();
             //ending inserting to otp table data
 
+            /*
+
             $content = 'Your OTP is '.$otp;
             $response = Mail::raw("", function ($message) use ($email,$otp,$content) {
             $body = new \Symfony\Component\Mime\Part\TextPart($content);
             $message->to($email)
                 ->subject('Your OTP is '.$otp)
-                ->from("noreply@idexchportal.com")
+                ->from("help@integrityflowers.co.uk")
                 ->setBody($body);
-            });
+            }); */
+
+            $customerEmail = $email;
+            $dataUser = ['otp'=>$otp];
+            $subject = 'New OTP from Signature1618';
+
+            Mail::to($customerEmail)
+            ->send(new \App\Mail\UserOTPMail($dataUser, $subject));
+
             //ending sending email
 
             return response(["status" => 200, "message" => "OTP has been sent"]);
     }
 
-    public function verifyOTP(Request $request){
-
+    public function verifyOTP(Request $request)
+    {
         $input = $request->all();
         $rules = array(
             'otp' => 'required',
@@ -404,22 +416,30 @@ class AuthController extends Controller
             return response(["status" => 400, "message" => $validator->errors()->first(), "data" => null]);
         }
 
-        //check otp matching
-        $otpdata = ResetOTP::where('email',$request->email)->first();
+        // Check OTP matching
+        $otpdata = ResetOTP::where('email', $request->email)->first();
 
-        if(!$otpdata){
-            return response(["status" => 400, "message" => "No OTP available with this email."]); 
+        if (!$otpdata) {
+            return response(["status" => 400, "message" => "No OTP available with this email."]);
         }
 
-        if($otpdata->otp != $request->otp){
-            return response(["status" => 400, "message" => "OTP missmatched."]); 
+        // Check if the OTP is expired
+        $otpCreationTime = Carbon::parse($otpdata->created_at);
+        $currentTime = Carbon::now();
+        if ($currentTime->diffInMinutes($otpCreationTime) > 5) {
+            $otpdata->delete();
+            return response(["status" => 400, "message" => "OTP expired."]);
         }
 
-        $otpdata->delete();
+        if ($otpdata->otp != $request->otp) {
+            return response(["status" => 400, "message" => "OTP mismatched."]);
+        }
 
-        return response(["status" => 200, "message" => "OTP Matched!"]); 
-        //ending check otp
+        // Mark the OTP as used
+        $otpdata->status = 1;
+        $otpdata->update();
 
+        return response(["status" => 200, "message" => "OTP Matched!"]);
     }
 
     public function updatePassword(Request $request){
@@ -434,6 +454,19 @@ class AuthController extends Controller
             return response(["status" => 400, "message" => $validator->errors()->first(), "data" => null]);
         }
 
+        $otpdata = ResetOTP::where('email', $request->email)->first();
+
+        if($otpdata){
+            if($otpdata->status == 0){
+                return response(["status" => 400, "message" => "Please verify your OTP first."]);
+            }elseif($otpdata->status == 1){
+                $otpdata->delete();
+            }
+        }else{
+            return response(["status" => 400, "message" => "Please verify your OTP first."]);
+        }
+        
+
         $user = User::where('email',$request->email)->first();
         $password = bcrypt($request->password);
         $user->password = $password;
@@ -443,17 +476,7 @@ class AuthController extends Controller
 
     }
 
-    public function authPermissions(){
-
-        $role_id = Auth::user()->user_role;
-
-        $data = RolePermission::where('role_id',$role_id)
-        ->with('permissionDetail')
-        ->get();
-
-        return response(["status" => 200, "data" => $data]); 
-
-    }
+    
 
    
 }

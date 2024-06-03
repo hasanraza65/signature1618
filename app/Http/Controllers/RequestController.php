@@ -228,6 +228,9 @@ class RequestController extends Controller
                 $userRequestData->approve_status = 0;
             }
 
+            $userName = getUserName();
+
+            $userRequestData->sent_date = Carbon::now();
             $userRequestData->expiry_type = $request->expiry_type;
             $userRequestData->expiry_data_count = $request->expiry_data_count;
             $userRequestData->expiry_data_type = $request->expiry_data_type;
@@ -235,6 +238,7 @@ class RequestController extends Controller
             $userRequestData->reminder_data_type = $request->reminder_data_type;
             $userRequestData->reminder_data_count = $request->reminder_data_count;
             $userRequestData->allow_decline = $decline_to_sign;
+            $userRequestData->sender_name = $userName;
 
             $userRequestData->update();
 
@@ -1147,7 +1151,6 @@ class RequestController extends Controller
     }
 
     
-
     public function sendReminder(Request  $request) {
 
         //reminder 
