@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('user_global_settings', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id')->nullable();
-            $table->integer('decline_sign')->default(1);
+            $table->string('meta_key')->nullable();
+            $table->longText('meta_value')->nullable();
             $table->timestamps();
         });
     }

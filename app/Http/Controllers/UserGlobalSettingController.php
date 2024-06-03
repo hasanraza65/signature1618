@@ -14,26 +14,66 @@ class UserGlobalSettingController extends Controller
     public function index()
     {
         // Retrieve the user's global settings
-        $data = UserGlobalSetting::where('user_id', Auth::user()->id)->first();
-
-        // Retrieve the authenticated user's data
-        $userData = Auth::user();
-
-        // Convert both objects to arrays
-        $dataArray = $data ? $data->toArray() : [];
-        $userDataArray = $userData ? $userData->toArray() : [];
-
-        // Merge the arrays
-        $mergedData = array_merge($dataArray, $userDataArray);
+        $data = UserGlobalSetting::where('user_id', Auth::user()->id)->get();
 
         // Return the merged data in the JSON response
         return response()->json([
-            'data' => $mergedData,
+            'data' => $data,
             'message' => 'Success'
         ], 200);
     }
 
+    public function show($meta_key){
 
+        $data = UserGlobalSetting::where('user_id', Auth::user()->id)
+        ->where('meta_key',$meta_key)
+        ->first();
+
+        // Return the merged data in the JSON response
+        return response()->json([
+            'data' => $data,
+            'message' => 'Success'
+        ], 200);
+
+    }
+
+
+    public function store(Request $request){
+
+        $user_id = Auth::user()->id;
+        //$data = new UserGlobalSetting();
+        //$data->user_id = $user_id;
+
+        foreach ($request->all() as $key => $value) {
+            if ($key !== '_token') { // Skip the CSRF token if present
+                // Check if the meta_key already exists for the user
+                $existingSetting = UserGlobalSetting::where('user_id', $user_id)
+                                                     ->where('meta_key', $key)
+                                                     ->first();
+                
+                if ($existingSetting) {
+                    // Update the existing record
+                    $existingSetting->meta_value = $value;
+                    $existingSetting->save();
+                } else {
+                    // Create a new record
+                    $newSetting = new UserGlobalSetting();
+                    $newSetting->user_id = $user_id;
+                    $newSetting->meta_key = $key;
+                    $newSetting->meta_value = $value;
+                    $newSetting->save();
+                }
+            }
+        }
+
+        return response()->json([
+            'data' => $request->all(),
+            'message' => 'Success'
+        ],200);
+
+    }
+
+    /*
     public function store(Request $request){
 
         $dataObj = UserGlobalSetting::where('user_id',Auth::user()->id)->first();
@@ -68,32 +108,6 @@ class UserGlobalSettingController extends Controller
             'message' => 'Success'
         ],200);
 
-    }
-
-    /*
-    public function supportMail(Request $request)
-    {
-        $email = 'ranahasanraza24@gmail.com';
-        $subject = 'New support request: ' . $request->subject;
-        $dataUser = [
-            'email' => Auth::user()->email,
-            'subject' => $request->subject,
-            'feature_related_query' => $request->feature_related_query,
-            'message' => $request->message,
-        ];
-
-        $file = $request->hasFile('attachment') ? $request->file('attachment') : null;
-
-        try {
-            Mail::to($email)->send(new \App\Mail\SupportMail($dataUser, $subject, $file));
-            //Log::info('Email sent successfully.');
-        } catch (\Exception $e) {
-            Log::error('Failed to send email: ' . $e->getMessage());
-        }
-
-        return response()->json([
-            'message' => 'Email sent successfully.'
-        ], 200);
     } */
 
 }

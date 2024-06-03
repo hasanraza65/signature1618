@@ -19,6 +19,7 @@ use App\Models\UserOtp;
 use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\Team;
+use App\Models\UserGlobalSetting;
 use DB;
 
 
@@ -290,12 +291,15 @@ class AuthController extends Controller
 
             $token = $user->createToken('LaravelAuthApp')->accessToken;
 
+            $user_global_settings = UserGlobalSetting::where('user_id',$user->id)->get();
+
             
 
             return response()->json([
                 'token' => $token,
                 'user' => $user,
-                'plan' => $plan
+                'plan' => $plan,
+                'user_global_settings' => $user_global_settings
             ], 200);
         } else {
             return response()->json(['error' => 'Please check your email & password again'], 401);

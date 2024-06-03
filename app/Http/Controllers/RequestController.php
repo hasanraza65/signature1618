@@ -13,6 +13,7 @@ use App\Models\RequestReminderDate;
 use App\Models\Approver;
 use App\Models\RadioButton;
 use App\Models\RequestLog;
+use App\Models\UserGlobalSetting;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -165,7 +166,7 @@ class RequestController extends Controller
             $userRequest->save();
 
             //adding activity log 
-            $this->addRequestLog("new_request", "Created signature request", Auth::user()->name, $userRequest->id);
+            $this->addRequestLog("new_request", "Signature request created", Auth::user()->name, $userRequest->id);
             //ending adding activity log
 
             return response()->json([
@@ -204,6 +205,14 @@ class RequestController extends Controller
                 $approvers = $requestData['approvers'];
             }
 
+            //get decline to sign check for current user
+            $userglobalsettings = UserGlobalSetting::where('meta_key','decline_sign')->where('user_id',Auth::user()->id)->first();
+            $decline_to_sign = 0;
+            if($userglobalsettings){
+                $decline_to_sign = $userglobalsettings->meta_value;
+            }
+            //ending get decline to sign check
+
             $userRequestData = UserRequest::where('unique_id', $uniqueId)->first();
 
             $userRequestData->email_otp = $requestData['email_otp'] ?? 0;
@@ -225,6 +234,7 @@ class RequestController extends Controller
             $userRequestData->automatic_reminders = $request->automatic_reminders;
             $userRequestData->reminder_data_type = $request->reminder_data_type;
             $userRequestData->reminder_data_count = $request->reminder_data_count;
+            $userRequestData->allow_decline = $decline_to_sign;
 
             $userRequestData->update();
 
@@ -362,7 +372,7 @@ class RequestController extends Controller
              
             //adding activity log 
             if($request->status != "draft"){
-            $this->addRequestLog("sent_request", "Sent signature request", Auth::user()->name, $userRequestData->id);
+            $this->addRequestLog("sent_request", "Signature request sent", Auth::user()->name, $userRequestData->id);
             }
             //ending adding activity log
     
@@ -386,14 +396,16 @@ class RequestController extends Controller
         
         if(!$data){
             return response()->json([
-                'message' => 'No data available.'
-            ], 400);
+                'message' => 'No data available.',
+                'error_code' => 'no_data'
+            ], 200);
         }
 
         if($data->is_trash == 1){
 
             return response()->json([
-                'message' => 'Request has been trashed.'
+                'message' => 'Request has been trashed.',
+                'error_code' => 'request_trashed'
             ], 200);
 
         }
@@ -401,7 +413,8 @@ class RequestController extends Controller
         if($data->status == 'cancelled'){
 
             return response()->json([
-                'message' => 'Request has been cancelled.'
+                'message' => 'Signature request cancelled',
+                'error_code' => 'request_cancelled'
             ], 200);
 
         }
@@ -551,7 +564,7 @@ class RequestController extends Controller
         if($data->status == 'cancelled'){
 
             return response()->json([
-                'message' => 'Request has been cancelled.'
+                'message' => 'Signature request cancelled'
             ], 200);
 
         }
@@ -732,7 +745,7 @@ class RequestController extends Controller
         if($requestdata->status == 'cancelled'){
 
             return response()->json([
-                'message' => 'Request has been cancelled.'
+                'message' => 'Signature request cancelled'
             ], 200);
 
         }
@@ -766,6 +779,10 @@ class RequestController extends Controller
         ->first();
 
         if(!$signercheck){
+
+            $requestdata->signed_at = Carbon::now()->format('Y-m-d');
+            $requestdata->update();
+
             UserRequest::where('unique_id',$request->request_unique_id)->update(['status'=>'done']);
         }
 
@@ -802,7 +819,7 @@ class RequestController extends Controller
         if($requestdata->status == 'cancelled'){
 
             return response()->json([
-                'message' => 'Request has been cancelled.'
+                'message' => 'Signature request cancelled'
             ], 200);
 
         }
@@ -1249,7 +1266,7 @@ class RequestController extends Controller
         if($request->request_status == "cancelled"){
 
             //adding activity log 
-            $this->addRequestLog("cancelled_request", "Request has been cancelled", $userName, $data->id);
+            $this->addRequestLog("cancelled_request", "Signature request cancelled", $userName, $data->id);
             //ending adding activity log
 
         }elseif($request->request_status == "declined"){
