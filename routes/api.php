@@ -20,6 +20,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+//Route::get('auth/google', [AuthController::class, 'redirectToGoogle'])->middleware('web');
+//Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
+Route::post('auth/google', [AuthController::class, 'handleGoogleCallback']);
+
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/signin', [AuthController::class, 'login']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);

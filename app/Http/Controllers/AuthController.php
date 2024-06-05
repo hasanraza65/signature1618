@@ -21,6 +21,9 @@ use App\Models\Plan;
 use App\Models\Team;
 use App\Models\UserGlobalSetting;
 use DB;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Passport\Token;
+use Google_Client;
 
 
 class AuthController extends Controller
@@ -31,6 +34,90 @@ class AuthController extends Controller
     {
 
     }
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback(Request $request)
+    {
+        $idToken = $request->input('credential');
+
+        $googleClientId = env('GOOGLE_CLIENT_ID');
+
+        $client = new Google_Client(['client_id' => $googleClientId]);
+        $payload = $client->verifyIdToken($idToken);
+
+        if (!$payload) {
+            return response()->json(['error' => 'Failed to authenticate with Google'], 401);
+        }
+
+        $googleUserEmail = $payload['email'];
+        $googleUserName = $payload['name'];
+        $googleUserId = $payload['sub'];
+
+        // Check if the user already exists in your database
+        $user = User::where('email', $googleUserEmail)->first();
+
+        if ($user) {
+            // If the user already exists, log them in
+            Auth::login($user, true);
+        } else {
+            // If the user doesn't exist, create a new user
+            $user = User::create([
+                'name' => $googleUserName,
+                'email' => $googleUserEmail,
+                'google_id' => $googleUserId,
+                "is_verified" => 1
+                // You can add additional user details here if needed
+            ]);
+
+            Auth::login($user, true);
+        }
+
+        // Verify user's account status
+        /*
+        if ($user->is_verified == 0) {
+            return response()->json(['error' => 'Please verify your account first', 'user_id' => $user->id], 401);
+        }  */
+
+        // Check if the user has a subscription plan
+        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+        if (!$plan) {
+            // Add trial subscription if user doesn't have a plan
+            $trialPlan = Plan::where('is_trial', 1)->first();
+            $planId = $trialPlan ? $trialPlan->id : 1;
+
+            $subscription = new Subscription();
+            $subscription->user_id = $user->id;
+            $subscription->plan_id = $planId;
+            $subscription->price = 0;
+
+            // Set expiry date
+            $expiryDate = Carbon::now()->addDays(14)->toDateString();
+            $subscription->expiry_date = $expiryDate;
+
+            $subscription->save();
+
+            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+        }
+
+        // Generate Passport token
+        $token = $user->createToken('LaravelAuthApp')->accessToken;
+
+        // Get user global settings
+        $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
+
+        // Return response with token and user details
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+            'plan' => $plan,
+            'user_global_settings' => $userGlobalSettings
+        ], 200);
+    }
+
     public function showRegisterForm()
     {
         return view('landing.register');

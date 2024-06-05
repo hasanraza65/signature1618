@@ -28,7 +28,9 @@ class User extends Authenticatable
         'username',
         'company',
         'last_name',
-        'unique_id'
+        'unique_id',
+        'google_id',
+        'is_verified'
     ];
 
     /**
