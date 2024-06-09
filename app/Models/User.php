@@ -53,7 +53,8 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function planDetail(){
-        return $this->belongsTo(Plan::class,'user_id','id');
+    public function subscriptionDetail()
+    {
+        return $this->hasOne(Subscription::class, 'user_id');
     }
 }

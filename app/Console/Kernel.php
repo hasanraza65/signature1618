@@ -23,6 +23,7 @@ use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
+use Illuminate\Support\Facades\Mail;
 
 
 class Kernel extends ConsoleKernel
@@ -247,6 +248,40 @@ class Kernel extends ConsoleKernel
 
                         \Log::error('Stripe Payment Intent Error: ' . $e->getMessage().' at line '.$e->getLine());
                         //return "Error: " . $e->getMessage();
+
+                        //send failed payment mail 
+
+                        $userdata = User::find($sub_data->user_id);
+                        $plan_detail = Plan::where('id',$sub_data->plan_id)->first();
+                        $payment_method = PaymentMethod::where('user_id',$sub_data->user_id)->where('is_default',1)->first();
+                        
+                        $subject3 = "Action Required | Auto Renewal Payment Failed - Signature1618";
+
+                        $useremail = $userdata->email;
+                        
+                        $today = Carbon::now();
+                        // Add one day
+                        $tomorrow = $today->addDay();
+                        // Format the date
+                        $formattedDate = $tomorrow->format('m/d/Y');
+
+                        $card = $payment_method->card_brand.' '.$payment_method->card_last_4;
+
+                        $dataUser = [
+                            'email' => $userdata->email,
+                            'user_name' => $userdata->name.' '.$userdata->last_name,
+                            'subject' => $subject3,
+                            'plan_name' => $plan_detail->plan_name,
+                            'subscription_period' => $sub_data->payment_cycle,
+                            'next_billing_date' => $formattedDate,
+                            'payment_method' => $card
+                           
+                            
+                        ];
+
+                        Mail::to($useremail)->send(new \App\Mail\MemberJoinedTeam($dataUser, $subject3));
+
+                        //ending faield payment mail
                     }
                     //ending charging
 

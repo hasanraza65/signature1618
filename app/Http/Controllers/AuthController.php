@@ -480,8 +480,11 @@ class AuthController extends Controller
             }); */
 
             $customerEmail = $email;
-            $dataUser = ['otp'=>$otp];
-            $subject = 'New OTP from Signature1618';
+            $dataUser = ['otp'=>$otp,
+                        'first_name'=>$user->name,
+                        'last_name' => $user->last_name
+                        ];
+            $subject = 'Password Reset OTP - Signature1618';
 
             Mail::to($customerEmail)
             ->send(new \App\Mail\UserOTPMail($dataUser, $subject));

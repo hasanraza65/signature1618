@@ -658,6 +658,7 @@ class RequestController extends Controller
         if($request->type == 'email'){
 
         $dataUser = [
+                'receiver_name'=>$getUser->name.' '.$getUser->last_name,
                 'email'=>$email,
                 'otp'=>$otp
            ];
@@ -772,15 +773,44 @@ class RequestController extends Controller
             
         } 
         //ending storing fields answers
+        
 
         Signer::where('request_id',$requestdata->id)
         ->where('unique_id',$request->recipient_unique_id)
         ->update(['status'=>'signed']);
 
+        $signeruser = Signer::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->recipient_unique_id)->first();
+        $signeruser_data = User::find($signeruser->recipient_user_id);
+        $signeruser_contact = Contact::find($signeruser->recipient_contact_id);
+
+        //sign registered
+
+        $senderUser = User::find($requestdata->user_id);
+        $useremail = $senderUser->email;
+        $subject = 'Signature registered - Signature1618';
+
+        $dataUser = [
+            'email' => $signeruser_data->email,
+            'sender_name' => $signeruser_contact->name.' '.$senderUser->last_name,
+            'file_name' => $requestdata->file_name,
+            'requestUID' => $requestdata->unique_id,
+            'signed_file' => $requestdata->signed_file
+            
+        ];
+
+        Mail::to($signeruser_data->email)->send(new \App\Mail\SignRegister($dataUser, $subject));
+
+        //sign registered ending
+
+        
+
         //update status for request
         $signercheck = Signer::where('request_id',$requestdata->id)
         ->where('status','pending')
         ->first();
+
+        
 
         if(!$signercheck){
 
@@ -788,6 +818,55 @@ class RequestController extends Controller
             $requestdata->update();
 
             UserRequest::where('unique_id',$request->request_unique_id)->update(['status'=>'done']);
+
+            //fully signed email
+
+            $senderUser = User::find($requestdata->user_id);
+            $useremail = $senderUser->email;
+            $subject = $requestdata->file_name.' is fully signed - Signature1618';
+
+            $dataUser = [
+                'email' => $senderUser->email,
+                'sender_name' => $senderUser->name.' '.$senderUser->last_name,
+                'file_name' => $requestdata->file_name,
+                'requestUID' => $requestdata->unique_id,
+                
+            ];
+   
+            Mail::to($useremail)->send(new \App\Mail\FullySigned($dataUser, $subject));
+
+            //ending fully signed email
+        }else{
+
+            //inform other signers
+
+            $pendingSigners = Signer::where('request_id',$requestdata->id)
+            ->where('status','pending')
+            ->get();
+
+            foreach($pendingSigners as $pending){
+
+                $senderUser = User::find($pending->recipient_user_id);
+                $useremail = $senderUser->email;
+                $subject = $requestdata->file_name.' is fully signed - Signature1618';
+
+                $dataUser = [
+                    'email' => $senderUser->email,
+                    'sender_name' => $senderUser->name.' '.$senderUser->last_name,
+                    'file_name' => $requestdata->file_name,
+                    'requestUID' => $requestdata->unique_id,
+                    'signatory_a' => $signeruser_contact->contact_first_name.' '.$signeruser_contact->contact_last_name,
+                    'expiry_date' => $requestdata->expiry_date,
+                    'signer_unique_id' => $pending->unique_id
+                    
+                ];
+
+                Mail::to($useremail)->send(new \App\Mail\InformSigner($dataUser, $subject));
+
+            }
+
+            //ending inform other
+
         }
 
         //ending update status for request
@@ -944,17 +1023,32 @@ class RequestController extends Controller
 
         $userRequest = UserRequest::where('id', $requestId)->first();
         $requestUid = $userRequest->unique_id;
+
+        //get company name 
+        $admin_user = User::find($userRequest->user_id);
+        $globalsettings = UserGlobalSetting::where('user_id',$admin_user->user_id)->where('meta_key','company')->first();
+        if(!$globalsettings){
+            $company_name = $admin_user->name.' '.$admin_user->last_name;
+        }else{
+            $company_name = $globalsettings->meta_value;
+        }
+        //end get company name
+        $date = $userRequest->expiry_date;
+        $formattedDate = $date->format('m/d/Y');
     
         $dataUser = [
             'email' => $email,
             'signerUID' => $signerUId,
             'requestUID' => $requestUid,
+            'company_name' => $company_name,
+            'file_name' => $userRequest->file_name,
+            'expiry_date' => $formattedDate
         ];
     
         $subject = '';
         switch ($type) {
             case 1:
-                $subject = 'New Request From '.$userName;
+                $subject = 'Signature Request for'.$userRequest->file_name.' from '.$company_name.' via Signature1618';
                 break;
             case 2:
                 $subject = 'Approver Mail';
@@ -1263,6 +1357,8 @@ class RequestController extends Controller
             ], 400);
         }
 
+        $user = User::find($data->user_id);
+
         $data->status = $request->request_status;
         $data->update();
 
@@ -1281,6 +1377,20 @@ class RequestController extends Controller
             //adding activity log 
             $this->addRequestLog("declined_request", "Request has been declined", $userName, $data->id);
             //ending adding activity log
+
+            //send mail
+            $dataUser = [
+                'email' => $user->email,
+                'sender_name' => $user->name.' '.$user->last_name,
+                'requestUID' => $data->unique_id,
+                'receiver_name' => Auth::user()->name.' '.Auth::user()->last_name,
+                'signerUID' => $signer->unique_id
+            ];
+        
+            $subject = 'Request to Sign Declined by '.Auth::user()->name.' '.Auth::user()->last_name;
+        
+            Mail::to($user->email)->send(new \App\Mail\DeclineSignSender($dataUser, $subject));
+            //ending send mail
 
         }
 

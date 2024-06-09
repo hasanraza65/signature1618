@@ -47,8 +47,6 @@
 				display: none;
 			}
 
-			.row-2 .column-1 .block-5.button_block .alignment a,
-			.row-2 .column-1 .block-5.button_block .alignment div,
 			.row-content {
 				width: 100% !important;
 			}
@@ -74,17 +72,10 @@
 
 			.row-2 .column-1 .block-2.paragraph_block td.pad>div,
 			.row-2 .column-1 .block-3.paragraph_block td.pad>div,
-			.row-2 .column-1 .block-7.paragraph_block td.pad>div,
-			.row-2 .column-1 .block-8.paragraph_block td.pad>div,
-			.row-2 .column-1 .block-9.paragraph_block td.pad>div {
+			.row-2 .column-1 .block-4.paragraph_block td.pad>div,
+			.row-2 .column-1 .block-5.paragraph_block td.pad>div,
+			.row-3 .column-1 .block-1.paragraph_block td.pad>div {
 				font-size: 14px !important;
-			}
-
-			.row-2 .column-1 .block-5.button_block a,
-			.row-2 .column-1 .block-5.button_block div,
-			.row-2 .column-1 .block-5.button_block span {
-				font-size: 20px !important;
-				line-height: 40px !important;
 			}
 		}
 	</style>
@@ -139,7 +130,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">We recently received a request to reset the password for your Signature1618 account. To complete the password reset process, please follow the instructions below:</p>
+																	<p style="margin: 0;">Your invited team member, {{$user_d['invited_member_name']}}, has successfully joined {{$user_d['organization_name']}}'s group on Signature1618. As a result, {{$user_d['invited_member_name']}} now has access to Signature1618's pro features for enhanced collaboration within your organization.</p>
 																</div>
 															</td>
 														</tr>
@@ -148,44 +139,22 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Password Reset Instructions:<br>1. Copy the OTP from below.<br>2. Follow the on-screen instructions to reset your password.</p>
+																	<p style="margin: 0;"><strong>Invited Team Member Details:</strong><br>Name: {{$user_d['invited_member_name']}}<br>Job Title: {{$user_d['job_title']}}<br>Joined Date: {{$user_d['joined_date']}}</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-4" style="height:25px;line-height:25px;font-size:1px;">&#8202;</div>
-													<table class="button_block block-5" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-														<tr>
-															<td class="pad">
-																<div class="alignment" align="center"><!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ env('APP_URL') }}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
-<w:anchorlock/>
-<v:textbox inset="0px,0px,0px,0px">
-<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--><a target="_blank" style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">{{$user_d['otp']}}</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
-															</td>
-														</tr>
-													</table>
-													<div class="spacer_block block-6" style="height:25px;line-height:25px;font-size:1px;">&#8202;</div>
-													<table class="paragraph_block block-7" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+													<table class="paragraph_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;"><strong>Note:</strong> If you did not request this password reset or believe it to be in error, please ignore this email. Your password will remain unchanged.</p>
+																	<p style="margin: 0; margin-bottom: 16px;">If you have any questions or need assistance, please feel free to reach out to our support team. We're here to ensure your experience with Signature1618 is exceptional.</p>
+																	<p style="margin: 0;">Thank you for choosing Signature1618 for your electronic signature needs.</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<table class="paragraph_block block-8" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-														<tr>
-															<td class="pad">
-																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">For security reasons, this link will expire in 5 minutes. If you do not reset your password within this time frame, you may need to request another password reset.</p>
-																</div>
-															</td>
-														</tr>
-													</table>
-													<table class="paragraph_block block-9" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+													<table class="paragraph_block block-5" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
@@ -194,7 +163,7 @@
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-10" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
+													<div class="spacer_block block-6" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
 												</td>
 											</tr>
 										</tbody>
@@ -215,7 +184,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0; margin-bottom: 16px;">Email Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #e5e5e5;" rel="noopener" bis_size="{&quot;x&quot;:756,&quot;y&quot;:674,&quot;w&quot;:104,&quot;h&quot;:17,&quot;abs_x&quot;:756,&quot;abs_y&quot;:734}">Signature1618</a></p>
+																	<p style="margin: 0; margin-bottom: 16px;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #e5e5e5;" rel="noopener" bis_size="{&quot;x&quot;:756,&quot;y&quot;:674,&quot;w&quot;:104,&quot;h&quot;:17,&quot;abs_x&quot;:756,&quot;abs_y&quot;:734}">Signature1618</a></p>
 																</div>
 															</td>
 														</tr>

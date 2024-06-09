@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\UserGlobalSetting;
 
 class TeamController extends Controller
 {
@@ -88,8 +89,10 @@ class TeamController extends Controller
         $data->unique_id = $request->unique_id;
         $data->save();
 
+        $receiver_name = $request->first_name.' '.$request->last_name;
+
         //send mail
-        $this->sendMail($request->email,$request->unique_id);
+        $this->sendMail($request->email,$request->unique_id, $receiver_name);
         //ending send mail
 
         return response()->json(['data' => $data, 'message' => 'Team member added successfully'], 201);
@@ -160,16 +163,20 @@ class TeamController extends Controller
 
     }
 
-    private function sendMail($email,$unique_id) {
+    private function sendMail($email,$unique_id,$receiver_name=null) {
 
         $userName = getUserName();
 
+        $today = Carbon::now();
+        // Format the date
+        $formattedDate = $today->format('m/d/Y');
     
         $dataUser = [
             'email' => $email,
             'senderName' => $userName,
             'unique_id' => $unique_id,
-            
+            'receiver_name' => $receiver_name,
+            "date"=> $formattedDate
         ];
     
         $subject = $userName.' invited you to join signature1618';
@@ -280,6 +287,8 @@ class TeamController extends Controller
                 return response()->json(['error' => 'Team admin does not have a subscription.'], 400);
             }
 
+           
+
             // Check if admin plan expiry date is equal or greater than today
             if ($admin_plan->expiry_date < now()) {
                 return response()->json(['error' => 'Team admin subscription has expired.'], 400);
@@ -323,6 +332,40 @@ class TeamController extends Controller
             }
 
             $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
+
+
+            //send mail 
+            $admin_user = User::find($team_admin->user_id);
+
+            //get company name 
+            $globalsettings = UserGlobalSetting::where('user_id',$team_admin->user_id)->where('meta_key','company')->first();
+            if(!$globalsettings){
+                $company_name = $admin_user->name.' '.$admin_user->last_name;
+            }else{
+                $company_name = $globalsettings->meta_value;
+            }
+            //end get company name
+            
+            $useremail = $admin_user->email;
+            $subject = Auth::user()->name.' '.Auth::user()->last_name.' Has Joined '.$company_name.' on Signature1618 ';
+            $today = Carbon::now();
+            // Format the date
+            $formattedDate = $today->format('m/d/Y');
+            $dataUser = [
+                'email' => Auth::user()->email,
+                'invited_member_name' => Auth::user()->name.' '.Auth::user()->last_name,
+                'first_name' => $admin_user->name,
+                'last_name' => $admin_user->last_name,
+                'subject' => $request->subject,
+                'company_name' => $company_name,
+                'organization_name' => $company_name,
+                'joined_date' => $formattedDate,
+                'job_title' => $team_admin->job_title,
+                
+            ];
+
+            Mail::to($useremail)->send(new \App\Mail\MemberJoinedTeam($dataUser, $subject));
+            //ending mail
             
 
             return response()->json(['plan'=>$plan, 'success' => 'User has successfully joined the team.'], 200);
@@ -347,6 +390,40 @@ class TeamController extends Controller
         $data->update();
 
         Subscription::where('user_id',Auth::user()->id)->delete();
+
+         //send mail 
+         $admin_user = User::find($data->user_id);
+
+         //get company name 
+         $globalsettings = UserGlobalSetting::where('user_id',$data->user_id)->where('meta_key','company')->first();
+         if(!$globalsettings){
+             $company_name = $admin_user->name.' '.$admin_user->last_name;
+         }else{
+             $company_name = $globalsettings->meta_value;
+         }
+         //end get company name
+         
+         $useremail = $admin_user->email;
+         $subject = Auth::user()->name.' '.Auth::user()->last_name.' Has Refused '.$company_name.' on Signature1618 ';
+         $today = Carbon::now();
+         $invitation_date = $data->created_at;
+         // Format the date
+         $formattedDate = $invitation_date->format('m/d/Y');
+         $dataUser = [
+             'email' => Auth::user()->email,
+             'invited_member_name' => Auth::user()->name.' '.Auth::user()->last_name,
+             'first_name' => $admin_user->name,
+             'last_name' => $admin_user->last_name,
+             'subject' => $request->subject,
+             'company_name' => $company_name,
+             'organization_name' => $company_name,
+             'invitation_date' => $formattedDate,
+             'job_title' => $data->job_title,
+             
+         ];
+
+         Mail::to($useremail)->send(new \App\Mail\MemberRefusedTeam($dataUser, $subject));
+         //ending mail
 
         return response()->json([
             'data' => $data,

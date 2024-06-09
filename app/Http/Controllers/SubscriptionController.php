@@ -178,6 +178,7 @@ class SubscriptionController extends Controller
         $userId = Auth::user()->id;
 
         $data = Subscription::where('user_id',$userId)->first();
+        $plan_data = Plan::find($plan_id);
         
         if(!$data){
             $data = new Subscription();
@@ -212,6 +213,30 @@ class SubscriptionController extends Controller
         $transaction = Transaction::find($transaction_id);
         $transaction->plan_id = $plan_id;
         $transaction->update();
+
+        //send mail 
+
+        $useremail = Auth::user()->email;
+        $subject = 'Subscription Confirmed - Signature1618 ';
+        $today = Carbon::now();
+        $invitation_date = $data->created_at;
+        // Format the date
+        $formattedDate = $invitation_date->format('m/d/Y');
+        $dataUser = [
+            'email' => Auth::user()->email,
+            'first_name' => Auth::user()->name,
+            'last_name' => Auth::user()->last_name,
+            'invitation_date' => $formattedDate,
+            'plan_name' => $plan_data->plan_name,
+            'amount' => $amount,
+            'subscription_period' => $payment_cycle,
+            'next_billing_date' => $expirydate,
+             
+         ];
+
+         Mail::to($useremail)->send(new \App\Mail\MemberRefusedTeam($dataUser, $subject));
+
+        //ending send mail
 
         return true;
 

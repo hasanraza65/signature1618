@@ -160,6 +160,14 @@ Route::middleware('auth:api')->group(function () {
         Route::resource('/admin_user_request', App\Http\Controllers\RequestController::class);
         Route::resource('/plan', App\Http\Controllers\PlanController::class);
 
+        Route::resource('/user_management', App\Http\Controllers\UserManagementController::class);
+        Route::post('/change_plan', [App\Http\Controllers\UserManagementController::class, 'changePlan']);
+
+        Route::resource('/tickets', App\Http\Controllers\SupportMailController::class);
+        Route::post('/change_ticket_status', [App\Http\Controllers\SupportMailController::class, 'changeTicketStatus']);
+
+        Route::get('/admin_dashboard', [App\Http\Controllers\DashboardController::class, 'stat']);
+
     } );
 
 

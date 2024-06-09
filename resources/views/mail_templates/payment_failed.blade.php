@@ -76,15 +76,15 @@
 			.row-2 .column-1 .block-3.paragraph_block td.pad>div,
 			.row-2 .column-1 .block-7.paragraph_block td.pad>div,
 			.row-2 .column-1 .block-8.paragraph_block td.pad>div,
-			.row-2 .column-1 .block-9.paragraph_block td.pad>div {
+			.row-3 .column-1 .block-1.paragraph_block td.pad>div {
 				font-size: 14px !important;
 			}
 
 			.row-2 .column-1 .block-5.button_block a,
 			.row-2 .column-1 .block-5.button_block div,
 			.row-2 .column-1 .block-5.button_block span {
-				font-size: 20px !important;
-				line-height: 40px !important;
+				font-size: 17px !important;
+				line-height: 34px !important;
 			}
 		}
 	</style>
@@ -120,18 +120,18 @@
 							</tr>
 						</tbody>
 					</table>
-					<table class="row row-2" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e7e7e7;">
+					<table class="row row-2" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e7e7e7; background-size: auto;">
 						<tbody>
 							<tr>
 								<td>
-									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff; border-left: 1px solid #ebebeb; border-right: 1px solid #ebebeb; color: #000000; width: 600px; margin: 0 auto;" width="600">
+									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-size: auto; background-color: #ffffff; border-left: 1px solid #ebebeb; border-right: 1px solid #ebebeb; color: #000000; width: 600px; margin: 0 auto;" width="600">
 										<tbody>
 											<tr>
 												<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
 													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['first_name']}} {{$user_d['last_name']}},</span></h1>
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['user_name']}},</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -139,7 +139,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">We recently received a request to reset the password for your Signature1618 account. To complete the password reset process, please follow the instructions below:</p>
+																	<p style="margin: 0;">We have encountered an issue processing the auto-renewal payment for your Signature1618 subscription.</p>
 																</div>
 															</td>
 														</tr>
@@ -148,7 +148,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Password Reset Instructions:<br>1. Copy the OTP from below.<br>2. Follow the on-screen instructions to reset your password.</p>
+																	<p style="margin: 0;">- Plan: {{$user_d['plan_name']}}<br>- Subscription Period: {{$user_d['subscription_period']}}<br>- Next Billing Date: {{$user_d['next_billing_date']}}<br>- Payment Method: {{$user_d['payment_method']}}</p>
 																</div>
 															</td>
 														</tr>
@@ -162,16 +162,17 @@
 <w:anchorlock/>
 <v:textbox inset="0px,0px,0px,0px">
 <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--><a target="_blank" style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">{{$user_d['otp']}}</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+<![endif]--><a href="{{ env('APP_URL') }}/billing" target="_blank" style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Update Payment Information</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
 															</td>
 														</tr>
 													</table>
 													<div class="spacer_block block-6" style="height:25px;line-height:25px;font-size:1px;">&#8202;</div>
-													<table class="paragraph_block block-7" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+													<table class="paragraph_block block-7" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
 														<tr>
-															<td class="pad">
+															<td class="pad" style="padding-left:10px;padding-right:10px;padding-top:10px;">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;"><strong>Note:</strong> If you did not request this password reset or believe it to be in error, please ignore this email. Your password will remain unchanged.</p>
+																	<p style="margin: 0; margin-bottom: 5px;">Please take the following action:</p>
+																	<p style="margin: 0;">1. Log in to your Signature1618 account and<br>2. Update your payment information to ensure successful renewal.</p>
 																</div>
 															</td>
 														</tr>
@@ -180,21 +181,12 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">For security reasons, this link will expire in 5 minutes. If you do not reset your password within this time frame, you may need to request another password reset.</p>
-																</div>
-															</td>
-														</tr>
-													</table>
-													<table class="paragraph_block block-9" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-														<tr>
-															<td class="pad">
-																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0;">Best regards,<br>Signature1618 Support</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-10" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
+													<div class="spacer_block block-9" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
 												</td>
 											</tr>
 										</tbody>

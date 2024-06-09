@@ -5,9 +5,11 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class SupportMail extends Mailable
+class SupportMailUser extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -26,7 +28,7 @@ class SupportMail extends Mailable
     {
         $user_d = $this->data;
         $email = $this->subject('Support Ticket Received - Signature1618 '.$this->subject)
-                      ->view('mail_templates.support_mail', compact('user_d'));
+                      ->view('mail_templates.support_mail_user', compact('user_d'));
 
         // Attach file if present
         if ($this->file) {
