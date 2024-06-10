@@ -907,11 +907,30 @@ class RequestController extends Controller
 
         }
         
-
+        $senderuser = User::find($requestdata->user_id);
 
         $checkng = Approver::where('request_id',$requestdata->id)
         ->where('unique_id',$request->approver_unique_id)
         ->update(['status'=>'approved']);
+
+        //notify sender
+        $senderemail = $senderuser->email;
+        $approver_data = Approver::where('request_id',$requestdata->id)
+        ->where('unique_id',$request->approver_unique_id)->first();
+        $approver_user = User::find($approver_data->recipient_user_id);
+        $approver_name = $approver_user->name.' '.$approver_user->last_name;
+        $subject = "Request approved by ".$approver_name." - Signature1618";
+        
+         $dataUser = [
+             'sender_name' => $senderuser->name.' '.$senderuser->last_name,
+             'file_name' => $requestdata->file_name,
+             'requestUID' => $requestdata->unique_id,
+             'approver_name' =>$approver_name
+         ];
+
+         Mail::to($senderemail)->send(new \App\Mail\ApprovedMail($dataUser, $subject));
+
+        //ending notify sender
 
 
         //update status for request
@@ -1005,6 +1024,52 @@ class RequestController extends Controller
         $this->addRequestLog("rejected_request", "Rejected document", $full_name, $requestdata->id);
         //ending adding activity log
 
+
+        //get company name 
+        $globalsettings = UserGlobalSetting::where('user_id',$requestdata->user_id)->where('meta_key','company')->first();
+        if(!$globalsettings){
+            $company_name = $sender->name.' '.$sender->last_name;
+        }else{
+            $company_name = $globalsettings->meta_value;
+        }
+        //end get company name
+
+        //send mail to approvers
+
+        $approver_contact = Contact::where('id',$approver->recipient_contact_id)->first();
+        $approver_user = User::where('id',$approver->recipient_user_id)->first();
+        $dataUserToApprover = [
+            'user_first_name' => $approver_contact->contact_first_name,
+            'user_last_name' => $approver_contact->contact_last_name,
+            'organization_name' => $company_name,
+            'document_name' => $requestdata->file_name
+        ];
+                    
+        $subjectToApprover = 'You rejected '.$requestdata->file_name.'- Signature1618';
+                    
+        Mail::to($approver_user->email)->send(new \App\Mail\RequestRejectedToApprover($dataUserToApprover, $subjectToApprover));
+                
+        //ending send mail
+
+        //send mail to sender
+
+        $dataUserToSender = [
+            'sender_first_name' => $sender->name,
+            'sender_last_name' => $sender->last_name,
+            'approver_first_name' => $approver_contact->contact_first_name,
+            'approver_last_name' => $approver_contact->contact_last_name,
+            'organization_name' => $company_name,
+            'document_name' => $requestdata->file_name,
+            'requestUID'=>$requestdata->unique_id
+        ];
+                    
+        $subjectToSender = $approver_contact->contact_first_name.' '.$approver_contact->contact_last_name.' has rejected '.$requestdata->file_name.'- Signature1618';
+                    
+        Mail::to($sender->email)->send(new \App\Mail\RequestRejectedToSender($dataUserToSender, $subjectToSender));
+                
+        //ending send mail to sender
+
+
         return response()->json([
             'message' => 'Request answered successfully.'
         ], 200);
@@ -1034,15 +1099,21 @@ class RequestController extends Controller
         }
         //end get company name
         $date = $userRequest->expiry_date;
-        $formattedDate = $date->format('m/d/Y');
+        //$formattedDate = $date->format('m/d/Y');
+
+        $signerdata = Signer::where('unique_id',$signerUId)->where('request_id',$requestId)->first();
+        $signercontact = User::find($signerdata->recipient_user_id);
     
         $dataUser = [
             'email' => $email,
+            'receiver_name' => $signercontact->name.' '.$signercontact->last_name,
             'signerUID' => $signerUId,
             'requestUID' => $requestUid,
             'company_name' => $company_name,
             'file_name' => $userRequest->file_name,
-            'expiry_date' => $formattedDate
+            'sender_first_name' => $admin_user->name,
+            'sender_last_name' => $admin_user->last_name,
+            'expiry_date' => $date
         ];
     
         $subject = '';
@@ -1362,7 +1433,36 @@ class RequestController extends Controller
         $data->status = $request->request_status;
         $data->update();
 
+        //get company name 
+        $globalsettings = UserGlobalSetting::where('user_id',$data->user_id)->where('meta_key','company')->first();
+        if(!$globalsettings){
+            $company_name = $user->name.' '.$user->last_name;
+        }else{
+            $company_name = $globalsettings->meta_value;
+        }
+        //end get company name
+
         if($request->request_status == "cancelled"){
+
+            //send mail to approvers
+            $allapprovers = Approver::where('request_id',$data->id)->get();
+
+            foreach($allapprovers as $approver){
+                $approver_contact = Contact::where('id',$approver->recipient_contact_id)->first();
+                $approver_user = User::where('id',$approver->recipient_user_id)->first();
+                $dataUserToApprover = [
+                    'user_first_name' => $approver_contact->contact_first_name,
+                    'user_last_name' => $approver_contact->contact_last_name,
+                    'organization_name' => $company_name,
+                    'document_name' => $data->file_name
+                ];
+            
+                $subjectToApprover = 'Request has been cancelled by '.$company_name;
+            
+                Mail::to($approver_user->email)->send(new \App\Mail\RequestCancelledBySenderToApprover($dataUserToApprover, $subjectToApprover));
+            }
+           
+            //ending send mail
 
             //adding activity log 
             $this->addRequestLog("cancelled_request", "Signature request cancelled", $userName, $data->id);
@@ -1384,13 +1484,56 @@ class RequestController extends Controller
                 'sender_name' => $user->name.' '.$user->last_name,
                 'requestUID' => $data->unique_id,
                 'receiver_name' => Auth::user()->name.' '.Auth::user()->last_name,
-                'signerUID' => $signer->unique_id
+                'signerUID' => $signer->unique_id,
+                'organization_name' => $company_name
             ];
         
             $subject = 'Request to Sign Declined by '.Auth::user()->name.' '.Auth::user()->last_name;
         
             Mail::to($user->email)->send(new \App\Mail\DeclineSignSender($dataUser, $subject));
             //ending send mail
+
+            //send mail to signer
+            $dataUserSigner = [
+                'email' => Auth::user()->email,
+                'first_name' => Auth::user()->name,
+                'last_name' => Auth::user()->last_name,
+                'requestUID' => $data->unique_id,
+                'organization_name' => $company_name,
+                'signerUID' => $signer->unique_id,
+                'file_name' => $data->file_name
+            ];
+        
+            $subjectSigner = 'Request to Sign Declined';
+        
+            Mail::to(Auth::user()->email)->send(new \App\Mail\DeclineSignSigner($dataUserSigner, $subjectSigner));
+            //ending send mail to signer
+
+            //send mail to OTHER signer
+            $otherSigners = Signer::where('request_id',$data->id)->whereNot('recipient_user_id',Auth::user()->id)->get();
+            $otheruser = User::find($otherSigners->recipient_user_id);
+
+            foreach($otherSigners as $otherSigner){
+                
+                $dataUserOtherSigner = [
+                    'email' => $otheruser->email,
+                    'user_first_name' => $otheruser->name,
+                    'user_last_name' => $otheruser->last_name,
+                    'declined_by_first_name' => Auth::user()->name,
+                    'declined_by_last_name' => Auth::user()->last_name,
+                    'requestUID' => $data->unique_id,
+                    'organization_name' => $company_name,
+                    'signerUID' => $signer->unique_id,
+                    'document_name' => $data->file_name
+                ];
+            
+                $subjectOtherSigner = 'Request to Sign Declined by '.Auth::user()->name.' '.Auth::user()->last_name;
+            
+                Mail::to($otheruser->email)->send(new \App\Mail\DeclineSignOther($dataUserOtherSigner, $subjectOtherSigner));
+
+            }
+            
+            //ending send mail to OTHER signer
 
         }
 

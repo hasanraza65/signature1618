@@ -69,6 +69,13 @@
 				display: table !important;
 				max-height: none !important;
 			}
+
+			.row-2 .column-1 .block-2.paragraph_block td.pad>div,
+			.row-2 .column-1 .block-3.paragraph_block td.pad>div,
+			.row-2 .column-1 .block-4.paragraph_block td.pad>div,
+			.row-3 .column-1 .block-1.paragraph_block td.pad>div {
+				font-size: 14px !important;
+			}
 		}
 	</style>
 </head>
@@ -114,7 +121,7 @@
 													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['user_name']}},</span></h1>
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['user_first_name']}} {{$user_d['user_last_name']}},</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -122,31 +129,30 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">You have requested a One-Time Passcode to verify your identity regarding creating a new account.<br>Kindly input this OTP code were prompted.</p>
+																	<p style="margin: 0;">{{$user_d['document_name']}} is no longer available for approval because it has been cancelled by {{$user_d['organization_name']}}.</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-3" style="height:25px;line-height:25px;font-size:1px;">&#8202;</div>
-													<table class="heading_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-														<tr>
-															<td class="pad">
-																<h1 style="margin: 0; color: #111111; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 33.6px;"><span class="tinyMce-placeholder">{{$user_d['otp']}}</span></h1>
-															</td>
-														</tr>
-													</table>
-													<div class="spacer_block block-5" style="height:15px;line-height:15px;font-size:1px;">&#8202;</div>
-													<table class="paragraph_block block-6" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+													<table class="paragraph_block block-3" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0; margin-bottom: 16px;">If you have any questions or need assistance, kindly consult our verification help pages.</p>
-																	<p style="margin: 0;">Best regards,<br>Signature1618 Support Team</p>
+																	<p style="margin: 0;">You can longer access the document.</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-7" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
+													<table class="paragraph_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+														<tr>
+															<td class="pad">
+																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
+																	<p style="margin: 0;">Best regards,<br>{{$user_d['organization_name']}}</p>
+																</div>
+															</td>
+														</tr>
+													</table>
+													<div class="spacer_block block-5" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
 												</td>
 											</tr>
 										</tbody>
@@ -167,7 +173,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #e5e5e5;" rel="noopener" bis_size="{&quot;x&quot;:971,&quot;y&quot;:846,&quot;w&quot;:104,&quot;h&quot;:17,&quot;abs_x&quot;:971,&quot;abs_y&quot;:906}">Signature1618</a></p>
+																	<p style="margin: 0;">Request made via Signature1618</p>
 																</div>
 															</td>
 														</tr>

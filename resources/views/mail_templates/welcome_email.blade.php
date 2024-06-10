@@ -47,6 +47,8 @@
 				display: none;
 			}
 
+			.row-2 .column-1 .block-4.button_block .alignment a,
+			.row-2 .column-1 .block-4.button_block .alignment div,
 			.row-content {
 				width: 100% !important;
 			}
@@ -68,6 +70,19 @@
 			.desktop_hide table {
 				display: table !important;
 				max-height: none !important;
+			}
+
+			.row-2 .column-1 .block-2.paragraph_block td.pad>div,
+			.row-2 .column-1 .block-6.paragraph_block td.pad>div,
+			.row-2 .column-1 .block-7.paragraph_block td.pad>div,
+			.row-3 .column-1 .block-1.paragraph_block td.pad>div {
+				font-size: 14px !important;
+			}
+
+			.row-2 .column-1 .block-4.button_block a,
+			.row-2 .column-1 .block-4.button_block div,
+			.row-2 .column-1 .block-4.button_block span {
+				line-height: 32px !important;
 			}
 		}
 	</style>
@@ -114,7 +129,7 @@
 													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['user_name']}},</span></h1>
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Hi {{$user_d['first_name']}} {{$user_d['last_name']}},</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -122,16 +137,24 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">You have requested a One-Time Passcode to verify your identity regarding creating a new account.<br>Kindly input this OTP code were prompted.</p>
+																	<p style="margin: 0;">Welcome to Signature1618! We're excited to have you join our community of users who are revolutionizing the way they sign documents.<br><br>With Signature1618, you can create, manage, and use secure electronic signatures from anywhere, all within a few clicks. Make a new request now.</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-3" style="height:25px;line-height:25px;font-size:1px;">&#8202;</div>
-													<table class="heading_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+													<div class="spacer_block block-3" style="height:15px;line-height:15px;font-size:1px;">&#8202;</div>
+													<table class="button_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #111111; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: center; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 33.6px;"><span class="tinyMce-placeholder">{{$user_d['otp']}}</span></h1>
+																<div class="alignment" align="center"><!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="height:41px;width:375px;v-text-anchor:middle;" arcsize="10%" stroke="false" fillcolor="#000000">
+<w:anchorlock/>
+<v:textbox inset="0px,0px,0px,0px">
+<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:16px">
+<![endif]-->                                                        <a href="{{ env('APP_URL') }}">
+																	<div style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:4px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:16px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 32px;">+ New Request</span></span></div><!--[if mso]></center></v:textbox></v:roundrect><![endif]-->
+                                                                    </a>
+                                                                </div>
 															</td>
 														</tr>
 													</table>
@@ -140,13 +163,22 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0; margin-bottom: 16px;">If you have any questions or need assistance, kindly consult our verification help pages.</p>
-																	<p style="margin: 0;">Best regards,<br>Signature1618 Support Team</p>
+																	<p style="margin: 0; margin-bottom: 16px;">Streamline your workflow and save time with Signature1618!<br>Ready to take control?</p>
+																	<p style="margin: 0;">Start your free trail and explore the features that will transform your signing experience: www.signature1618.app</p>
 																</div>
 															</td>
 														</tr>
 													</table>
-													<div class="spacer_block block-7" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
+													<table class="paragraph_block block-7" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+														<tr>
+															<td class="pad">
+																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
+																	<p style="margin: 0;">Welcome to the future of document signing!<br>Signature1618 support.</p>
+																</div>
+															</td>
+														</tr>
+													</table>
+													<div class="spacer_block block-8" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
 												</td>
 											</tr>
 										</tbody>
@@ -167,7 +199,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #e5e5e5;" rel="noopener" bis_size="{&quot;x&quot;:971,&quot;y&quot;:846,&quot;w&quot;:104,&quot;h&quot;:17,&quot;abs_x&quot;:971,&quot;abs_y&quot;:906}">Signature1618</a></p>
+																	<p style="margin: 0;">Enjoy a free 14-day trial of our Enterprise plan! Unlock advanced features and experience the full potential of Signature1618. Start a free trial today on: www.signature1618.app</p>
 																</div>
 															</td>
 														</tr>

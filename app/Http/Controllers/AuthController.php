@@ -188,7 +188,8 @@ class AuthController extends Controller
 
             $dataUser = [
                 'email'=>$user->email,
-                'otp'=>$otpcode
+                'otp'=>$otpcode,
+                'user_name'=>$user->name.' '.$user->last_name
         ];
 
             $subject = $user->name." your OTP for registration";
@@ -275,6 +276,18 @@ class AuthController extends Controller
             }
             //ending plan detail
 
+            //sending welcome mail
+            $dataUserWelcome = [
+                'first_name' => $user->name,
+                'last_name' => $user->last_name,
+                
+            ];
+        
+            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Your Documents!';
+        
+            Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+            //ending welcome mail
+
             return response(["status" => 200, 'user' => $user,'plan'=>$plan, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
             
 
@@ -306,7 +319,8 @@ class AuthController extends Controller
 
         $dataUser = [
             'email'=>$user->email,
-            'otp'=>$otpcode
+            'otp'=>$otpcode,
+            'user_name'=>$user->name.' '.$user->last_name
         ];
 
         $subject = $user->name." your OTP for registration";
