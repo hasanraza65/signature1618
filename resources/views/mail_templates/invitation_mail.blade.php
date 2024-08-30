@@ -129,7 +129,7 @@
 																<div align="center" class="alignment"
 																	style="line-height:10px">
 																	<div style="max-width: 250px;"><img height="auto"
-																			src="https://test.app.signature1618.com/signaturelogo.png"
+																			src="https://signature1618.app/backend_code/public/signaturelogo.png"
 																			style="display: block; height: auto; border: 0; width: 100%;"
 																			width="250" /></div>
 																</div>

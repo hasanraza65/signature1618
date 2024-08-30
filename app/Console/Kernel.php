@@ -40,8 +40,8 @@ class Kernel extends ConsoleKernel
             $subject = "Reminder to sign the document";
             foreach($data as $date){
                 $reminderDate = Carbon::parse($date->date);
-                \Log::info('reminder date '.$reminderDate);
-                \Log::info('today date '.Carbon::today());
+                //\Log::info('reminder date '.$reminderDate);
+                //\Log::info('today date '.Carbon::today());
                 if ($reminderDate->isSameDay(Carbon::today())) {
                     
                     // APPROVER NOTIFICATION
@@ -279,7 +279,7 @@ class Kernel extends ConsoleKernel
                             
                         ];
 
-                        Mail::to($useremail)->send(new \App\Mail\MemberJoinedTeam($dataUser, $subject3));
+                        Mail::to($useremail)->send(new \App\Mail\PaymentFailed($dataUser, $subject3));
 
                         //ending faield payment mail
                     }

@@ -96,7 +96,7 @@
 														<tr>
 															<td class="pad" style="width:100%;">
 																<div class="alignment" align="center" style="line-height:10px">
-																	<div style="max-width: 250px;"><img src="https://test.app.signature1618.com/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
+																	<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
 																</div>
 															</td>
 														</tr>

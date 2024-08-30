@@ -105,7 +105,7 @@
 														<tr>
 															<td class="pad" style="width:100%;">
 																<div class="alignment" align="center" style="line-height:10px">
-																	<div style="max-width: 250px;"><img src="https://test.app.signature1618.com/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
+																	<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
 																</div>
 															</td>
 														</tr>
@@ -198,7 +198,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">If you are having trouble signing the document, please visit this link from an internet connected computer. {{$user_d['request_link']}}</p>
+																	<p style="margin: 0;">If you are having trouble signing the document, please visit this link from an internet connected computer. {{ env('APP_URL') }}/request-details/?r={{$user_d['requestUID']}}</p>
 																</div>
 															</td>
 														</tr>

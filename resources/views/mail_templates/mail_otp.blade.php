@@ -110,7 +110,7 @@
                               <td class="pad" style="width:100%;">
                                 <div align="center" class="alignment" style="line-height:10px">
                                   <div style="max-width: 250px;"><img height="auto"
-                                      src="https://test.app.signature1618.com/signaturelogo.png"
+                                      src="https://signature1618.app/backend_code/public/signaturelogo.png"
                                       style="display: block; height: auto; border: 0; width: 100%;" width="250" /></div>
                                 </div>
                               </td>
@@ -210,7 +210,7 @@
                                   style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
                                   <p style="margin: 0; margin-bottom: 16px;">If you have any questions or need
                                     assistance, kindly consult our verification help pages.</p>
-                                  <p style="margin: 0;">Best regards,<br />Signature1618 Support Team</p>
+                                  <p style="margin: 0;">Best regards,<br />Signature1618 Support</p>
                                 </div>
                               </td>
                             </tr>

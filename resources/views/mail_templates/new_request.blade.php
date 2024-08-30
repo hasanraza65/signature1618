@@ -90,7 +90,7 @@
 														<tr>
 															<td class="pad" style="width:100%;">
 																<div class="alignment" align="center" style="line-height:10px">
-																	<div style="max-width: 250px;"><img src="https://test.app.signature1618.com/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
+																	<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
 																</div>
 															</td>
 														</tr>
@@ -163,7 +163,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Best regards,<br>Signature1618 Support Team</p>
+																	<p style="margin: 0;">Best regards,<br>Signature1618 Support</p>
 																</div>
 															</td>
 														</tr>

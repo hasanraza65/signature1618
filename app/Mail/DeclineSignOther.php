@@ -28,7 +28,7 @@ class DeclineSignOther extends Mailable
     {
         $user_d = $this->data;
         $email = $this->subject($this->subject)
-                      ->view('mail_templates.decline_to_sign_signer', compact('user_d'));
+                      ->view('mail_templates.decline_sign_other', compact('user_d'));
 
         return $email;
     }

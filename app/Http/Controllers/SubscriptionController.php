@@ -234,7 +234,7 @@ class SubscriptionController extends Controller
              
          ];
 
-         Mail::to($useremail)->send(new \App\Mail\MemberRefusedTeam($dataUser, $subject));
+         Mail::to($useremail)->send(new \App\Mail\NewSubscription($dataUser, $subject));
 
         //ending send mail
 

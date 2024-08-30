@@ -90,7 +90,7 @@
 														<tr>
 															<td class="pad" style="width:100%;">
 																<div class="alignment" align="center" style="line-height:10px">
-																	<div style="max-width: 250px;"><img src="https://test.app.signature1618.com/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
+																	<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
 																</div>
 															</td>
 														</tr>
@@ -131,15 +131,10 @@
 													<table class="button_block block-4" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<a href="test.{{ env('APP_URL') }}/files/{{$user_d['signed_file']}}" target="_blank">
-																<div class="alignment" align="center"><!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ env('APP_URL') }}/request-details/?r={{$user_d['requestUID']}}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
-<w:anchorlock/>
-<v:textbox inset="0px,0px,0px,0px">
-<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--><a href="test.{{ env('APP_URL') }}/files/{{$user_d['signed_file']}}" target="_blank" style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Download Document</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]-->
+																
+																<div class="alignment" align="center"><a href="{{ env('APP_URL') }}/backend_code/public/{{$user_d['signed_file']}}" target="_blank" style="background-color:#000000;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Download Document</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]-->
 																</div>
-																</a>
+																
 															</td>
 														</tr>
 													</table>
@@ -148,7 +143,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Best regards,<br>Signature1618 Support Team</p>
+																	<p style="margin: 0;">Best regards,<br>Signature1618 Support</p>
 																</div>
 															</td>
 														</tr>

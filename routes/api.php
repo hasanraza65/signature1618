@@ -66,6 +66,8 @@ Route::get('attach_payment', [App\Http\Controllers\SubscriptionController::class
 
 //ending stripe testing
 
+Route::post('/decline_request', [App\Http\Controllers\RequestController::class, 'declineRequest']);
+
 Route::middleware('auth:api')->group(function () {
 
     

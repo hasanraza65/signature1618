@@ -114,7 +114,7 @@
                                                                 <div align="center" class="alignment"
                                                                     style="line-height:10px">
                                                                     <div style="max-width: 250px;"><img height="auto"
-                                                                            src="https://test.app.signature1618.com/signaturelogo.png"
+                                                                            src="https://signature1618.app/backend_code/public/signaturelogo.png"
                                                                             style="display: block; height: auto; border: 0; width: 100%;"
                                                                             width="250" /></div>
                                                                 </div>
@@ -243,7 +243,7 @@
                                                                         for choosing Signature1618. We appreciate your
                                                                         patience and trust in our service.</p>
                                                                     <p style="margin: 0;">Best
-                                                                        regards,<br />Signature1618 Support Team</p>
+                                                                        regards,<br />Signature1618 Support</p>
                                                                 </div>
                                                             </td>
                                                         </tr>
