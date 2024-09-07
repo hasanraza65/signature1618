@@ -148,7 +148,8 @@ class AuthController extends Controller
 
                 $dataUser = [
                     'email'=>$usercheck->email,
-                    'otp'=>$otpcode
+                    'otp'=>$otpcode,
+                    'user_name'=>$usercheck->name.' '.$usercheck->last_name,
             ];
 
                 $subject = $usercheck->name." your OTP for registration";
@@ -403,7 +404,7 @@ class AuthController extends Controller
                 'user_global_settings' => $user_global_settings
             ], 200);
         } else {
-            return response()->json(['error' => 'Please check your email & password again'], 401);
+            return response()->json(['error' => 'Invalid credentials, kindly verify your email and password.'], 401);
         }
     }
 

@@ -32,44 +32,61 @@ class ContactController extends Controller
 
     public function store(Request $request) {
 
+        // Validate the request data
+        $request->validate([
+            'first_name' => 'required|string|max:15',  
+            'last_name' => 'required|string|max:15',   
+            'email' => 'required|email',               
+            'phone' => 'nullable|string',              
+            'job_title' => 'nullable|string',
+            'company_name' => 'nullable|string',
+            'address_line_1' => 'nullable|string',
+            'address_line_2' => 'nullable|string',
+            'zip_code' => 'nullable|string',
+            'city' => 'nullable|string',
+            'country' => 'nullable|string',
+            'user_unique_id' => 'nullable|string',
+            'contact_unique_id' => 'nullable|string',
+        ]);
+    
         // Check if the email is already registered
         $existingUser = User::where('email', $request->email)->first();
-
+    
         if ($existingUser) {
             $contact_user_id = $existingUser->id;
-
+    
             $existingContact = Contact::where('contact_user_id', $contact_user_id)
-            ->where('user_id',Auth::user()->id)
-            ->where('is_deleted',0)
-            ->first();
+                ->where('user_id', Auth::user()->id)
+                ->where('is_deleted', 0)
+                ->first();
+    
             if ($existingContact) {
                 return response()->json([
                     'message' => 'Contact already in contacts list.'
                 ], 400);
             }
-
-        }else{
+    
+        } else {
             // Create a new user
             $user = new User();
             $user->email = $request->email;
-            $user->name = $request->first_name.' '.$request->last_name;
+            $user->name = $request->first_name . ' ' . $request->last_name;
             $user->language = $request->language ? $request->language : "en";
             $user->phone = $request->phone;
             $user->unique_id = $request->user_unique_id;
-            $user->contact_type = 1; //if this user only for contact at the moment and not registered officially here
-            
+            $user->contact_type = 1; // if this user only for contact at the moment and not registered officially here
+    
             // Generate a random password
             $password = Str::random(12); // You can adjust the length of the password as needed
             $user->password = bcrypt($password);
             $user->save();
             $contact_user_id = $user->id;
         }
-
-        
+    
         // Create contact data for the user
         $data = new Contact();
         $data->user_id = getUserId($request); // Using the helper function
-        $data->contact_user_id = $contact_user_id; 
+        $data->contact_user_id = $contact_user_id;
         $data->job_title = $request->job_title;
         $data->company_name = $request->company_name;
         $data->address_line_1 = $request->address_line_1;
@@ -89,6 +106,7 @@ class ContactController extends Controller
             'message' => 'Success'
         ], 200);
     }
+    
 
     public function show(Request $request, $id){
 
@@ -115,40 +133,55 @@ class ContactController extends Controller
 
     public function update(Request $request, $id) {
 
+        // Validate the request data
+        $request->validate([
+            'first_name' => 'required|string|max:15',  // First name must be a string with max 15 characters
+            'last_name' => 'required|string|max:15',   // Last name must be a string with max 15 characters
+            'email' => 'required|email',               // Validate email format
+            'phone' => 'nullable|string',              // Validate phone if provided
+            'job_title' => 'nullable|string',
+            'company_name' => 'nullable|string',
+            'address_line_1' => 'nullable|string',
+            'address_line_2' => 'nullable|string',
+            'zip_code' => 'nullable|string',
+            'city' => 'nullable|string',
+            'country' => 'nullable|string',
+            'language' => 'nullable|string',
+        ]);
+    
         // Create contact data for the user
         $userId = getUserId($request);
-
+    
         // Find the contact by ID and user ID
-        $data = Contact::where('unique_id', $id)->where('user_id', $userId)->where('is_deleted',0)->first();
-
-        if(!$data){
+        $data = Contact::where('unique_id', $id)->where('user_id', $userId)->where('is_deleted', 0)->first();
+    
+        if (!$data) {
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
         }
-
-
-        //checking email user
+    
+        // Check if the email is already associated with a user
         $existingUser = User::where('email', $request->email)->first();
         if ($existingUser) {
             $contact_user_id = $existingUser->id;
-        }else{
+        } else {
             // Create a new user
             $user = new User();
             $user->email = $request->email;
-            $user->name = $request->first_name.' '.$request->last_name;
+            $user->name = $request->first_name . ' ' . $request->last_name;
             $user->language = $request->language;
             $user->phone = $request->phone;
-            $user->contact_type = 1; //if this user only for contact at the moment and not registered officially here
+            $user->contact_type = 1; // if this user is only for contact at the moment and not registered officially here
             
             // Generate a random password
-            $password = Str::random(12); // You can adjust the length of the password as needed
+            $password = Str::random(12); // Adjust the length as needed
             $user->password = bcrypt($password);
             $user->save();
             $contact_user_id = $user->id;
         }
-        //ending checking email user
-
+    
+        // Update contact data for the user
         $data->contact_user_id = $contact_user_id;
         $data->job_title = $request->job_title;
         $data->company_name = $request->company_name;

@@ -84,20 +84,20 @@
 		<tbody>
 			<tr>
 				<td>
-					<table class="row row-1" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e7e7e7;">
+                    <table class="row row-1" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 						<tbody>
 							<tr>
 								<td>
-									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #111111; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
 										<tbody>
 											<tr>
 												<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 20px; padding-left: 50px; padding-right: 50px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
 													<table class="image_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad" style="width:100%;">
-																<div class="alignment" align="center" style="line-height:10px">
-																	<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height: auto; border: 0; width: 100%;" width="250" height="auto"></div>
-																</div>
+                                                                <div class="alignment" align="center" style="line-height:10px">
+                                                                    <div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height:60%; border: 0; width: 60%;"></div>
+                                                                </div>
 															</td>
 														</tr>
 													</table>
@@ -109,7 +109,8 @@
 							</tr>
 						</tbody>
 					</table>
-					<table class="row row-2" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e7e7e7;">
+
+					<table class="row row-2" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 						<tbody>
 							<tr>
 								<td>
@@ -120,7 +121,7 @@
 													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['first_name']}} {{$user_d['last_name']}},</span></h1>
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['first_name']}} {{$user_d['last_name']}},</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -128,7 +129,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">You have refused to sign {{$user_d['file_name']}}. your refusal has been recorded and {{$user_d['organization_name']}} has been notified.&nbsp;</p>
+																	<p style="margin: 0;">You have refused to sign {{$user_d['file_name']}}. Your refusal has been recorded and {{$user_d['organization_name']}} has been notified.&nbsp;</p>
 																</div>
 															</td>
 														</tr>
@@ -138,7 +139,7 @@
 														<tr>
 															<td class="pad">
 																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Best regards,<br>{{$user_d["organization_name"]}}</p>
+																	<p style="margin: 0;">Best regards,<br>Signature1618 Support</p>
 																</div>
 															</td>
 														</tr>
@@ -152,31 +153,31 @@
 							</tr>
 						</tbody>
 					</table>
-					<table class="row row-3" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e7e7e7;">
-						<tbody>
-							<tr>
-								<td>
-									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #111111; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
-										<tbody>
-											<tr>
-												<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
-													<table class="paragraph_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
-														<tr>
-															<td class="pad">
-																<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-																	<p style="margin: 0;">Request made via Signature1618</p>
-																</div>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
-										</tbody>
-									</table>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<table class="row row-3" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; ">
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; padding:20px; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                        <tbody>
+                                            <tr>
+                                                <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
+                                                    <table class="paragraph_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+                                                        <tr>
+                                                            <td class="pad">
+                                                                <div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
+                                                                    <p style="margin: 0;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener" bis_size="{&quot;x&quot;:874,&quot;y&quot;:753,&quot;w&quot;:104,&quot;h&quot;:18,&quot;abs_x&quot;:874,&quot;abs_y&quot;:812}">Signature1618</a></p>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 				</td>
 			</tr>
 		</tbody>

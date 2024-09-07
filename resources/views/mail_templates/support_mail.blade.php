@@ -123,7 +123,7 @@
 														style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;"
 														width="100%">
 														<tr>
-															<td class="pad" style="width:100%;">
+															<!-- <td class="pad" style="width:100%;">
 																<div align="center" class="alignment"
 																	style="line-height:10px">
 																	<div style="max-width: 500px;"><img height="auto"
@@ -131,7 +131,7 @@
 																			style="display: block; height: auto; border: 0; width: 100%;"
 																			width="500" /></div>
 																</div>
-															</td>
+															</td> -->
 														</tr>
 													</table>
 												</td>
@@ -248,10 +248,10 @@
 																<div
 																	style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
 																	<p style="margin: 0;">Powered by <a
-																			href="https://app.signature1618.com/"
+																			href="https://www.signature1618.com/"
 																			rel="noopener"
 																			style="text-decoration: underline; color: #7747FF;"
-																			target="_blank">Signature1618</a> | All
+																			target="_blank">Enqavon Technologie</a> | All
 																		rights reserved | 2024</p>
 																</div>
 															</td>

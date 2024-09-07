@@ -37,7 +37,7 @@ class SubscriptionController extends Controller
             $subscription = Subscription::with(['plan','plan.planFeatures','userDetail'])->orderBy('id','desc')->get();
         }else{
             // Retrieve the single subscription with its associated plans and plan features
-            $subscription = Subscription::with(['plan', 'plan.planFeatures'])
+            $subscription = Subscription::with(['plan', 'plan.planFeatures','teamDetail'])
                 ->where('user_id', Auth::user()->id)
                 ->orderBy('id', 'desc')
                 ->first();

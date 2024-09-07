@@ -40,8 +40,8 @@ class Kernel extends ConsoleKernel
             $subject = "Reminder to sign the document";
             foreach($data as $date){
                 $reminderDate = Carbon::parse($date->date);
-                //\Log::info('reminder date '.$reminderDate);
-                //\Log::info('today date '.Carbon::today());
+                \Log::info('reminder date '.$reminderDate);
+                \Log::info('today date '.Carbon::today());
                 if ($reminderDate->isSameDay(Carbon::today())) {
                     
                     // APPROVER NOTIFICATION
@@ -65,13 +65,17 @@ class Kernel extends ConsoleKernel
                             $email = $user_obj->email;
 
                             $dataUser = [
+                                'expiry_date'=>$request_obj_approver->expiry_date,
+                                'file_name'=>$request_obj_approver->file_name,
+                                'company_name'=> $user_obj->company,
+                                'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj_approver->unique_id,
                                 'signerUID'=>$approver->unique_id,
                                 'custom_message'=>$request_obj_approver->custom_message,
                             ];
 
-                            //\Mail::to($email)->send(new \App\Mail\ReminderEmailApprover($dataUser, $subject));
+                            \Mail::to($email)->send(new \App\Mail\ReminderEmailApprover($dataUser, $subject));
 
                         }
                         
@@ -97,13 +101,17 @@ class Kernel extends ConsoleKernel
                             $email = $user_obj->email;
 
                             $dataUser = [
+                                'expiry_date'=>$request_obj->expiry_date,
+                                'file_name'=>$request_obj->file_name,
+                                'company_name'=> $user_obj->company,
+                                'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj->unique_id,
                                 'signerUID'=>$signer->unique_id,
                                 'custom_message'=>$request_obj->custom_message,
                             ];
 
-                            //\Mail::to($email)->send(new \App\Mail\ReminderEmail($dataUser,$subject));
+                            \Mail::to($email)->send(new \App\Mail\ReminderEmail($dataUser,$subject));
 
                         }
 

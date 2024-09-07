@@ -597,8 +597,10 @@ public function declineRequest(Request $request){
 
         if (Carbon::parse($data->expiry_date)->isPast()) {
             return response()->json([
-                'message' => 'This link has been expired.'
-            ], 401);
+                'message' => 'This link has been expired.',
+                'file_name' => $data->file_name,
+                'error_code' => 'link_expired',
+            ], 200);
         } 
 
         //check signer status
@@ -622,8 +624,9 @@ public function declineRequest(Request $request){
         // Check if the file exists
         if (!File::exists($filePath)) {
             return response()->json([
-                'message' => 'File not found.'
-            ], 404);
+                'message' => 'File not found.',
+                'error_code' => 'no_data',
+            ], 200);
         }
     
         // Read the file content
@@ -952,7 +955,7 @@ public function declineRequest(Request $request){
 
         if(!$signercheck){
 
-            $requestdata->signed_at = Carbon::now()->format('Y-m-d');
+            $requestdata->signed_at = Carbon::now();
             $requestdata->update();
 
             UserRequest::where('unique_id',$request->request_unique_id)->update(['status'=>'done']);
@@ -1276,7 +1279,7 @@ public function declineRequest(Request $request){
         $subject = '';
         switch ($type) {
             case 1:
-                $subject = 'Signature Request for'.$userRequest->file_name.' from '.$company_name.' via Signature1618';
+                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' via Signature1618';
                 break;
             case 2:
                 $subject = 'Approver Mail';
@@ -1288,9 +1291,11 @@ public function declineRequest(Request $request){
                 // Handle default case
                 break;
         }
+        
+         $now_datetime = \App\Helpers\Common::dateFormat(Carbon::now()->toDateTimeString());
     
         // Append current timestamp to subject
-        $subject .= ' - ' . Carbon::now()->toDateTimeString();
+        $subject .= ' - ' . $now_datetime;
     
         // Send email
         if ($type == 1) {
@@ -1341,10 +1346,10 @@ public function declineRequest(Request $request){
         $subject = '';
         switch ($type) {
             case 1:
-                $subject = 'Signature Request for'.$userRequest->file_name.' from '.$company_name.' via Signature1618';
+                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' via Signature1618';
                 break;
             case 2:
-                $subject = 'Signature Request for'.$userRequest->file_name.' from '.$company_name.' for approval via Signature1618';
+                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' for approval via Signature1618';
                 break;
             case 3:
                 $subject = 'Rejected Mail';
@@ -1353,9 +1358,14 @@ public function declineRequest(Request $request){
                 // Handle default case
                 break;
         }
+        
+        
+        $now_datetime = \App\Helpers\Common::dateFormat(Carbon::now()->toDateTimeString());
+        
+        //\Log::info('date time of current hr '.$now_datetime);
     
         // Append current timestamp to subject
-        $subject .= ' - ' . Carbon::now()->toDateTimeString();
+        $subject .= ' - ' . $now_datetime;
     
         // Send email
         if ($type == 1) {
@@ -1540,6 +1550,49 @@ public function declineRequest(Request $request){
     
     public function sendReminder(Request  $request) {
 
+        //check last reminder sent time
+        $req_obj_reminder = UserRequest::where('unique_id', $request->request_unique_id)
+            ->first();
+
+        if ($req_obj_reminder) {
+            $last_reminder = RequestLog::where('request_id', $req_obj_reminder->id)
+                ->where('type','reminder_request')
+                ->orderBy('created_at', 'desc') // Ensure you are getting the most recent reminder
+                ->first();
+
+            if ($last_reminder) {
+                // Get the current time
+                $currentTime = Carbon::now();
+                
+                // Get the time of the last reminder
+                $lastReminderTime = $last_reminder->created_at;
+                
+                // Calculate the difference in minutes
+                $timeDifference = $currentTime->diffInMinutes($lastReminderTime);
+
+                if ($timeDifference < 15) {
+                    // Calculate how many minutes are left to send the next reminder
+                    $minutesLeft = 15 - $timeDifference;
+
+                    return response()->json([
+                        'message' => 'You can send another reminder after ' . $minutesLeft . ' minutes.',
+                        'error_code' => 'reminder_too_soon'
+                    ], 200);
+                }
+            }
+
+            // Proceed with sending the reminder since it's been more than 15 minutes
+            // Your reminder logic here
+
+        } else {
+            return response()->json([
+                'message' => 'No data available.',
+                'error_code' => 'no_data'
+            ], 200);
+        }
+        
+        //ending check last reminder sent time
+
         //reminder 
         $subject = "Reminder to sign the document";
         
@@ -1563,6 +1616,10 @@ public function declineRequest(Request $request){
                     $email = $user_obj->email;
 
                     $dataUser = [
+                        'expiry_date'=>$request_obj_approver->expiry_date,
+                        'file_name'=>$request_obj_approver->file_name,
+                        'company_name'=> $user_obj->company,
+                        'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                         'email' => $email,
                         'requestUID'=>$request_obj_approver->unique_id,
                         'signerUID'=>$approver->unique_id,
@@ -1607,6 +1664,10 @@ public function declineRequest(Request $request){
                 $email = $user_obj->email;
 
                 $dataUser = [
+                    'expiry_date'=>$request_obj->expiry_date,
+                    'file_name'=>$request_obj->file_name,
+                    'company_name'=> $user_obj->company,
+                    'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                     'email' => $email,
                     'requestUID'=>$request_obj->unique_id,
                     'signerUID'=>$signer->unique_id,

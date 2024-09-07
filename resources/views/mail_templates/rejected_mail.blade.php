@@ -1,34 +1,179 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="en">
+
 <head>
+	<title></title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"><!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		a[x-apple-data-detectors] {
+			color: inherit !important;
+			text-decoration: inherit !important;
+		}
+
+		#MessageViewBody a {
+			color: inherit;
+			text-decoration: none;
+		}
+
+		p {
+			line-height: inherit
+		}
+
+		.desktop_hide,
+		.desktop_hide table {
+			mso-hide: all;
+			display: none;
+			max-height: 0px;
+			overflow: hidden;
+		}
+
+		.image_block img+div {
+			display: none;
+		}
+
+		@media (max-width:620px) {
+			.mobile_hide {
+				display: none;
+			}
+
+			.row-content {
+				width: 100% !important;
+			}
+
+			.stack .column {
+				width: 100%;
+				display: block;
+			}
+
+			.mobile_hide {
+				min-height: 0;
+				max-height: 0;
+				max-width: 0;
+				overflow: hidden;
+				font-size: 0px;
+			}
+
+			.desktop_hide,
+			.desktop_hide table {
+				display: table !important;
+				max-height: none !important;
+			}
+		}
+	</style>
 </head>
-<body style="color:#444444;font-size: 22px;font-style: normal;font-weight: bold;line-height: 150%;letter-spacing: normal;text-align: left;font-family:Georgia, 'Times New Roman', Times, serif;">
- 
-    <div style="text-align:center;text-align:center;max-width: 260px;margin: 0px auto;line-height:25px;">
-        <h4 style="background:yellow;font-size: 21px;font-weight:100">New Document Received For Sign</h4>
-    </div>
-    
-    <div style="max-width:600px;margin:0px auto;">
-    <h3>Hi ,</h3>
-    <h4>You file has been rejected by the approver. Login to your account to get more details.</h4>
+
+<body>
+		<div class="header">
+			<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color:#244BED; border-radius: 0; color: #101112; width: 600px; margin: 0 auto;" width="600">
+				<tbody>
+					<tr>
+						<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 20px; padding-left: 50px; padding-right: 50px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
+							<table class="image_block block-1" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+								<tr>
+									<td class="pad" style="width:100%;">
+										<div class="alignment" align="center" style="line-height:10px">
+											<div style="max-width: 250px;"><img src="https://signature1618.app/backend_code/public/signaturelogo.png" style="display: block; height:60%; border: 0; width: 60%;"></div>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="content">
+			<table class="row-content stack" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+						<tbody>
+							<tr>
+								<td>
+									<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff; border-left: 1px solid #ebebeb; border-right: 1px solid #ebebeb; color: #000000; width: 600px; margin: 0 auto;" width="600">
+										<tbody>
+											<tr>
+												<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
+													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+														<tr>
+															<td class="pad">
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{$user_d['sender_name']}},</span></h1>
+															</td>
+														</tr>
+													</table>
+													<table class="paragraph_block block-2" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+														<tr>
+															<td class="pad">
+																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
+																	<p style="margin: 0;">{{$user_d['approver_name']}} has refused approval of {{$user_d['file_name']}}.<br>As such, the dossier is no longer valid. You may access additional information about the dossier by consulting the dossier's page.</p>
+																</div>
+															</td>
+														</tr>
+													</table>
+													
+													<table class="button_block block-4" width="200px" align="center" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+														<tr>
+															<td class="pad" align="center";>
+																<div class="alignment" align="center"><!--[if mso]>
+																		<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ env('APP_URL') }}/request-details/?r={{$user_d['requestUID']}}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
+																		<w:anchorlock/>
+																		<v:textbox inset="0px,0px,0px,0px">
+																		<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
+																		<![endif]--><a href="{{ env('APP_URL') }}/request-details/?r={{$user_d['requestUID']}}" target="_blank" style="background-color:red;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:200px;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Access Dossier</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+															</td>
+														</tr>
+													</table>
+													
+													<table class="paragraph_block block-6" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+														<tr>
+															<td class="pad">
+																<div style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
+																	<p style="margin: 0;">Best regards,<br>Signature1618 Support</p>
+																</div>
+															</td>
+														</tr>
+													</table>
+													<div class="spacer_block block-7" style="height:10px;line-height:10px;font-size:1px;">&#8202;</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+		</div>	
+		<table class="row row-3" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; ">
+			<tbody>
+				<tr>
+					<td>
+						<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; padding:20px; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+							<tbody>
+								<tr>
+									<td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
+										<table class="paragraph_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
+											<tr>
+												<td class="pad">
+													<div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
+														<p style="margin: 0;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener" bis_size="{&quot;x&quot;:874,&quot;y&quot;:753,&quot;w&quot;:104,&quot;h&quot;:18,&quot;abs_x&quot;:874,&quot;abs_y&quot;:812}">Signature1618</a></p>
+													</div>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+			</tbody>
+		</table>
 
 
-    
-    <h3></h3>
-    <hr style="border:1px solid #ddd;">
-   <h3 style="font-size:16px;">Best regards<br>
-        Team Signature1618
-    </h3>  
-    </div>
-
-    <div style="background:#333333 none no-repeat center/cover;background-color: rgb(51, 51, 51);background-position-x: center;background-position-y: center;background-repeat: no-repeat;    background-image: none;background-size: cover;background-color: #333333;background-image: none;background-repeat: no-repeat;background-position: center;background-size: cover;border-top: 0;border-bottom: 0;padding-top: 45px;padding-bottom: 63px;margin-top:60px;max-width:700px;margin:60px auto;">
-        
-        
-        <div style="text-align:center;">
-          <p style="color:#fff;padding:0;margin:0;font-size:12px;font-style:italic;font-weight:normal;line-height:20px;margin-bottom:12px;font-family:arial;">Copyright © {{date('Y')}} Elysium Service. All rights reserved.<br>SIREN 885130682 RCS PARIS</p>
-            <p style="color:#fff;padding:0;margin:0;font-size:12px;font-style:italic;font-weight:normal;line-height:20px;margin-bottom:12px;font-family:arial;">Our mailing address is:<br>7 rue Meyerbeer 75009</p>
-
-        </div>
-    </div> 
 </body>
 </html>

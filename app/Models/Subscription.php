@@ -16,4 +16,8 @@ class Subscription extends Model
     public function userDetail(){
         return $this->belongsTo(User::class,'user_id');
     }
+    
+    public function teamDetail(){
+        return $this->hasMany(Team::class,'user_id','user_id');
+    }
 }
