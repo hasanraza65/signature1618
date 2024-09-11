@@ -133,6 +133,7 @@ class AuthController extends Controller
             $usercheck->last_name = $request->last_name;
             $usercheck->password = bcrypt($request->password);
             $usercheck->contact_type = 0;
+            $usercheck->company = $request->company;
             $usercheck->update();
 
             $accessToken = $usercheck->createToken('LaravelAuthApp')->accessToken;

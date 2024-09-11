@@ -6,7 +6,7 @@
 	<title></title>
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
 	<meta content="width=device-width, initial-scale=1.0" name="viewport" />
-	<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+	{{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
 	<style>
 		* {
 			box-sizing: border-box;
@@ -151,7 +151,7 @@
 														</tr>
 													</table>
 													
-												<!--	<table border="0" cellpadding="10" cellspacing="0"
+												{{-- <table border="0" cellpadding="10" cellspacing="0"
 														class="heading_block block-3" role="presentation"
 														style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;"
 														width="100%">
@@ -178,7 +178,7 @@
 																</div>
 															</td>
 														</tr>
-													</table>-->
+													</table>--}}
 													
 													
 													
@@ -188,17 +188,17 @@
 														width="350px">
 														<tr>
 															<td class="pad">
-																<div align="center" class="alignment"><!--[if mso]>
+																<div align="center" class="alignment">{{---[if mso]>
 <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://app.signature1618.com/?join_team={{$user_d['unique_id']}}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
 <w:anchorlock/>
 <v:textbox inset="0px,0px,0px,0px">
 <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--><a href="https://app.signature1618.com/?join_team={{$user_d['unique_id']}}"
+<![endif]--}}<a href="https://app.signature1618.com/?join_team={{$user_d['unique_id']}}"
 																		style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"
 																		target="_blank"><span
 																			style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span
 																				style="word-break: break-word; line-height: 44px;">Join
-																				Team</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]-->
+																				Team</span></span></a>{{---[if mso]></center></v:textbox></v:roundrect><![endif]--}}
 																</div>
 															</td>
 														</tr>
@@ -213,25 +213,25 @@
 															<td class="pad">
 																<div
 																	style="color:#101112;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:left;mso-line-height-alt:19.2px;">
-																<!--	<p style="margin: 0; margin-bottom: 16px;">As part
+																{{---	<p style="margin: 0; margin-bottom: 16px;">As part
 																		of {{$user_d['senderName']}}'s enterprise plan,
 																		you have been granted access to Signature1618
 																		with free pro features. These features will
 																		enable you to collaborate more effectively and
 																		streamline document signing processes within our
-																		team.</p>-->
+																		team.</p>--}}
 																		
 																	<p style="margin: 0; margin-bottom: 16px;">To Accept
 																		the invitation:<br />      1. Create an account
 																		on Signature1618.com with current email.<br /> 
 																		    2. Accept the invitation on the Teams page
-																		on your Signature1618 account.<br /><br /><!--If
+																		on your Signature1618 account.<br /><br />{{---If
 																		you have any questions or need assistance,
 																		please don't hesitate to check our online help
 																		article on accepting invitation.<br />We look
 																		forward to having you on board and experiencing
 																		the benefits of Signature1618 as part of
-																		{{$user_d['senderName']}}.--></p>
+																		{{$user_d['senderName']}}.--}}</p>
 																	<p style="margin: 0;">Best
 																		regards,<br />Signature1618 Support</p>
 																</div>
@@ -274,7 +274,7 @@
 				</td>
 			</tr>
 		</tbody>
-	</table><!-- End -->
+	</table>{{--- End --}}
 </body>
 
 </html>

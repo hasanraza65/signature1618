@@ -1,21 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-<!--[if (gte mso 9)|(IE)]>
+{{---[if (gte mso 9)|(IE)]>
   <xml>
     <o:OfficeDocumentSettings>
     <o:AllowPNG/>
     <o:PixelsPerInch>96</o:PixelsPerInch>
   </o:OfficeDocumentSettings>
 </xml>
-<![endif]-->
+<![endif]--}}
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"> <!-- So that mobile will display zoomed in -->
-<meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- enable media queries for windows phone 8 -->
-<meta name="format-detection" content="telephone=no"> <!-- disable auto telephone linking in iOS -->
-<meta name="format-detection" content="date=no"> <!-- disable auto date linking in iOS -->
-<meta name="format-detection" content="address=no"> <!-- disable auto address linking in iOS -->
-<meta name="format-detection" content="email=no"> <!-- disable auto email linking in iOS -->
+<meta name="viewport" content="width=device-width, initial-scale=1"> {{--- So that mobile will display zoomed in --}}
+<meta http-equiv="X-UA-Compatible" content="IE=edge"> {{--- enable media queries for windows phone 8 --}}
+<meta name="format-detection" content="telephone=no"> {{--- disable auto telephone linking in iOS --}}
+<meta name="format-detection" content="date=no"> {{--- disable auto date linking in iOS --}}
+<meta name="format-detection" content="address=no"> {{--- disable auto address linking in iOS --}}
+<meta name="format-detection" content="email=no"> {{--- disable auto email linking in iOS --}}
 <title></title>
 
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -87,29 +87,29 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
 <div   style="display:none; font-size:0px; line-height:0px; max-height:0px; max-width:0px; opacity:0; overflow:hidden; visibility:hidden; mso-hide:all;"></div>
 
 <table border="0" align="center" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:100%;">
-  <tr><!-- Outer Table -->
+  <tr>{{--- Outer Table --}}
     <td align="center"  bgcolor="#f0f0f0" data-composer>
 
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;max-width:100%;" >
-  <!-- lotus-header-5 -->
+  {{--- lotus-header-5 --}}
   <tr>
     <td align="center"  bgcolor="#244BED" class="container-padding">
 
-<!-- Content -->
+{{--- Content --}}
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" class="row" width="580" style="width:580px;max-width:580px;">
   <tr>
     <td height="40" style="font-size:40px;line-height:40px;" >&nbsp;</td>
   </tr>
   <tr  >
     <td align="center">
-      <!-- Logo & Webview -->
+      {{--- Logo & Webview --}}
       <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;max-width:100%;">
         <tr>
           <td align="center" class="container-padding">
 
-      <!--[if (gte mso 9)|(IE)]><table border="0" cellpadding="0" cellspacing="0" dir="rtl"><tr><td><![endif]-->
+      {{---[if (gte mso 9)|(IE)]><table border="0" cellpadding="0" cellspacing="0" dir="rtl"><tr><td><![endif]--}}
 
-      <!-- column -->
+      {{--- column --}}
       <table border="0" align="right" cellpadding="0" cellspacing="0" role="presentation" class="row" width="280" style="width:280px;max-width:280px;">
         <tr>
           <td class="center-text" align="right" height="22" style="height: 22px;">
@@ -117,21 +117,21 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           </td>
         </tr>
       </table>
-      <!-- column -->
+      {{--- column --}}
 
-      <!--[if (gte mso 9)|(IE)]></td><td><![endif]-->
+      {{---[if (gte mso 9)|(IE)]></td><td><![endif]--}}
 
-      <!-- gap -->
+      {{--- gap --}}
       <table border="0" align="right" cellpadding="0" cellspacing="0" role="presentation" class="row" width="20" style="width:20px;max-width:20px;">
         <tr>
           <td height="20" style="font-size:20px;line-height:20px;">&nbsp;</td>
         </tr>
       </table>
-      <!-- gap -->
+      {{--- gap --}}
 
-      <!--[if (gte mso 9)|(IE)]></td><td><![endif]-->
+      {{---[if (gte mso 9)|(IE)]></td><td><![endif]--}}
 
-      <!-- column -->
+      {{--- column --}}
       <table border="0" align="right" cellpadding="0" cellspacing="0" role="presentation" class="row" width="280" style="width:280px;max-width:280px;">
         <tr  >
           <td align="left" class="center-text">
@@ -139,14 +139,14 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           </td>
         </tr>
       </table>
-      <!-- column -->
+      {{--- column --}}
 
-      <!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]-->
+      {{---[if (gte mso 9)|(IE)]></td></tr></table><![endif]--}}
 
           </td>
         </tr>
       </table>
-      <!-- Logo & Webview -->
+      {{--- Logo & Webview --}}
     </td>
   </tr>
   <tr  >
@@ -161,7 +161,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
     <td height="40" style="font-size:40px;line-height:40px;" >&nbsp;</td>
   </tr>
 
-  <!---
+  {{----
   <tr  >
     <td class="center-text"  align="center" style="font-family:'Roboto Slab',Arial,Helvetica,sans-serif;font-size:42px;line-height:52px;font-weight:400;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;">
         
@@ -170,7 +170,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           </div>
         
     </td>
-  </tr> -->
+  </tr> --}}
   <tr  >
     <td height="20" style="font-size:20px;line-height:20px;" >&nbsp;</td>
   </tr>
@@ -188,11 +188,11 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
   </tr>
   <tr  >
     <td align="center" class="container-padding">
-      <!-- Use Code -->
+      {{--- Use Code --}}
       <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" class="row" width="480" style="width:480px;max-width:480px;">
         <tr>
           <td align="center"    bgcolor="#4d57b9" style="border-radius: 6px;border: 2px dashed #7982da;">
-            <!-- Content -->
+            {{--- Content --}}
             <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" class="row" width="480" style="width:480px;max-width:480px;">
               <tr>
                 <td height="20" style="font-size:20px;line-height:20px;">&nbsp;</td>
@@ -210,11 +210,11 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
                 <td height="20" style="font-size:20px;line-height:20px;">&nbsp;</td>
               </tr>
             </table>
-            <!-- Content -->
+            {{--- Content --}}
           </td>
         </tr>
       </table>
-      <!-- User Code -->
+      {{--- User Code --}}
     </td>
   </tr>
   <tr  >
@@ -222,47 +222,47 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
   </tr>
   <tr  >
     <td align="center">
-      <!-- Header Button -->
+      {{--- Header Button --}}
       <table border="0" cellspacing="0" cellpadding="0" role="presentation" align="center" class="center-float">
         <tr>
           <td align="center"    bgcolor="#d6df58" style="border-radius: 6px;">
-      <!--[if (gte mso 9)|(IE)]>
+      {{---[if (gte mso 9)|(IE)]>
         <table border="0" cellpadding="0" cellspacing="0" align="center">
           <tr>
             <td align="center" width="50"></td>
             <td align="center" height="50" style="height:50px;">
-            <![endif]-->
+            <![endif]--}}
               
-                <!---<a href="#" target="_blank"    style="font-family:'Roboto Slab',Arial,Helvetica,sans-serif;font-size:16px;line-height:19px;font-weight:700;font-style:normal;color:#000000;text-decoration:none;letter-spacing:0px;padding: 20px 50px 20px 50px;display: inline-block;"><span>ACTIVATE CODE</span></a> --->
+                {{----<a href="#" target="_blank"    style="font-family:'Roboto Slab',Arial,Helvetica,sans-serif;font-size:16px;line-height:19px;font-weight:700;font-style:normal;color:#000000;text-decoration:none;letter-spacing:0px;padding: 20px 50px 20px 50px;display: inline-block;"><span>ACTIVATE CODE</span></a> ---}}
               
-            <!--[if (gte mso 9)|(IE)]>
+            {{---[if (gte mso 9)|(IE)]>
             </td>
             <td align="center" width="50"></td>
           </tr>
         </table>
-      <![endif]-->
+      <![endif]--}}
           </td>
         </tr>
       </table>
-      <!-- Header Button -->
+      {{--- Header Button --}}
     </td>
   </tr>
   <tr>
     <td height="40" style="font-size:40px;line-height:40px;" >&nbsp;</td>
   </tr>
 </table>
-<!-- Content -->
+{{--- Content --}}
 
     </td>
   </tr>
 </table>
 
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;max-width:100%;" >
-  <!-- lotus-footer-5 -->
+  {{--- lotus-footer-5 --}}
   <tr>
     <td align="center"  bgcolor="#f0f0f0" class="container-padding">
       
-<!-- Content -->
+{{--- Content --}}
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" class="row" width="580" style="width:580px;max-width:580px;">
   <tr>
     <td height="50" style="font-size:50px;line-height:50px;" >&nbsp;</td>
@@ -270,7 +270,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
   {{--
   <tr  >
     <td align="center">
-      <!-- Social Icons -->
+      {{--- Social Icons --}}
       <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;max-width:100%;">
         <tr>
           <td align="center">
@@ -325,7 +325,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
           </td>
         </tr>
       </table>
-      <!-- Social Icons -->
+      {{--- Social Icons --}}
     </td>
   </tr> ---}}
   <tr  >
@@ -360,11 +360,11 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
   {{--- 
   <tr  >
     <td align="center">
-      <!-- Buttons -->
+      {{--- Buttons --}}
       <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" class="row" width="100%" style="width:100%;max-width:100%;">
         <tr>
           <td align="center">
-            <!-- column -->
+            {{--- column --}}
             <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation">
               <tr  >
                 <td align="center">
@@ -375,11 +375,11 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
                   <img mc:edit="mc8" style="display:block;width:100%;max-width:117px;border:0px;"    width="117" src="/mail_images/Google-play.png" border="0"  alt="icon"></td>
               </tr>
             </table>
-            <!-- column -->
+            {{--- column --}}
           </td>
         </tr>
       </table>
-      <!-- Buttons -->
+      {{--- Buttons --}}
     </td>
   </tr>---}}
   <tr  >
@@ -424,14 +424,14 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
     <td height="50" style="font-size:50px;line-height:50px;" >&nbsp;</td>
   </tr>
 </table>
-<!-- Content -->
+{{--- Content --}}
 
     </td>
   </tr>
 </table>
 
     </td>
-  </tr><!-- Outer-Table -->
+  </tr>{{--- Outer-Table --}}
 </table>
 
 </body>

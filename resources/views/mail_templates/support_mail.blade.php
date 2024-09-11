@@ -6,7 +6,7 @@
 	<title></title>
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
 	<meta content="width=device-width, initial-scale=1.0" name="viewport" />
-	<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+	{{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
 	<style>
 		* {
 			box-sizing: border-box;
@@ -123,7 +123,7 @@
 														style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;"
 														width="100%">
 														<tr>
-															<!-- <td class="pad" style="width:100%;">
+															{{--- <td class="pad" style="width:100%;">
 																<div align="center" class="alignment"
 																	style="line-height:10px">
 																	<div style="max-width: 500px;"><img height="auto"
@@ -131,7 +131,7 @@
 																			style="display: block; height: auto; border: 0; width: 100%;"
 																			width="500" /></div>
 																</div>
-															</td> -->
+															</td> --}}
 														</tr>
 													</table>
 												</td>
@@ -268,7 +268,7 @@
 				</td>
 			</tr>
 		</tbody>
-	</table><!-- End -->
+	</table>{{--- End --}}
 </body>
 
 </html>

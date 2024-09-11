@@ -76,6 +76,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/update_profile_data', [App\Http\Controllers\ProfileManagementController::class, 'updateProfileData']); 
     Route::post('change-password', [AuthController::class, 'changePassword']);
     Route::post('change-profile-img', [App\Http\Controllers\ProfileManagementController::class, 'changeProfileImg']);
+    Route::post('change-company-name', [App\Http\Controllers\ProfileManagementController::class, 'changeCompanyName']);
     Route::post('change-logo-img', [App\Http\Controllers\ProfileManagementController::class, 'changeLogoImg']);
 
     Route::get('logout', [AuthController::class, 'logout']);

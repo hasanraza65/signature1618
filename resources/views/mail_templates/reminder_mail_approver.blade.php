@@ -151,7 +151,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="border: 1px solid #101112; padding: 8px;">Expiration Date</td>
-                                                                        <td style="border: 1px solid #101112; padding: 8px;">{{$user_d['expiry_date']}}</td>
+                                                                        <td style="border: 1px solid #101112; padding: 8px;">{{ \App\Helpers\Common::dateFormat($user_d['expiry_date']) }}</td>
                                                                     </tr>
                                                                 </table>
                                                             </td>

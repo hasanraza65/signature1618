@@ -5,7 +5,7 @@
 <head>
 	<title></title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0"><!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">{{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
 	<style>
 		* {
 			box-sizing: border-box;
@@ -186,7 +186,7 @@
 				</td>
 			</tr>
 		</tbody>
-	</table><!-- End -->
+	</table>{{--- End --}}
 </body>
 
 </html>

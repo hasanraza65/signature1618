@@ -6,7 +6,7 @@
   <title></title>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-  <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+  {{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
   <style>
     * {
       box-sizing: border-box;
@@ -164,7 +164,7 @@
                             </tr>
                           </table>
                           <div class="spacer_block block-5" style="height:25px;line-height:25px;font-size:1px;"> </div>
-                          <!-- <table border="0" cellpadding="10" cellspacing="0" class="heading_block block-6"
+                          {{--- <table border="0" cellpadding="10" cellspacing="0" class="heading_block block-6"
                             role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="100%">
                             <tr>
                               <td class="pad">
@@ -190,8 +190,8 @@
                                 </div>
                               </td>
                             </tr>
-                          </table> -->
-                          <!-- <div class="spacer_block block-5" style="height:15px;line-height:15px;font-size:1px;">&#8202;</div> -->
+                          </table> --}}
+                          {{--- <div class="spacer_block block-5" style="height:15px;line-height:15px;font-size:1px;">&#8202;</div> --}}
 													<table class="paragraph_block block-6" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; word-break: break-word;">
 														<tr>
 															<td class="pad">
@@ -241,7 +241,7 @@
         </td>
       </tr>
     </tbody>
-  </table><!-- End -->
+  </table>{{--- End --}}
 </body>
 
 </html>

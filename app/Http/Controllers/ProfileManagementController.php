@@ -19,29 +19,52 @@ class ProfileManagementController extends Controller
 
     }
 
-    public function  updateProfileData(Request $request){
-
+    public function updateProfileData(Request $request){
         $data = Auth::user();
-
         if(!$data){
             return response()->json([
                 'message' => 'Error: No data available.'
             ], 400);
         }
+    
+        if($request->has('name')) {
+            $data->name = $request->name;
+        }
+    
+        if($request->has('last_name')) {
+            $data->last_name = $request->last_name;
+        }
+    
+        if($request->has('phone')) {
+            $data->phone = $request->phone;
+        }
+    
+        if($request->has('language')) {
+            $data->language = $request->language;
+        }
+    
+        if($request->has('company')) {
+            $data->company = $request->company;
+        }
 
-        $data->name = $request->name;
-        $data->last_name = $request->last_name;
-        $data->phone = $request->phone;
-        $data->language = $request->language;
-        $data->company = $request->company;
+        if($request->has('accept_terms')) {
+            $data->accept_terms = $request->accept_terms;
+        }
+
+        if($request->has('company_size')) {
+            $data->company_size = $request->company_size;
+        }
+
+        
+    
         $data->update();
-
+    
         return response()->json([
             'data' => $data,
             'message' => 'Success'
         ], 200);
-
     }
+    
 
     public function changeProfileImg(Request $request)
     {
@@ -70,6 +93,29 @@ class ProfileManagementController extends Controller
         }
 
         return response()->json(['message' => 'Failed to update profile image'], 400);
+    }
+
+    public function changeCompanyName(Request $request){
+       
+
+        // Get the authenticated user
+        $user = Auth::user();
+
+        // Store the new profile image
+        if ($request->company) {
+            $company_name = $request->company;
+            
+            $user->company = $company_name;
+            $user->save();
+
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Failed to update data'], 400);
+
     }
 
     public function changeLogoImg(Request $request)

@@ -5,7 +5,7 @@
 <head>
 	<title></title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0"><!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">{{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
 	<style>
 		* {
 			box-sizing: border-box;
@@ -165,7 +165,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                       <td style="border: 1px solid #101112; padding: 8px;">Next Billing Date</td>
-                                                                      <td style="border: 1px solid #101112; padding: 8px;">{{$user_d['next_billing_date']}}</td>
+                                                                      <td style="border: 1px solid #101112; padding: 8px;">{{ \App\Helpers\Common::dateFormat($user_d['next_billing_date']) }}</td>
                                                                     </tr>
                                                                   </table>
                                                                   
@@ -192,7 +192,7 @@
 <v:textbox inset="0px,0px,0px,0px">
 <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
 <![endif] ---}}
-<a href="{{ env('APP_URL') }}" target="_blank" style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Login To Your Account</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]--></div>
+<a href="{{ env('APP_URL') }}" target="_blank" style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Login To Your Account</span></span></a>{{---[if mso]></center></v:textbox></v:roundrect><![endif]--}}</div>
 															</td>
 														</tr>
 													</table>
@@ -255,7 +255,7 @@
 				</td>
 			</tr>
 		</tbody>
-	</table><!-- End -->
+	</table>{{--- End --}}
 </body>
 
 </html>

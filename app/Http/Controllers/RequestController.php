@@ -599,6 +599,7 @@ public function declineRequest(Request $request){
             return response()->json([
                 'message' => 'This link has been expired.',
                 'file_name' => $data->file_name,
+                'sender_name' => $sender->name.' '.$sender->last_name,
                 'error_code' => 'link_expired',
             ], 200);
         } 
@@ -1202,7 +1203,10 @@ public function declineRequest(Request $request){
             'user_first_name' => $approver_contact->contact_first_name,
             'user_last_name' => $approver_contact->contact_last_name,
             'organization_name' => $company_name,
-            'document_name' => $requestdata->file_name
+            'document_name' => $requestdata->file_name,
+            'sender_name' => $sender->name.' '.$sender->last_name,
+            'approver_name' => $approver_contact->contact_first_name.' '.$approver_contact->contact_last_name,
+            'file_name' => $requestdata->file_name,
         ];
                     
         $subjectToApprover = 'You rejected '.$requestdata->file_name.'- Signature1618';
@@ -1220,7 +1224,10 @@ public function declineRequest(Request $request){
             'approver_last_name' => $approver_contact->contact_last_name,
             'organization_name' => $company_name,
             'document_name' => $requestdata->file_name,
-            'requestUID'=>$requestdata->unique_id
+            'requestUID'=>$requestdata->unique_id,
+            'sender_name' => $sender->name.' '.$sender->last_name,
+            'approver_name' => $approver_contact->contact_first_name.' '.$approver_contact->contact_last_name,
+            'file_name' => $requestdata->file_name
         ];
                     
         $subjectToSender = $approver_contact->contact_first_name.' '.$approver_contact->contact_last_name.' has rejected '.$requestdata->file_name.'- Signature1618';
@@ -1263,6 +1270,10 @@ public function declineRequest(Request $request){
 
         $signerdata = Signer::where('unique_id',$signerUId)->where('request_id',$requestId)->first();
         $signercontact = User::find($signerdata->recipient_user_id);
+        
+        /*
+        $approverdata = Approver::where('unique_id',$signerUId)->where('request_id',$requestId)->first();
+        $approvercontact = User::find($approverdata->recipient_user_id); */
     
         $dataUser = [
             'email' => $email,
@@ -1273,7 +1284,9 @@ public function declineRequest(Request $request){
             'file_name' => $userRequest->file_name,
             'sender_first_name' => $admin_user->name,
             'sender_last_name' => $admin_user->last_name,
-            'expiry_date' => $date
+            'sender_name' => $admin_user->name.' '.$admin_user->last_name,
+            'expiry_date' => $date,
+            'approver_name'=>$userName,
         ];
     
         $subject = '';

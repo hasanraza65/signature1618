@@ -6,7 +6,7 @@
     <title></title>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--><!--[if !mso]><!--><!--<![endif]-->
+    {{---[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]--}}{{---[if !mso]>{{---}}{{---<![endif]--}}
     <style>
         * {
             box-sizing: border-box;
@@ -191,7 +191,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="border: 1px solid #101112; padding: 8px;">Date Submitted</td>
-                                                                        <td style="border: 1px solid #101112; padding: 8px;">{{$user_d['submission_date']}}</td>
+                                                                        <td style="border: 1px solid #101112; padding: 8px;">{{ \App\Helpers\Common::dateFormat($user_d['submission_date']) }}</td>
 
                                                                     </tr>
                                                                 </table>
@@ -229,17 +229,17 @@
                                                         width="100%">
                                                         <tr>
                                                             <td class="pad">
-                                                                <div align="center" class="alignment"><!--[if mso]>
+                                                                <div align="center" class="alignment">{{---[if mso]>
 <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ env('APP_URL') }}/support" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
 <w:anchorlock/>
 <v:textbox inset="0px,0px,0px,0px">
 <center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--><a href="{{ env('APP_URL') }}/support" style="background-color:red;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"
+<![endif]--}}<a href="{{ env('APP_URL') }}/support" style="background-color:red;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"
                                                                         target="_blank"><span
                                                                             style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span
                                                                                 style="word-break: break-word; line-height: 44px;">View
                                                                                 Your Support
-                                                                                Ticket</span></span></a><!--[if mso]></center></v:textbox></v:roundrect><![endif]-->
+                                                                                Ticket</span></span></a>{{---[if mso]></center></v:textbox></v:roundrect><![endif]--}}
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -302,7 +302,7 @@
                 </td>
             </tr>
         </tbody>
-    </table><!-- End -->
+    </table>{{--- End --}}
 </body>
 
 </html>
