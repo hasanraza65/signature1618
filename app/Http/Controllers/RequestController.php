@@ -23,6 +23,10 @@ use Twilio\Rest\Client;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
+use setasign\Fpdi\Fpdi;
+
 class RequestController extends Controller
 {
 
@@ -56,55 +60,64 @@ class RequestController extends Controller
     }
 
     public function inbox() {
-        $signers = Signer::where('recipient_user_id', Auth::user()->id)->pluck('request_id')->toArray();
-    
-        $data = UserRequest::with([
-            'signers.requestFields.radioFields', 'userDetail', 'signers', 'signers.requestFields', 
-            'signers.signerContactDetail', 'approvers', 'approvers.approverContactDetail', 
-            'approvers.approverContactDetail.contactUserDetail', 'signers.signerContactDetail.contactUserDetail'
-        ])
-        ->whereIn('id', $signers)
-        ->where('is_trash', 0)
-        ->whereNot('status', 'draft')
-        ->orderBy('id', 'desc')
-        ->get();
-    
-        $responseData = [];
-    
-        foreach ($data as $request) {
-            // Retrieve the file path for each request
-            $filePath = public_path($request->file);
-    
-            // Check if the file exists
-            if (!File::exists($filePath)) {
-                // If file not found, add a message to the response data
-                $request->pdf_file = null; // Set pdf_file to null if file not found
-                $responseData[] = $request;
-                continue; // Skip to the next iteration
+    $signers = Signer::where('recipient_user_id', Auth::user()->id)->pluck('request_id')->toArray();
+
+    $data = UserRequest::with([
+        'signers.requestFields.radioFields', 'userDetail', 'signers', 'signers.requestFields', 
+        'signers.signerContactDetail', 'approvers', 'approvers.approverContactDetail', 
+        'approvers.approverContactDetail.contactUserDetail', 'signers.signerContactDetail.contactUserDetail'
+    ])
+    ->whereIn('id', $signers)
+    ->where('is_trash', 0)
+    ->whereNot('status', 'draft')
+    ->orderBy('id', 'desc')
+    ->get();
+
+    $responseData = [];
+
+    foreach ($data as $request) {
+        // Retrieve the file path for each request
+        $filePath = public_path($request->file);
+        $signedFilePath = public_path($request->signed_file); // Get the signed file path
+
+        // Handle the regular file
+        if (!File::exists($filePath)) {
+            $request->pdf_file = null; // File not found, return null
+        } else {
+            try {
+                $fileContent = File::get($filePath);
+                //$compressedContent = gzencode($fileContent, 9);
+                $base64CompressedContent = base64_encode($fileContent);
+                $request->pdf_file = $base64CompressedContent;
+            } catch (\Exception $e) {
+                $request->pdf_file = null; // In case of an error, return null
             }
-    
-            // Read the file content
-            $fileContent = File::get($filePath);
-    
-            // Compress the file content
-            $compressedContent = gzencode($fileContent, 9);
-    
-            // Encode compressed content to base64
-            $base64CompressedContent = base64_encode($compressedContent);
-    
-            // Append base64 compressed file content to the request object
-            $request->pdf_file = $base64CompressedContent;
-    
-            // Add the modified request object to the response data
-            $responseData[] = $request;
         }
-    
-        // Generate response with modified data
-        return response()->json([
-            'data' => $data,
-            'message' => 'Success'
-        ], 200);
+
+        // Handle the signed file
+        if (!File::exists($signedFilePath)) {
+            $request->signed_pdf_file = null; // Set signed_pdf_file to null if not found
+        } else {
+            try {
+                $signedFileContent = File::get($signedFilePath);
+                //$compressedSignedContent = gzencode($signedFileContent, 9);
+                $base64CompressedSignedContent = base64_encode($signedFileContent);
+                $request->signed_pdf_file = $base64CompressedSignedContent; // Assign signed file content
+            } catch (\Exception $e) {
+                $request->signed_pdf_file = null; // In case of an error, return null
+            }
+        }
+
+        // Add the modified request object to the response data
+        $responseData[] = $request;
     }
+
+    // Generate response with modified data
+    return response()->json([
+        'data' => $responseData,
+        'message' => 'Success'
+    ], 200);
+}
 
 
 public function declineRequest(Request $request){
@@ -275,8 +288,10 @@ public function declineRequest(Request $request){
             $userRequest->file_name = $originalFileName;
             $userRequest->save();
 
+            $userName = getUserName($request);
+
             //adding activity log 
-            $this->addRequestLog("new_request", "Signature request created", Auth::user()->name, $userRequest->id);
+            $this->addRequestLog("new_request", "Signature request created", $userName, $userRequest->id);
             //ending adding activity log
 
             return response()->json([
@@ -338,7 +353,7 @@ public function declineRequest(Request $request){
                 $userRequestData->approve_status = 0;
             }
 
-            $userName = getUserName();
+            $userName = getUserName($request);
 
             $userRequestData->sent_date = Carbon::now();
             $userRequestData->expiry_type = $request->expiry_type;
@@ -493,7 +508,8 @@ public function declineRequest(Request $request){
              
             //adding activity log 
             if($request->status != "draft"){
-            $this->addRequestLog("sent_request", "Signature request sent", Auth::user()->name, $userRequestData->id);
+            $userName = getUserName($request);    
+            $this->addRequestLog("sent_request", "Signature request sent", $userName, $userRequestData->id);
             }
             //ending adding activity log
     
@@ -632,11 +648,26 @@ public function declineRequest(Request $request){
     
         // Read the file content
         $fileContent = File::get($filePath);
+
+       if($data->signed_file != null){
+            $signedFilePath = public_path($data->signed_file);
+
+            if (!File::exists($signedFilePath)) {
+                $signedfileContent = null;
+            }else{
+                $signedfileContent = File::get($signedFilePath);
+            }
+        }else{
+            $signedfileContent = null;
+        }
+
+
     
         // Generate response with file content and other data
         return response()->json([
             'data' => $data,
             'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'signed_file' => base64_encode($signedfileContent),
             'message' => 'Success'
         ], 200);
     
@@ -666,11 +697,26 @@ public function declineRequest(Request $request){
     
         // Read the file content
         $fileContent = File::get($filePath);
+        
+        if($data->signed_file != null){
+            $signedFilePath = public_path($data->signed_file);
+
+            if (!File::exists($signedFilePath)) {
+                $signedfileContent = null;
+            }else{
+                $signedfileContent = File::get($signedFilePath);
+            }
+        }else{
+            $signedfileContent = null;
+        }
+
+        
     
         // Generate response with file content and other data
         return response()->json([
             'data' => $data,
             'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'signed_file' => base64_encode($signedfileContent),
             'message' => 'Success'
         ], 200);
     
@@ -749,6 +795,18 @@ public function declineRequest(Request $request){
     
         // Retrieve the file path
         $filePath = public_path($data->file);
+
+        if($data->signed_file != null){
+            $signedFilePath = public_path($data->signed_file);
+
+            if (!File::exists($signedFilePath)) {
+                $signedfileContent = null;
+            }else{
+                $signedfileContent = File::get($signedFilePath);
+            }
+        }else{
+            $signedfileContent = null;
+        }
     
         // Check if the file exists
         if (!File::exists($filePath)) {
@@ -756,6 +814,8 @@ public function declineRequest(Request $request){
                 'message' => 'File not found.'
             ], 404);
         }
+
+        
     
         // Read the file content
         $fileContent = File::get($filePath);
@@ -764,6 +824,7 @@ public function declineRequest(Request $request){
         return response()->json([
             'data' => $data,
             'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'signed_file' => base64_encode($signedfileContent),
             'message' => 'Success'
         ], 200);
     
@@ -868,11 +929,24 @@ public function declineRequest(Request $request){
     
         // Read the file content
         $fileContent = File::get($filePath);
+
+        if($data->signed_file != null){
+            $signedFilePath = public_path($data->signed_file);
+
+            if (!File::exists($signedFilePath)) {
+                $signedfileContent = null;
+            }else{
+                $signedfileContent = File::get($signedFilePath);
+            }
+        }else{
+            $signedfileContent = null;
+        }
     
         // Generate response with file content and other data
         return response()->json([
             'data' => $uRequestdata,
             'pdf_file' => base64_encode($fileContent), // Convert file content to base64
+            'signed_file' => base64_encode($signedfileContent),
             'message' => 'OTP Matched'
         ], 200);
 
@@ -894,13 +968,15 @@ public function declineRequest(Request $request){
             ], 200);
 
         }
+
+        /*
         
         if($requestdata) {
         $filePath = $this->storeFile($request->file('signed_file'), 'files');
         $requestdata->signed_file = $filePath;
         //$requestdata->status =  'Done';
         $requestdata->update();
-        }
+        } */
         
         //storing fields answers
         
@@ -926,6 +1002,13 @@ public function declineRequest(Request $request){
         $signeruser_data = User::find($signeruser->recipient_user_id);
         $signeruser_contact = Contact::find($signeruser->recipient_contact_id);
 
+
+        //manage signed file 
+
+        $this->addSignerPDF($requestdata->id,$signeruser->id);
+
+        //ending manage signed file
+
         //sign registered
 
         $senderUser = User::find($requestdata->user_id);
@@ -936,8 +1019,10 @@ public function declineRequest(Request $request){
             'email' => $signeruser_data->email,
             'sender_name' => $signeruser_contact->name.' '.$senderUser->last_name,
             'file_name' => $requestdata->file_name,
+            'file' => $requestdata->file,
             'requestUID' => $requestdata->unique_id,
-            'signed_file' => $requestdata->signed_file
+            'signed_file' => $requestdata->signed_file,
+            'signer_name' => $signeruser_contact->contact_first_name.' '.$signeruser_contact->contact_last_name,
             
         ];
 
@@ -982,15 +1067,25 @@ public function declineRequest(Request $request){
 
             //inform other signers
 
-            $pendingSigners = Signer::where('request_id',$requestdata->id)
-            ->where('status','pending')
-            ->get();
+            $pendingSigners = Signer::where('request_id', $requestdata->id)
+                ->where('status', 'pending')
+                ->get();
+
+            $totalSigners = Signer::where('request_id', $requestdata->id)
+                ->count('id');
+
+            // Calculate the percentage of signed documents
+            $signedCount = $totalSigners - $pendingSigners->count();
+            $percentageSigned = $totalSigners > 0 ? ($signedCount / $totalSigners) * 100 : 0;
+
+            // Format the percentage to 0 decimal places
+            $percentageSigned = number_format($percentageSigned, 0);
 
             foreach($pendingSigners as $pending){
 
                 $senderUser = User::find($pending->recipient_user_id);
                 $useremail = $senderUser->email;
-                $subject = $requestdata->file_name.' is fully signed - Signature1618';
+                $subject = $requestdata->file_name . ' has ' . $percentageSigned . '% signed - Signature1618';
 
                 $dataUser = [
                     'email' => $senderUser->email,
@@ -1159,6 +1254,7 @@ public function declineRequest(Request $request){
         //$this->sendMail($sender->unique_id,$requestdata->id,$sender->email,$type=3);
 
         $signers = Signer::where('request_id',$requestdata->id)->get();
+        /*
         foreach($signers as $signer){
 
             $signer_user = User::find($signer->recipient_user_id);
@@ -1167,7 +1263,7 @@ public function declineRequest(Request $request){
 
             $this->sendMail($signer->unique_id,$requestdata->id,$signer_user->email,$type=3);
 
-        }
+        } */
         
     
        
@@ -1251,7 +1347,8 @@ public function declineRequest(Request $request){
 
     private function sendMail($signerUId, $requestId, $email, $type) {
 
-        $userName = getUserName();
+        $request = request();
+        $userName = getUserName($request);
 
         $userRequest = UserRequest::where('id', $requestId)->first();
         $requestUid = $userRequest->unique_id;
@@ -1323,8 +1420,8 @@ public function declineRequest(Request $request){
     }
 
     private function sendMailApprover($signerUId, $requestId, $email, $type) {
-
-        $userName = getUserName();
+        $request = request();
+        $userName = getUserName($request);
 
         $userRequest = UserRequest::where('id', $requestId)->first();
         $requestUid = $userRequest->unique_id;
@@ -1450,7 +1547,8 @@ public function declineRequest(Request $request){
         $data->update();
 
         //adding activity log 
-        $this->addRequestLog("trashed_request", "Request moved to trash", Auth::user()->name.' '.Auth::user()->last_name, $data->id);
+        $userName = getUserName($request);
+        $this->addRequestLog("trashed_request", "Request moved to trash", $userName, $data->id);
         //ending adding activity log
 
         return response()->json([
@@ -1567,6 +1665,8 @@ public function declineRequest(Request $request){
         $req_obj_reminder = UserRequest::where('unique_id', $request->request_unique_id)
             ->first();
 
+        $sender_user = User::find($req_obj_reminder->user_id);
+
         if ($req_obj_reminder) {
             $last_reminder = RequestLog::where('request_id', $req_obj_reminder->id)
                 ->where('type','reminder_request')
@@ -1631,7 +1731,7 @@ public function declineRequest(Request $request){
                     $dataUser = [
                         'expiry_date'=>$request_obj_approver->expiry_date,
                         'file_name'=>$request_obj_approver->file_name,
-                        'company_name'=> $user_obj->company,
+                        'company_name'=> $sender_user->company,
                         'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                         'email' => $email,
                         'requestUID'=>$request_obj_approver->unique_id,
@@ -1645,8 +1745,10 @@ public function declineRequest(Request $request){
 
                     $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
 
+                    $userName = getUserName($request);
+
                     //adding activity log 
-                    $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name,  $request_obj_approver->id);
+                    $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, $userName,  $request_obj_approver->id);
                     //ending adding activity log
 
 
@@ -1679,7 +1781,7 @@ public function declineRequest(Request $request){
                 $dataUser = [
                     'expiry_date'=>$request_obj->expiry_date,
                     'file_name'=>$request_obj->file_name,
-                    'company_name'=> $user_obj->company,
+                    'company_name'=> $sender_user->company,
                     'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
                     'email' => $email,
                     'requestUID'=>$request_obj->unique_id,
@@ -1694,8 +1796,10 @@ public function declineRequest(Request $request){
 
                 $full_name = $contact->contact_first_name.' '.$contact->contact_last_name;
 
+                $userName = getUserName($request);
+
                 //adding activity log 
-                $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, Auth::user()->name.' '.Auth::user()->last_name, $request_obj->id);
+                $this->addRequestLog("reminder_request", "Reminder sent to ".$full_name, $userName, $request_obj->id);
                 //ending adding activity log
 
             }
@@ -1838,20 +1942,22 @@ public function declineRequest(Request $request){
             foreach($otherSigners as $otherSigner){
                 
                 $otheruser = User::find($otherSigners->recipient_user_id);
+
+                $userName = getUserName($request);
                 
                 $dataUserOtherSigner = [
                     'email' => $otheruser->email,
                     'user_first_name' => $otheruser->name,
                     'user_last_name' => $otheruser->last_name,
-                    'declined_by_first_name' => Auth::user()->name,
-                    'declined_by_last_name' => Auth::user()->last_name,
+                    'declined_by_first_name' => $userName,
+                    'declined_by_last_name' => '',
                     'requestUID' => $request_data->unique_id,
                     'organization_name' => $company_name,
                     'signerUID' => $signer->unique_id,
                     'document_name' => $request_data->file_name
                 ];
             
-                $subjectOtherSigner = 'Request to Sign Declined by '.Auth::user()->name.' '.Auth::user()->last_name;
+                $subjectOtherSigner = 'Request to Sign Declined by '.$userName;
             
                 Mail::to($otheruser->email)->send(new \App\Mail\DeclineSignOther($dataUserOtherSigner, $subjectOtherSigner));
 
@@ -1880,5 +1986,408 @@ public function declineRequest(Request $request){
 
     }
     
+
+   public function addSignerPDF($request_id = null, $signer_id = null)
+    {
+        // Fetching data as per your original code
+    $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+        ->where('is_trash', 0)
+        ->where('id', $request_id)
+        ->orderBy('id', 'desc')
+        ->first();
+
+    // Original PDF file path
+    $pdfPath = public_path($data->file);
+
+    // Check if the file exists
+    if (!file_exists($pdfPath)) {
+        return response()->json([
+            'message' => 'PDF file not found',
+        ], 404);
+    }
+
+    // Signed PDF file path
+    $signedFileName = 'signed_' . Str::afterLast($data->file, '/');  // Example: 'signed_1726043140_sample.pdf'
+    $signedFilePath = public_path('files/' . $signedFileName);
+
+    // Initialize FPDI and check if a signed file already exists
+    $pdf = new Fpdi();
+
+    if (file_exists($signedFilePath)) {
+        // If signed file already exists, load that file
+        $pdfPath = $signedFilePath;
+    } else {
+        // If not, load the original PDF file
+        $pdfPath = public_path($data->file);
+    }
+
+    // Set the source file
+    $pageCount = $pdf->setSourceFile($pdfPath);
+
+    // Array to track processed signer IDs
+    $processedSigners = [];
+
+    // Loop through all pages and add the annotation
+    for ($pageNumber = 1; $pageNumber <= $pageCount; $pageNumber++) {
+        // Import each page
+        $templateId = $pdf->importPage($pageNumber);
+
+        // Get the page size of the imported page
+        $size = $pdf->getTemplateSize($templateId);
+
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($templateId);
+
+        // Set the new width for the annotation
+        $newWidth = 600; // New static width for annotation
+
+        // Calculate the new height to maintain the aspect ratio
+        $originalWidth = $size['width'];
+        $originalHeight = $size['height'];
+        $newHeight = ($newWidth / $originalWidth) * $originalHeight;
+
+        // Calculate the scale factors
+        $scaleX = $originalWidth / $newWidth;
+        $scaleY = $originalHeight / $newHeight;
+
+        foreach ($data->signers as $signer) {
+            if ($signer->id == $signer_id) {
+                foreach ($signer->requestFields as $field) {
+                    if ($field->page_index == ($pageNumber - 1)) {
+                        // Original coordinates
+                        $originalX = $field->x;
+                        $originalY = $field->y;
+        
+                        $width = $field->width;
+                        $height = $field->height;
+        
+                        // Calculate the new coordinates based on the scaling
+                        $newX = $originalX * $scaleX;
+                        $newY = $originalY * $scaleY;
+        
+                        // Handle signature field
+                        if ($field->type == 'signature') {
+                            if (!in_array($signer->id, $processedSigners)) {
+                                $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
+                                $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
+                                $fullName = $contactFirstName . ' ' . $contactLastName;
+                                $processedSigners[] = $signer->id;
+                            }
+        
+                            // Convert signer name to image
+                            $signatureImagePath = $this->createSignatureImage($fullName);
+        
+                            // Image dimensions and position
+                            $imageWidth = $width * $scaleX;
+                            $imageHeight = $height * $scaleY;
+        
+                            // Check if the image file exists
+                            if (file_exists($signatureImagePath)) {
+                                // Add the signature image to the PDF
+                                $pdf->Image($signatureImagePath, $newX, $newY, $imageWidth, $imageHeight);
+                            }
+                        }
+        
+                        // Handle text input field
+                        elseif ($field->type == 'textinput') {
+                            $answer = $field->answer;
+        
+                            // Set font and size (adjust to fit your needs)
+                            $pdf->SetFont('Helvetica', '', 16);
+                            
+                            // Calculate the text position and width
+                            $textX = $newX;
+                            $textY = $newY;
+        
+                            // Optionally, adjust the text to fit within the field's width
+                            $pdf->SetXY($textX, $textY);
+        
+                            // Place the text on the PDF (adjust width for fitting within field)
+                            $pdf->MultiCell($width * $scaleX, 10, $answer);
+                        }elseif($field->type == 'mention'){
+                            
+                            $answer = $field->question;
+        
+                            // Set font and size (adjust to fit your needs)
+                            $pdf->SetFont('Helvetica', '', 16);
+                            
+                            // Calculate the text position and width
+                            $textX = $newX;
+                            $textY = $newY;
+        
+                            // Optionally, adjust the text to fit within the field's width
+                            $pdf->SetXY($textX, $textY);
+        
+                            // Place the text on the PDF (adjust width for fitting within field)
+                            $pdf->MultiCell($width * $scaleX, 10, $answer);
+                            
+                        }elseif ($field->type == 'radio') {
+                    // Retrieve all radio buttons associated with the current field
+                    $radioButtons = RadioButton::where('field_id', $field->id)->get();
+                
+                    // Check if field answer is valid and points to an existing radio button
+                    if (!is_null($field->answer) && isset($radioButtons[$field->answer])) {
+                        // Get the selected radio button based on the index stored in field answer
+                        $selectedRadioButton = $radioButtons[$field->answer];
+                
+                        // Get the position for the selected radio button
+                        $radioX = $selectedRadioButton->x; // X position of the selected radio button
+                        $radioY = $selectedRadioButton->y; // Y position of the selected radio button
+                
+                        // Apply the same scaling and transformations as the signature image
+                        $scaledX = $radioX * $scaleX; // Apply horizontal scaling (if necessary)
+                        $scaledY = $radioY * $scaleY; // Apply vertical scaling (if necessary)
+                
+                        // Set the size of the radio button image (adjust as needed)
+                        $imageWidth = 8;  // Width for the radio button image
+                        $imageHeight = 8; // Height for the radio button image
+                
+                        // Determine which image to use based on selection status
+                        $radioImagePath = public_path('radio-checked.png');
+                
+                        // Check if the image file exists
+                        if (file_exists($radioImagePath)) {
+                            // Add the radio button image to the PDF at the scaled position
+                            $pdf->Image($radioImagePath, $scaledX, $scaledY, $imageWidth, $imageHeight);
+                        } else {
+                            // Fallback if the image is not found
+                            $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
+                            $pdf->Text($scaledX, $scaledY, '✓'); // Simple text fallback (✓ if selected)
+                        }
+                    } else {
+                        // No valid answer or radio button found, handle unselected or fallback
+                        $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
+                        $pdf->Text($newX, $newY, '○'); // Simple text fallback (empty circle for unselected)
+                    }
+                }elseif($field->type == 'checkbox') {
+                            // Answer is either 'true' (checked) or 'false' (unchecked)
+                            $isChecked = $field->answer === 'true';
+                        
+                            // Set dimensions for checkbox (adjust as needed)
+                            $boxSize = 5; // Set a fixed box size or adjust based on your scaling
+                        
+                            // Draw the checkbox (a square)
+                            $pdf->Rect($newX, $newY, $boxSize, $boxSize);
+                        
+                            // If checked, draw a checkmark manually using lines
+                            if ($isChecked) {
+                                // Drawing a simple checkmark using lines
+                                $pdf->Line($newX + 1, $newY + 2, $newX + 2, $newY + 4); // Diagonal line (left)
+                                $pdf->Line($newX + 2, $newY + 4, $newX + 4, $newY + 1); // Diagonal line (right)
+                            } else {
+                                // If not checked, draw an 'X' or leave it empty
+                                // Option 2: Drawing an 'X' if unchecked (if you prefer marking unchecked boxes)
+                                $pdf->Line($newX, $newY, $newX + $boxSize, $newY + $boxSize); // Diagonal line from top-left to bottom-right
+                                $pdf->Line($newX + $boxSize, $newY, $newX, $newY + $boxSize); // Diagonal line from top-right to bottom-left
+                            }
+                            
+                            
+                        }elseif($field->type == 'readonlytext'){
+                            
+                            $answer = $field->question;
+        
+                            // Set font and size (adjust to fit your needs)
+                            $pdf->SetFont('Helvetica', '', 16);
+                            
+                            // Calculate the text position and width
+                            $textX = $newX;
+                            $textY = $newY;
+        
+                            // Optionally, adjust the text to fit within the field's width
+                            $pdf->SetXY($textX, $textY);
+        
+                            // Place the text on the PDF (adjust width for fitting within field)
+                            $pdf->MultiCell($width * $scaleX, 12, $answer);
+                            
+                        }
+
+                    }
+                    
+                    if ($field->type == 'initials') {
+                        // Retrieve the first and last names from the signer contact details
+                        $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
+                        $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
+                        
+                        // Original coordinates
+                        $originalX = $field->x;
+                        $originalY = $field->y;
+        
+                        $width = $field->width;
+                        $height = $field->height;
+        
+                        // Calculate the new coordinates based on the scaling
+                        $newX = $originalX * $scaleX;
+                        $newY = $originalY * $scaleY;
+                        
+                        // Get the initials by taking the first letter of each name
+                        $initials = strtoupper(substr($contactFirstName, 0, 1)) . strtoupper(substr($contactLastName, 0, 1));
+                        
+                        // Create initials image
+                        $imagePath = $this->createInitialsImage($initials);
+                        
+                        // Define the position for the initials image (adjust $newX and $newY accordingly)
+                        $initialsY = $newY; // Y position for initials
+                        
+                        // Set default X position
+                        $defaultX = 0; // Default X position
+                    
+                        // Determine the X position based on alignment
+                        switch (strtolower($field->question)) {
+                            case 'left':
+                                $initialsX = $defaultX; // Align to the left
+                                break;
+                            case 'center':
+                                $pageWidth = $pdf->GetPageWidth();
+                                $imageWidth = 40; // Width of the image
+                                $initialsX = ($pageWidth - $imageWidth) / 2; // Center horizontally
+                                break;
+                            case 'right':
+                                $pageWidth = $pdf->GetPageWidth();
+                                $imageWidth = 40; // Width of the image
+                                $initialsX = $pageWidth - $imageWidth; // Align to the right
+                                break;
+                            default:
+                                $initialsX = $defaultX; // Default X position if position is not recognized
+                        }
+                        
+                        // Add initials image to the PDF at the specified position
+                        $pdf->Image($imagePath, $initialsX, $initialsY, 40, 20); // Adjust width and height as needed
+                    }
+                }
+            }
+        }
+        
+    }
+
+    // Save the new or updated signed PDF
+    $pdf->Output($signedFilePath, 'F');
     
+    $signedPath = 'files/' . $signedFileName;
+        
+    UserRequest::where('id',$request_id)->update(['signed_file'=>$signedPath]);
+
+    return response()->json([
+        'message' => 'PDF annotated and saved successfully',
+        'signed_pdf' => asset('files/' . $signedFileName),
+    ], 200);
+
+}
+    
+    
+    
+    /**
+     * Create an image from the signer name
+     *
+     * @param string $name
+     * @return string Path to the generated image
+     */
+    private function createSignatureImage($name)
+    {
+        // Path to the font file
+        $fontPath = public_path('BrightSunshine.ttf'); // Replace with the path to your handwritten font
+    
+        // Path to save the signature image
+        $imagePath = public_path('files/signatures/' . time() . '_signature.png');
+    
+        // Set initial image dimensions
+        $width = 720;
+        $height = 400;
+        $im = imagecreatetruecolor($width, $height);
+    
+        // Allocate a color for the background (transparent)
+        $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+        imagefill($im, 0, 0, $transparent);
+    
+        // Enable alpha blending and save alpha channel
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+    
+        // Allocate a color for the text (black)
+        $textColor = imagecolorallocate($im, 0, 0, 0);
+    
+        // Start with a large font size
+        $fontSize = 200;
+        $box = imagettfbbox($fontSize, 0, $fontPath, $name);
+    
+        // Calculate text width and adjust font size
+        $textWidth = $box[2] - $box[0];
+        while ($textWidth > $width - 50) {
+            $fontSize -= 1;
+            $box = imagettfbbox($fontSize, 0, $fontPath, $name);
+            $textWidth = $box[2] - $box[0];
+        }
+    
+        // Calculate text position
+        $y = $height / 1.7;
+        $x = ($width - $textWidth) / 2;
+    
+        // Add text to image
+        imagettftext($im, $fontSize, 0, $x, $y, $textColor, $fontPath, $name);
+    
+        // Save the image with PNG format to maintain transparency
+        imagepng($im, $imagePath);
+        imagedestroy($im);
+    
+        return $imagePath;
+    }
+    
+    private function createInitialsImage($initials)
+{
+    // Path to the font file
+    $fontPath = public_path('BrightSunshine.ttf'); // Replace with the path to your custom font
+
+    // Path to save the initials image
+    $directoryPath = public_path('files/initials/');
+    // Ensure the directory exists, create it if necessary
+    if (!is_dir($directoryPath)) {
+        mkdir($directoryPath, 0755, true);
+    }
+    
+    $imagePath = $directoryPath . time() . '_initials.png';
+
+    // Set initial image dimensions
+    $width = 200;
+    $height = 100;
+    $im = imagecreatetruecolor($width, $height);
+
+    // Allocate a color for the background (transparent)
+    $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+    imagefill($im, 0, 0, $transparent);
+
+    // Enable alpha blending and save alpha channel
+    imagealphablending($im, false);
+    imagesavealpha($im, true);
+
+    // Allocate a color for the text (black)
+    $textColor = imagecolorallocate($im, 0, 0, 0);
+
+    // Start with a large font size
+    $fontSize = 30;
+    $box = imagettfbbox($fontSize, 0, $fontPath, $initials);
+
+    // Calculate text width and adjust font size if necessary
+    $textWidth = $box[2] - $box[0];
+    while ($textWidth > $width - 20) {
+        $fontSize -= 1;
+        $box = imagettfbbox($fontSize, 0, $fontPath, $initials);
+        $textWidth = $box[2] - $box[0];
+    }
+
+    // Calculate text position
+    $y = ($height + $fontSize) / 2; // Vertical center
+    $x = ($width - $textWidth) / 2; // Horizontal center
+
+    // Add text to image
+    imagettftext($im, $fontSize, 0, $x, $y, $textColor, $fontPath, $initials);
+
+    // Save the image with PNG format to maintain transparency
+    imagepng($im, $imagePath);
+    imagedestroy($im);
+
+    return $imagePath;
+}
+
+
+        
+
 }

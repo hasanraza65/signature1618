@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::post('/add-signer-pdf', [App\Http\Controllers\RequestController::class, 'addSignerPDF']);
+
 //Route::get('auth/google', [AuthController::class, 'redirectToGoogle'])->middleware('web');
 //Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 

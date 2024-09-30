@@ -123,15 +123,7 @@
 														style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;"
 														width="100%">
 														<tr>
-															{{--- <td class="pad" style="width:100%;">
-																<div align="center" class="alignment"
-																	style="line-height:10px">
-																	<div style="max-width: 500px;"><img height="auto"
-																			src="https://app.signature1618.com/sig_logo.png"
-																			style="display: block; height: auto; border: 0; width: 100%;"
-																			width="500" /></div>
-																</div>
-															</td> --}}
+															
 														</tr>
 													</table>
 												</td>

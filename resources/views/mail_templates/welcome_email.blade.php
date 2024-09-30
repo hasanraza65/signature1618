@@ -130,7 +130,7 @@
 										
 											<tr>
 												<td style="padding-bottom: 20px; font-size: 16px; line-height: 1.6;">
-													<p>Dear {{$user_d['first_name']}} {{$user_d['last_name']}},</p>
+													<p>Dear {{ rtrim($user_d['first_name']) }} {{ rtrim($user_d['last_name']) }},</p>
 													<p>We are delighted to have you on board. Signature1618 is designed to simplify and secure your document signing process, making it more efficient than ever.</p>
 												</td>
 											</tr>

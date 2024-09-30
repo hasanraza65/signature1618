@@ -194,11 +194,19 @@ class AuthController extends Controller
                 'user_name'=>$user->name.' '.$user->last_name
         ];
 
-            $subject = $user->name." your OTP for registration";
+        $subject = $user->name." your OTP for registration";
 
         Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
         //ending email otp verification sending
+
+        //use company name by default
+        UserGlobalSetting::insert([
+            'meta_key'=>'use_company',
+            'meta_value'=>1,
+            'user_id'=>$user->id
+        ]);
+        //ending use company name by default
 
         //return response(["status" => 200, 'user' => $user, 'access_token' => $accessToken]);
         return response(["status" => 200, 'user' => $user, 'message' => 'OTP sent to your email id']);

@@ -131,7 +131,7 @@
 															<td class="pad">
 																<h1
 																	style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;">
-																	Dear {{$user_d['receiver_name']}},</h1>
+																	Dear {{ rtrim($user_d['receiver_name']) }},</h1>
 															</td>
 														</tr>
 													</table>
@@ -188,12 +188,7 @@
 														width="350px">
 														<tr>
 															<td class="pad">
-																<div align="center" class="alignment">{{---[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://app.signature1618.com/?join_team={{$user_d['unique_id']}}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
-<w:anchorlock/>
-<v:textbox inset="0px,0px,0px,0px">
-<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--}}<a href="https://app.signature1618.com/?join_team={{$user_d['unique_id']}}"
+																<div align="center" class="alignment"><a href="{{ env('APP_URL') }}/?join_team={{$user_d['unique_id']}}"
 																		style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"
 																		target="_blank"><span
 																			style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UserGlobalSetting;
 use Auth;
 
 class ProfileManagementController extends Controller
@@ -54,10 +55,25 @@ class ProfileManagementController extends Controller
         if($request->has('company_size')) {
             $data->company_size = $request->company_size;
         }
-
-        
     
         $data->update();
+        
+        $existingSetting = UserGlobalSetting::where('user_id', $data->id)
+                                                     ->where('meta_key', 'company')
+                                                     ->first();
+                
+                if ($existingSetting) {
+                    // Update the existing record
+                    $existingSetting->meta_value = $request->company;
+                    $existingSetting->save();
+                } else {
+                    // Create a new record
+                    $newSetting = new UserGlobalSetting();
+                    $newSetting->user_id = $data->id;
+                    $newSetting->meta_key = 'company';
+                    $newSetting->meta_value = $request->company;
+                    $newSetting->save();
+                }
     
         return response()->json([
             'data' => $data,
@@ -107,6 +123,24 @@ class ProfileManagementController extends Controller
             
             $user->company = $company_name;
             $user->save();
+
+
+            $existingSetting = UserGlobalSetting::where('user_id', $user->id)
+                                                     ->where('meta_key', 'company')
+                                                     ->first();
+                
+                if ($existingSetting) {
+                    // Update the existing record
+                    $existingSetting->meta_value = $company_name;
+                    $existingSetting->save();
+                } else {
+                    // Create a new record
+                    $newSetting = new UserGlobalSetting();
+                    $newSetting->user_id = $user->id;
+                    $newSetting->meta_key = 'company';
+                    $newSetting->meta_value = $company_name;
+                    $newSetting->save();
+                }
 
             return response()->json([
                 'data' => $user,

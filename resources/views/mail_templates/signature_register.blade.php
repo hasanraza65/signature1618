@@ -118,7 +118,7 @@
 													<table class="heading_block block-1" width="100%" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear [Signers Name],</span></h1>
+																<h1 style="margin: 0; color: #000000; direction: ltr; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left; margin-top: 0; margin-bottom: 0; mso-line-height-alt: 21.599999999999998px;"><span class="tinyMce-placeholder">Dear {{ rtrim($user_d['signer_name']) }},</span></h1>
 															</td>
 														</tr>
 													</table>
@@ -135,12 +135,31 @@
 													<table class="button_block block-4" width="400px" align="center" border="0" cellpadding="10" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 														<tr>
 															<td class="pad">
-																<div class="alignment" align="center">{{---[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ env('APP_URL') }}/request-details/?r={{$user_d['requestUID']}}" style="height:54px;width:375px;v-text-anchor:middle;" arcsize="19%" stroke="false" fillcolor="#000000">
-<w:anchorlock/>
-<v:textbox inset="0px,0px,0px,0px">
-<center dir="false" style="color:#ffffff;font-family:Arial, sans-serif;font-size:22px">
-<![endif]--}}<a href="{{ env('APP_URL') }}/backend_code/public/{{$user_d['signed_file']}} " target="_blank" style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;"><span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;"><span style="word-break: break-word; line-height: 44px;">Download Document</span></span></a>{{---[if mso]></center></v:textbox></v:roundrect><![endif]--}}</div>
+																<div class="alignment" align="center">
+																@php
+    // Original path
+    $originalFilePath = $user_d['file'];
+
+    // Extract the filename from the original path
+    $fileName = basename($originalFilePath);
+
+    // Determine the new file name with 'signed_' prefix
+    $newFileName = 'signed_' . $fileName;
+
+    // Determine the new file path
+    $filePath = 'files/' . $newFileName;
+
+    // If signed_file exists, use it directly
+    if ($user_d['signed_file']) {
+        $filePath = $user_d['signed_file'];
+    }
+@endphp
+
+<a href="{{ env('APP_URL') }}/backend_code/public/{{ $filePath }}" target="_blank" style="background-color:#009c4a;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:10px;border-right:0px solid transparent;border-top:0px solid transparent;color:#ffffff;display:block;font-family:Arial, Helvetica, sans-serif;font-size:22px;font-weight:400;mso-border-alt:none;padding-bottom:5px;padding-top:5px;text-align:center;text-decoration:none;width:65%;word-break:keep-all;">
+    <span style="padding-left:20px;padding-right:20px;font-size:22px;display:inline-block;letter-spacing:normal;">
+        <span style="word-break: break-word; line-height: 44px;">Download Document</span>
+    </span>
+</a>
 															</td>
 														</tr>
 													</table>

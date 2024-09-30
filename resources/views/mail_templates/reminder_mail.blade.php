@@ -114,7 +114,7 @@
                                                         <tr>
                                                             <td class="pad">
                                                                 <h1 style="margin: 0; color: #000000; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: normal; line-height: 120%; text-align: left;">
-                                                                    <span class="tinyMce-placeholder">Dear {{$user_d['receiver_name']}},</span>
+                                                                    <span class="tinyMce-placeholder">Dear {{ rtrim($user_d['receiver_name']) }},</span>
                                                                 </h1>
                                                             </td>
                                                         </tr>

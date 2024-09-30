@@ -29,34 +29,35 @@ class SupportMailController extends Controller
 
     }
 
-    public function store(Request $request){
-        //$email = 'support@signature1618.com';
+    public function store(Request $request)
+    {
         $email = "ranahasanraza24@gmail.com";
         $useremail = Auth::user()->email;
         $subject = 'New support request: ' . $request->subject;
         $today = Carbon::now();
-        // Format the date
         $formattedDate = $today->format('m/d/Y');
+
+        $userName = getUserName($request);
         $dataUser = [
             'email' => Auth::user()->email,
-            'receiver_name' => Auth::user()->name.' '.Auth::user()->last_name,
+            'receiver_name' => $userName,
             'subject' => $request->subject,
             'feature_related_query' => $request->feature_related_query,
             'message' => $request->message,
             'status' => 'On Going',
             'submission_date' => $formattedDate
         ];
-    
+
         $file = $request->hasFile('attachment') ? $request->file('attachment') : null;
         $filePath = null;
-    
+
         if ($file) {
             $directory = 'support_attachments';
             $fileName = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path($directory), $fileName);
             $filePath = $directory . '/' . $fileName;
         }
-    
+
         try {
             $data = new SupportMail();
             $data->subject = $request->subject;
@@ -67,21 +68,18 @@ class SupportMailController extends Controller
             $data->attachment = $filePath;
             $data->save();
 
-            Mail::to($useremail)->send(new \App\Mail\SupportMailUser($dataUser, $subject, $file));
-    
-            Mail::to($email)->send(new \App\Mail\SupportMail($dataUser, $subject, $file));
+            // Pass file path instead of file object
+            Mail::to($email)->send(new \App\Mail\SupportMail($dataUser, $subject, $filePath));
+            Mail::to($useremail)->send(new \App\Mail\SupportMailUser($dataUser, $subject, $filePath));
 
-            
-            //Log::info('Email sent successfully.');
         } catch (\Exception $e) {
             Log::error('Failed to send email: ' . $e->getMessage());
         }
-    
+
         return response()->json([
             'message' => 'Email sent successfully.'
         ], 200);
     }
-
     public function show($id){
 
         $data = SupportMail::with('userDetail')->find($id);

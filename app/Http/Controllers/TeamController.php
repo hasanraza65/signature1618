@@ -14,37 +14,39 @@ use App\Models\UserGlobalSetting;
 
 class TeamController extends Controller
 {
-    public function index(){
-
-        if(Auth::user()->user_role == 1){
-            $data = Team::with(['userDetail','memberDetail'])
-            ->orderBy('id','desc')
+   public function index()
+{
+    if (Auth::user()->user_role == 1) {
+        $data = Team::with(['userDetail', 'memberDetail'])
+            ->orderBy('id', 'desc')
             ->get();
-        }else{
+    } else {
+        $team_plan = Subscription::where('user_id', Auth::user()->id)->first();
+        $team_data = Team::where('email', Auth::user()->email)
+            ->whereNot('status', 2)
+            ->first();
 
-            $team_plan = Subscription::where('user_id',Auth::user()->id)->first();
-            $team_data = Team::where('email',Auth::user()->email)->whereNot('status',2)->first();
-            
+        $user_id = $team_data ? $team_data->user_id : Auth::user()->id;
 
-            if($team_data){
-                $user_id = $team_data->user_id;
-            }else{
-                $user_id = Auth::user()->id;
-            }
-            
-
-            $data = Team::with(['userDetail','memberDetail'])
-            ->where('user_id',$user_id)
-            ->orderBy('id','desc')
+        $data = Team::with(['userDetail', 'memberDetail'])
+            ->where('user_id', $user_id)
+            ->orderBy('id', 'desc')
             ->get();
-        }
-
-        return response()->json([
-            'data' => $data,
-            'message' => 'Success'
-        ], 200);
-
     }
+
+    // Always maintain the same structure
+    $teamResponse = $data->isEmpty() ? [] : $data;  // Ensure $teamResponse is always an array
+    $userDetail = Auth::user(); // Get userDetail for the authenticated user
+
+    return response()->json([
+        'data' => [
+            'teams' => $teamResponse,  // Array of teams or empty array if no teams
+            'userDetail' => $userDetail  // Always return userDetail
+        ],
+        'message' => 'Success'
+    ], 200);
+}
+
 
     public function store(Request $request)
     {
@@ -164,8 +166,9 @@ class TeamController extends Controller
     }
 
     private function sendMail($email,$unique_id,$receiver_name=null) {
-
-        $userName = getUserName();
+        
+        $request = request();
+        $userName = getUserName($request);
 
         $today = Carbon::now();
         // Format the date
@@ -345,15 +348,17 @@ class TeamController extends Controller
                 $company_name = $globalsettings->meta_value;
             }
             //end get company name
+
+            $userName = getUserName($request);
             
             $useremail = $admin_user->email;
-            $subject = Auth::user()->name.' '.Auth::user()->last_name.' Has Joined '.$company_name.' on Signature1618 ';
+            $subject = $userName.' Has Joined '.$company_name.' on Signature1618 ';
             $today = Carbon::now();
             // Format the date
             $formattedDate = $today->format('m/d/Y');
             $dataUser = [
                 'email' => Auth::user()->email,
-                'invited_member_name' => Auth::user()->name.' '.Auth::user()->last_name,
+                'invited_member_name' => $userName,
                 'first_name' => $admin_user->name,
                 'last_name' => $admin_user->last_name,
                 'subject' => $request->subject,
@@ -402,16 +407,19 @@ class TeamController extends Controller
              $company_name = $globalsettings->meta_value;
          }
          //end get company name
+
+         $userName = getUserName($request);
          
          $useremail = $admin_user->email;
-         $subject = Auth::user()->name.' '.Auth::user()->last_name.' Has Refused '.$company_name.' on Signature1618 ';
+         $subject = $userName.' Has Refused '.$company_name.' on Signature1618 ';
          $today = Carbon::now();
          $invitation_date = $data->created_at;
          // Format the date
          $formattedDate = $invitation_date->format('m/d/Y');
+        
          $dataUser = [
              'email' => Auth::user()->email,
-             'invited_member_name' => Auth::user()->name.' '.Auth::user()->last_name,
+             'invited_member_name' => $userName,
              'first_name' => $admin_user->name,
              'last_name' => $admin_user->last_name,
              'subject' => $request->subject,

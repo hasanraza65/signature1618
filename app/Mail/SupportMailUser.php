@@ -5,8 +5,6 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class SupportMailUser extends Mailable
@@ -15,13 +13,13 @@ class SupportMailUser extends Mailable
 
     public $data;
     public $subject;
-    public $file;
+    public $filePath;
 
-    public function __construct($data, $subject, $file = null)
+    public function __construct($data, $subject, $filePath = null)
     {
         $this->data = $data;
         $this->subject = $subject;
-        $this->file = $file;
+        $this->filePath = $filePath;
     }
 
     public function build()
@@ -30,12 +28,14 @@ class SupportMailUser extends Mailable
         $email = $this->subject('Support Ticket Received - Signature1618 '.$this->subject)
                       ->view('mail_templates.support_mail_user', compact('user_d'));
 
-        // Attach file if present
-        if ($this->file) {
-            $email->attach($this->file->getRealPath(), [
-                'as' => $this->file->getClientOriginalName(),
-                'mime' => $this->file->getMimeType(),
+        // Attach file if path is provided and file exists
+        if ($this->filePath && file_exists(public_path($this->filePath))) {
+            $email->attach(public_path($this->filePath), [
+                'as' => basename($this->filePath),
+                'mime' => mime_content_type(public_path($this->filePath)),
             ]);
+        } else {
+            \Log::error('File does not exist or is not readable: ' . public_path($this->filePath));
         }
 
         return $email;

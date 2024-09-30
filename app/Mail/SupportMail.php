@@ -15,27 +15,28 @@ class SupportMail extends Mailable
     public $subject;
     public $file;
 
-    public function __construct($data, $subject, $file = null)
+    public function __construct($data, $subject, $filePath = null)
     {
         $this->data = $data;
         $this->subject = $subject;
-        $this->file = $file;
+        $this->filePath = $filePath;
     }
-
+    
     public function build()
     {
         $user_d = $this->data;
         $email = $this->subject('Support Ticket Received - Signature1618 '.$this->subject)
                       ->view('mail_templates.support_mail', compact('user_d'));
-
-        // Attach file if present
-        if ($this->file) {
-            $email->attach($this->file->getRealPath(), [
-                'as' => $this->file->getClientOriginalName(),
-                'mime' => $this->file->getMimeType(),
+    
+        // Attach file if path is provided
+        if ($this->filePath) {
+            $email->attach(public_path($this->filePath), [
+                'as' => basename($this->filePath),
+                'mime' => mime_content_type(public_path($this->filePath)),
             ]);
         }
-
+    
         return $email;
     }
+
 }
