@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TicketResolved extends Mailable
+class RequestCancelledBySenderToSigner extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -27,8 +27,8 @@ class TicketResolved extends Mailable
     public function build()
     {
         $user_d = $this->data;
-        $email = $this->subject('Support Ticket Resolved '.$this->subject)
-                      ->view('mail_templates.support_resolved', compact('user_d'));
+        $email = $this->subject($this->subject)
+                      ->view('mail_templates.request_cancelled_to_signer', compact('user_d'));
 
         return $email;
     }

@@ -864,7 +864,7 @@ public function declineRequest(Request $request){
                 'otp'=>$otp
            ];
 
-        $subject = $getContact->contact_first_name." your OTP for request file";
+        $subject = $getContact->contact_first_name." Your One-Time Password";
 
         \Mail::to($email)->send(new \App\Mail\OTPEmail($dataUser, $subject));
 
@@ -1013,7 +1013,7 @@ public function declineRequest(Request $request){
 
         $senderUser = User::find($requestdata->user_id);
         $useremail = $senderUser->email;
-        $subject = 'Signature registered - Signature1618';
+        $subject = 'Signature registered on '.$requestdata->file_name;
 
         $dataUser = [
             'email' => $signeruser_data->email,
@@ -1050,7 +1050,7 @@ public function declineRequest(Request $request){
 
             $senderUser = User::find($requestdata->user_id);
             $useremail = $senderUser->email;
-            $subject = $requestdata->file_name.' is fully signed - Signature1618';
+            $subject = $requestdata->file_name.' is Fully Signed';
 
             $dataUser = [
                 'email' => $senderUser->email,
@@ -1085,7 +1085,7 @@ public function declineRequest(Request $request){
 
                 $senderUser = User::find($pending->recipient_user_id);
                 $useremail = $senderUser->email;
-                $subject = $requestdata->file_name . ' has ' . $percentageSigned . '% signed - Signature1618';
+                $subject = $requestdata->file_name . ' is ' . $percentageSigned . '% Signed - Signature1618';
 
                 $dataUser = [
                     'email' => $senderUser->email,
@@ -1139,7 +1139,7 @@ public function declineRequest(Request $request){
         if($requestdata->status == 'cancelled'){
 
             return response()->json([
-                'message' => 'Signature request cancelled'
+                'message' => 'Signature Request Cancelled'
             ], 200);
 
         }
@@ -1159,7 +1159,7 @@ public function declineRequest(Request $request){
         ->where('unique_id',$request->approver_unique_id)->first();
         $approver_user = User::find($approver_data->recipient_user_id);
         $approver_name = $approver_user->name.' '.$approver_user->last_name;
-        $subject = "Request approved by ".$approver_name." - Signature1618";
+        $subject = $requestdata->file_name." Is Approved by ".$approver_name;
         
          $dataUser = [
              'sender_name' => $senderuser->name.' '.$senderuser->last_name,
@@ -1171,6 +1171,25 @@ public function declineRequest(Request $request){
          Mail::to($senderemail)->send(new \App\Mail\ApprovedMail($dataUser, $subject));
 
         //ending notify sender
+
+        //notify himself 
+
+      
+        $dataUserToApprover = [
+            'user_first_name' => $approver_user->name,
+            'user_last_name' => $approver_user->contact_last_name,
+            'organization_name' => $senderuser->company,
+            'document_name' => $requestdata->file_name,
+            'sender_name' => $senderuser->name.' '.$senderuser->last_name,
+            'approver_name' => $approver_user->contact_first_name.' '.$approver_user->contact_last_name,
+            'file_name' => $requestdata->file_name,
+        ];
+                    
+        $subjectToApprover = 'You Approved '.$requestdata->file_name.' from '.$senderuser->company;
+                    
+        Mail::to($approver_user->email)->send(new \App\Mail\RequestApprovedToApprover($dataUserToApprover, $subjectToApprover));
+
+        //ending notify himself
 
 
         //update status for request
@@ -1305,7 +1324,7 @@ public function declineRequest(Request $request){
             'file_name' => $requestdata->file_name,
         ];
                     
-        $subjectToApprover = 'You rejected '.$requestdata->file_name.'- Signature1618';
+        $subjectToApprover = 'You Rejected '.$requestdata->file_name.' from '.$company_name;
                     
         Mail::to($approver_user->email)->send(new \App\Mail\RequestRejectedToApprover($dataUserToApprover, $subjectToApprover));
                 
@@ -1326,7 +1345,7 @@ public function declineRequest(Request $request){
             'file_name' => $requestdata->file_name
         ];
                     
-        $subjectToSender = $approver_contact->contact_first_name.' '.$approver_contact->contact_last_name.' has rejected '.$requestdata->file_name.'- Signature1618';
+        $subjectToSender = $requestdata->file_name.' Was Rejected by '.$approver_contact->contact_first_name.' '.$approver_contact->contact_last_name;
                     
         Mail::to($sender->email)->send(new \App\Mail\RequestRejectedToSender($dataUserToSender, $subjectToSender));
                 
@@ -1389,7 +1408,7 @@ public function declineRequest(Request $request){
         $subject = '';
         switch ($type) {
             case 1:
-                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' via Signature1618';
+                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name;
                 break;
             case 2:
                 $subject = 'Approver Mail';
@@ -1405,7 +1424,7 @@ public function declineRequest(Request $request){
          $now_datetime = \App\Helpers\Common::dateFormat(Carbon::now()->toDateTimeString());
     
         // Append current timestamp to subject
-        $subject .= ' - ' . $now_datetime;
+        //$subject .= ' - ' . $now_datetime;
     
         // Send email
         if ($type == 1) {
@@ -1459,7 +1478,7 @@ public function declineRequest(Request $request){
                 $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' via Signature1618';
                 break;
             case 2:
-                $subject = 'Signature Request for '.$userRequest->file_name.' from '.$company_name.' for approval via Signature1618';
+                $subject = 'Approval Request for '.$userRequest->file_name.' from '.$company_name;
                 break;
             case 3:
                 $subject = 'Rejected Mail';
@@ -1706,8 +1725,15 @@ public function declineRequest(Request $request){
         
         //ending check last reminder sent time
 
+        $globalsettings = UserGlobalSetting::where('user_id',$sender_user->id)->where('meta_key','company')->first();
+        if(!$globalsettings){
+            $company_name = $sender_user->name.' '.$sender_user->last_name;
+        }else{
+            $company_name = $globalsettings->meta_value;
+        }
+
         //reminder 
-        $subject = "Reminder to sign the document";
+        $subject = "Reminder: Do Sign ".$req_obj_reminder->file_name.' from '.$company_name;
         
         $request_obj_approver = UserRequest::where('unique_id',$request->request_unique_id)
             ->where('approve_status',0)
@@ -1716,7 +1742,7 @@ public function declineRequest(Request $request){
 
             if($request_obj_approver){
 
-                $subject = "Reminder to approve the document";
+                $subject = "Reminder: Do Approve ".$request_obj_approver->file_name.' from '.$company_name;
 
                 $approver_obj = Approver::where('request_id',$request_obj_approver->id)
                 ->where('status','pending')
@@ -1857,10 +1883,33 @@ public function declineRequest(Request $request){
                     'document_name' => $data->file_name
                 ];
             
-                $subjectToApprover = 'Request has been cancelled by '.$company_name;
+                $subjectToApprover = $data->file_name.' Has Been Cancelled by '.$company_name;
             
                 Mail::to($approver_user->email)->send(new \App\Mail\RequestCancelledBySenderToApprover($dataUserToApprover, $subjectToApprover));
             }
+
+            //mail to signers
+            if(count($allapprovers) == 0 || $data->status == 'approved'){
+                $allSigners = Signer::where('request_id',$data->id)->get();
+
+                foreach($allSigners as $signer){
+                    $signer_contact = Contact::where('id',$signer->recipient_contact_id)->first();
+                    $signer_user = User::where('id',$signer->recipient_user_id)->first();
+                    $dataUserToSigner = [
+                        'user_first_name' => $signer_contact->contact_first_name,
+                        'user_last_name' => $signer_contact->contact_last_name,
+                        'organization_name' => $company_name,
+                        'document_name' => $data->file_name
+                    ];
+                
+                    $subjectToSigner = $data->file_name.' Has Been Cancelled by '.$company_name;
+                
+                    Mail::to($$signer_user->email)->send(new \App\Mail\RequestCancelledBySenderToSigner($dataUserToApprover, $subjectToApprover));
+                }
+            }
+
+
+            //ending mail to signer
            
             //ending send mail
 

@@ -217,7 +217,7 @@ class SubscriptionController extends Controller
         //send mail 
 
         $useremail = Auth::user()->email;
-        $subject = 'Subscription Confirmed - Signature1618 ';
+        $subject = 'Subscription Confirmed : Signature1618 ';
         $today = Carbon::now();
         $invitation_date = $data->created_at;
         // Format the date

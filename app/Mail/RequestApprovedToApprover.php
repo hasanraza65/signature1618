@@ -9,27 +9,22 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TicketResolved extends Mailable
+class RequestApprovedToApprover extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $data;
     public $subject;
-   
 
     public function __construct($data, $subject)
     {
         $this->data = $data;
         $this->subject = $subject;
-        
     }
 
     public function build()
     {
         $user_d = $this->data;
-        $email = $this->subject('Support Ticket Resolved '.$this->subject)
-                      ->view('mail_templates.support_resolved', compact('user_d'));
-
-        return $email;
+        return $this->subject($this->subject)->view('mail_templates.request_approved_approver', compact('user_d'));
     }
 }

@@ -144,7 +144,7 @@ class Kernel extends ConsoleKernel
 
                     $userdata = User::find($sub_data->user_id);
                     $email2 = $userdata->email;
-                    $subject2 = "Your package has been expired";
+                    $subject2 = "Subscription Expired : Signature1618";
 
                     $dataUser2 = [
                         'email' => $email2,

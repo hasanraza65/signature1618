@@ -153,7 +153,7 @@ class AuthController extends Controller
                     'user_name'=>$usercheck->name.' '.$usercheck->last_name,
             ];
 
-                $subject = $usercheck->name." your OTP for registration";
+                $subject = $usercheck->name." Your Signup One-Time Password";
 
             Mail::to($usercheck->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
@@ -194,7 +194,7 @@ class AuthController extends Controller
                 'user_name'=>$user->name.' '.$user->last_name
         ];
 
-        $subject = $user->name." your OTP for registration";
+        $subject = $user->name." Your Signup One-Time Password";
 
         Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
@@ -293,7 +293,7 @@ class AuthController extends Controller
                 
             ];
         
-            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Your Documents!';
+            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
         
             Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
             //ending welcome mail
@@ -333,7 +333,7 @@ class AuthController extends Controller
             'user_name'=>$user->name.' '.$user->last_name
         ];
 
-        $subject = $user->name." your OTP for registration";
+        $subject = $user->name." Your Signup One-Time Password";
 
         Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 

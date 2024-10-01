@@ -182,7 +182,7 @@ class TeamController extends Controller
             "date"=> $formattedDate
         ];
     
-        $subject = $userName.' invited you to join signature1618';
+        $subject = 'Team Invitation from '.$userName.' on signature1618';
        
     
         // Append current timestamp to subject
@@ -411,7 +411,7 @@ class TeamController extends Controller
          $userName = getUserName($request);
          
          $useremail = $admin_user->email;
-         $subject = $userName.' Has Refused '.$company_name.' on Signature1618 ';
+         $subject = $userName.' Has Refused To Joined '.$company_name.' on Signature1618 ';
          $today = Carbon::now();
          $invitation_date = $data->created_at;
          // Format the date

@@ -25,7 +25,7 @@ class SupportMail extends Mailable
     public function build()
     {
         $user_d = $this->data;
-        $email = $this->subject('Support Ticket Received - Signature1618 '.$this->subject)
+        $email = $this->subject('New Support Ticket - New Support Request '.$user_d->email)
                       ->view('mail_templates.support_mail', compact('user_d'));
     
         // Attach file if path is provided
