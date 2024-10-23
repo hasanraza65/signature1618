@@ -15,19 +15,24 @@ class SupportMailController extends Controller
     public function index(){
 
         if(Auth::user()->user_role == 2){
-            $data = SupportMail::with('userDetail')->where('user_id',Auth::user()->id)->get();
-        }elseif(Auth::user()->user_role == 1){
-            $data = SupportMail::with('userDetail')->get();
+            // Get support mails where user is authenticated and userDetail exists
+            $data = SupportMail::with('userDetail')
+                        ->where('user_id', Auth::user()->id)
+                        ->whereHas('userDetail') // Ensure userDetail relation exists
+                        ->get();
+        } elseif(Auth::user()->user_role == 1){
+            // Get all support mails where userDetail exists
+            $data = SupportMail::with('userDetail')
+                        ->whereHas('userDetail') // Ensure userDetail relation exists
+                        ->get();
         }
-        
-
+    
         return response()->json([
             'data' => $data,
             'message' => 'Success'
-        ],200);
-
-
+        ], 200);
     }
+
 
     public function store(Request $request)
     {

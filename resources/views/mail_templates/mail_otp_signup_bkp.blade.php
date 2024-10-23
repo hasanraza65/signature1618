@@ -93,7 +93,7 @@ u + #body a {color:inherit;text-decoration:none;font-size:inherit;font-family:in
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;max-width:100%;" >
   {{--- lotus-header-5 --}}
   <tr>
-    <td align="center"  bgcolor="#244BED" class="container-padding">
+    <td align="center"  bgcolor="#0018A8" class="container-padding">
 
 {{--- Content --}}
 <table border="0" align="center" cellpadding="0" cellspacing="0" role="presentation" class="row" width="580" style="width:580px;max-width:580px;">

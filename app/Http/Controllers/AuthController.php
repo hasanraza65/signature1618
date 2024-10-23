@@ -43,7 +43,6 @@ class AuthController extends Controller
     public function handleGoogleCallback(Request $request)
     {
         $idToken = $request->input('credential');
-
         $googleClientId = env('GOOGLE_CLIENT_ID');
 
         $client = new Google_Client(['client_id' => $googleClientId]);
@@ -54,8 +53,13 @@ class AuthController extends Controller
         }
 
         $googleUserEmail = $payload['email'];
-        $googleUserName = $payload['name'];
+        $googleUserName = $payload['name']; // This contains the full name
         $googleUserId = $payload['sub'];
+
+        // Split the full name into first name and last name
+        $nameParts = explode(' ', $googleUserName);
+        $firstName = $nameParts[0]; // First name
+        $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : ''; // Last name (if exists)
 
         // Check if the user already exists in your database
         $user = User::where('email', $googleUserEmail)->first();
@@ -66,21 +70,19 @@ class AuthController extends Controller
         } else {
             // If the user doesn't exist, create a new user
             $user = User::create([
-                'name' => $googleUserName,
+                'name' => $firstName,
+                'last_name' => $lastName, // Save the last name in the database
                 'email' => $googleUserEmail,
                 'google_id' => $googleUserId,
-                "is_verified" => 1
-                // You can add additional user details here if needed
+                'is_verified' => 1
             ]);
+
+            //update global settings
+            $this->updateDefaultSettings($user->id);
+            //ending update global settings
 
             Auth::login($user, true);
         }
-
-        // Verify user's account status
-        /*
-        if ($user->is_verified == 0) {
-            return response()->json(['error' => 'Please verify your account first', 'user_id' => $user->id], 401);
-        }  */
 
         // Check if the user has a subscription plan
         $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
@@ -117,6 +119,7 @@ class AuthController extends Controller
             'user_global_settings' => $userGlobalSettings
         ], 200);
     }
+
 
     public function showRegisterForm()
     {
@@ -200,16 +203,59 @@ class AuthController extends Controller
 
         //ending email otp verification sending
 
-        //use company name by default
-        UserGlobalSetting::insert([
-            'meta_key'=>'use_company',
-            'meta_value'=>1,
-            'user_id'=>$user->id
-        ]);
-        //ending use company name by default
+        //update global settings
+        $this->updateDefaultSettings($user->id);
+        //ending update global settings
 
         //return response(["status" => 200, 'user' => $user, 'access_token' => $accessToken]);
         return response(["status" => 200, 'user' => $user, 'message' => 'OTP sent to your email id']);
+    }
+
+    public function updateDefaultSettings($user_id){
+
+        $expiry_date = $this->generateExpiryData();
+        UserGlobalSetting::insert([
+            [
+                'meta_key' => 'use_company',
+                'meta_value' => 1,
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'protection',
+                'meta_value' => 'numerical',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'default_reminder',
+                'meta_value' => '{"type":"weekly","count":15}',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'default_expiry',
+                'meta_value' => $expiry_date,
+                'user_id' => $user_id
+            ],
+           
+        ]);
+
+    }
+
+
+    public function generateExpiryData()
+    {
+        // Get the current date and add 6 months
+        $expiryDate = Carbon::now()->addMonths(6)->toISOString();
+
+        // Prepare the response data in the desired format
+        $data = [
+            "expiryType" => "Validity",
+            "count" => 6,
+            "type" => "months",
+            "date" => $expiryDate,
+        ];
+
+        // Encode the array as a JSON string and return it
+        return json_encode($data);
     }
 
     public function otpVerification(Request $request){

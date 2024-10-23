@@ -86,7 +86,7 @@
                                         <tbody>
                                             <tr>
                                                 <td>
-                                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #0018A8; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
                                                         <tbody>
                                                             <tr>
                                                                 <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 20px; padding-left: 50px; padding-right: 50px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
@@ -165,7 +165,7 @@
 							</tr>
 						</tbody>
 					</table>
-    				<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+    				<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #0018A8; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
                         <tbody>
                             <tr>
                                 <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
@@ -174,8 +174,8 @@
                                             <td class="pad">
                                                 <div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
                                                     <p style="margin: 0; margin-bottom: 16px;">Email Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener" bis_size="{&quot;x&quot;:756,&quot;y&quot;:674,&quot;w&quot;:104,&quot;h&quot;:17,&quot;abs_x&quot;:756,&quot;abs_y&quot;:734}">Signature1618</a></p>
-                                                    <p style="margin: 0;">If you are having trouble approving the document, please visit this link from an internet connected computer. {{ env('APP_URL') }}/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}.</p>
-                                                </div>
+													<p style="margin: 0;">Your information is protected by Signature1618's advanced encryption, ensuring the highest level of security for your documents. If you have any questions or need assistance signing, please visit our <a href="https://signature1618.com/help-center/">support center</a>.</p>
+														</div>
                                             </td>
                                         </tr>
                                     </table>

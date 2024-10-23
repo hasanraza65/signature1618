@@ -12,23 +12,29 @@ use App\Imports\ContactsImport;
 
 class ContactController extends Controller
 {
-    public function index(){
-
-        if(Auth::user()->user_role == 1){
-            $data = Contact::with(['userDetail','contactUserDetail'])
-            ->where('is_deleted',0)
-            ->orderBy('id','desc')
-            ->get();
-        }else{
-            $data = Contact::with(['userDetail','contactUserDetail'])->where('user_id',Auth::user()->id)->where('is_deleted',0)->orderBy('id','desc')->get();
+    public function index()
+    {
+        if (Auth::user()->user_role == 1) {
+            $data = Contact::with(['userDetail', 'contactUserDetail'])
+                ->where('is_deleted', 0)
+                ->whereHas('contactUserDetail') // Ensure contactUserDetail is not null (exists in users table)
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            $data = Contact::with(['userDetail', 'contactUserDetail'])
+                ->where('user_id', Auth::user()->id)
+                ->where('is_deleted', 0)
+                ->whereHas('contactUserDetail') // Ensure contactUserDetail is not null (exists in users table)
+                ->orderBy('id', 'desc')
+                ->get();
         }
-       
+    
         return response()->json([
             'data' => $data,
             'message' => 'Success'
-        ],200);
-
+        ], 200);
     }
+
 
     public function store(Request $request) {
 
@@ -70,7 +76,8 @@ class ContactController extends Controller
             // Create a new user
             $user = new User();
             $user->email = $request->email;
-            $user->name = $request->first_name . ' ' . $request->last_name;
+            $user->name = $request->first_name;
+            $user->last_name = $request->last_name;
             $user->language = $request->language ? $request->language : "en";
             $user->phone = $request->phone;
             $user->unique_id = $request->user_unique_id;

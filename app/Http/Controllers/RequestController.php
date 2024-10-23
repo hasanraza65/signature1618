@@ -27,6 +27,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use setasign\Fpdi\Fpdi;
 
+
 class RequestController extends Controller
 {
 
@@ -280,12 +281,16 @@ public function declineRequest(Request $request){
             // Store thumbnail
             $thumbnailPath = $this->storeFile($request->file('thumbnail'), 'thumbnails');
 
+            $userName = getUserName($request);
+
             $userRequest = new UserRequest();
             $userRequest->user_id = Auth::id();
             $userRequest->file = $filePath;
             $userRequest->thumbnail = $thumbnailPath;
             $userRequest->unique_id = $request->unique_id;
             $userRequest->file_name = $originalFileName;
+            $userRequest->sender_name = $userName;
+            $userRequest->sent_date = Carbon::now();
             $userRequest->save();
 
             $userName = getUserName($request);
@@ -515,6 +520,7 @@ public function declineRequest(Request $request){
     
             // Return response
             return response()->json([
+                'data' => $userRequestData,
                 'message' => 'Request processed successfully.'
             ], 200);
         } catch (\Exception $e) {
@@ -532,6 +538,13 @@ public function declineRequest(Request $request){
             ->first();
         
         if(!$data){
+            return response()->json([
+                'message' => 'No data available.',
+                'error_code' => 'no_data'
+            ], 200);
+        }
+
+        if($data->status == 'draft'){
             return response()->json([
                 'message' => 'No data available.',
                 'error_code' => 'no_data'
@@ -732,6 +745,13 @@ public function declineRequest(Request $request){
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
+        }
+
+        if($data->status == 'draft'){
+            return response()->json([
+                'message' => 'No data available.',
+                'error_code' => 'no_data'
+            ], 200);
         }
 
         if($data->is_trash == 1){
@@ -990,12 +1010,14 @@ public function declineRequest(Request $request){
         } 
         //ending storing fields answers
 
+        $protection_key = $this->generateProtectionKey($requestdata->user_id);
+
         $today_date = Carbon::now();
         $formatted_date = $today_date->format('Y-m-d H:i:s');
 
         Signer::where('request_id',$requestdata->id)
         ->where('unique_id',$request->recipient_unique_id)
-        ->update(['status'=>'signed','signed_date'=>$formatted_date]);
+        ->update(['status'=>'signed','signed_date'=>$formatted_date, 'protection_key'=>$protection_key]);
 
         $signeruser = Signer::where('request_id',$requestdata->id)
         ->where('unique_id',$request->recipient_unique_id)->first();
@@ -1005,11 +1027,13 @@ public function declineRequest(Request $request){
 
         //manage signed file 
 
-        $this->addSignerPDF($requestdata->id,$signeruser->id);
+        $this->addSignerPDF($requestdata->id,$signeruser->id, $protection_key);
 
         //ending manage signed file
 
         //sign registered
+
+       
 
         $senderUser = User::find($requestdata->user_id);
         $useremail = $senderUser->email;
@@ -1023,6 +1047,7 @@ public function declineRequest(Request $request){
             'requestUID' => $requestdata->unique_id,
             'signed_file' => $requestdata->signed_file,
             'signer_name' => $signeruser_contact->contact_first_name.' '.$signeruser_contact->contact_last_name,
+            'protection_key' => $protection_key
             
         ];
 
@@ -1904,7 +1929,7 @@ public function declineRequest(Request $request){
                 
                     $subjectToSigner = $data->file_name.' Has Been Cancelled by '.$company_name;
                 
-                    Mail::to($$signer_user->email)->send(new \App\Mail\RequestCancelledBySenderToSigner($dataUserToApprover, $subjectToApprover));
+                    Mail::to($signer_user->email)->send(new \App\Mail\RequestCancelledBySenderToSigner($dataUserToSigner, $subjectToSigner));
                 }
             }
 
@@ -2035,294 +2060,363 @@ public function declineRequest(Request $request){
 
     }
     
+    public function dFile($request_id = 342) {
+        // Fetch data from the database
+        $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('is_trash', 0)
+            ->where('id', $request_id)
+            ->orderBy('id', 'desc')
+            ->first();
+    
+        // Original PDF file path
+        $pdfPath = public_path($data->file);
+    
+        // Check if the file exists
+        if (!file_exists($pdfPath)) {
+            return response()->json([
+                'message' => 'PDF file not found',
+            ], 404);
+        }
+    
+        // Log the PDF path for debugging
+        \Log::info("PDF Path: {$pdfPath}");
+    
+        // Define output PDF file path (temp file)
+        $outputPdfPath = public_path('files/temp_output.pdf');
+    
+        // Construct the Ghostscript command
+        $command = "gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sOutputFile=\"{$outputPdfPath}\" \"{$pdfPath}\" 2>&1";
+    
+        // Execute the command and capture the output
+        $output = shell_exec($command);
+    
+        // Log the command output for debugging
+        \Log::info("Ghostscript Output: {$output}");
+    
+        // Check if the output PDF was created and is not empty
+        if (file_exists($outputPdfPath) && filesize($outputPdfPath) > 0) {
+            
+            return $outputPdfPath;
+            
+            return response()->json(['message' => 'PDF processed successfully!', 'output_file' => $outputPdfPath]);
+        } else {
+            return response()->json(['message' => 'Failed to process PDF.', 'error' => $output], 500);
+        }
+    }
 
-   public function addSignerPDF($request_id = null, $signer_id = null)
+    
+
+   public function addSignerPDF($request_id = null, $signer_id = null, $protection_key = null)
     {
         // Fetching data as per your original code
-    $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
-        ->where('is_trash', 0)
-        ->where('id', $request_id)
-        ->orderBy('id', 'desc')
-        ->first();
+        $data = UserRequest::with(['userDetail','signers','signers.requestFields','signers.signerContactDetail','approvers','approvers.approverContactDetail', 'approvers.approverContactDetail.contactUserDetail','signers.signerContactDetail.contactUserDetail'])
+            ->where('is_trash', 0)
+            ->where('id', $request_id)
+            ->orderBy('id', 'desc')
+            ->first();
 
-    // Original PDF file path
-    $pdfPath = public_path($data->file);
-
-    // Check if the file exists
-    if (!file_exists($pdfPath)) {
-        return response()->json([
-            'message' => 'PDF file not found',
-        ], 404);
-    }
-
-    // Signed PDF file path
-    $signedFileName = 'signed_' . Str::afterLast($data->file, '/');  // Example: 'signed_1726043140_sample.pdf'
-    $signedFilePath = public_path('files/' . $signedFileName);
-
-    // Initialize FPDI and check if a signed file already exists
-    $pdf = new Fpdi();
-
-    if (file_exists($signedFilePath)) {
-        // If signed file already exists, load that file
-        $pdfPath = $signedFilePath;
-    } else {
-        // If not, load the original PDF file
+        // Original PDF file path
         $pdfPath = public_path($data->file);
-    }
-
-    // Set the source file
-    $pageCount = $pdf->setSourceFile($pdfPath);
-
-    // Array to track processed signer IDs
-    $processedSigners = [];
-
-    // Loop through all pages and add the annotation
-    for ($pageNumber = 1; $pageNumber <= $pageCount; $pageNumber++) {
-        // Import each page
-        $templateId = $pdf->importPage($pageNumber);
-
-        // Get the page size of the imported page
-        $size = $pdf->getTemplateSize($templateId);
-
-        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-        $pdf->useTemplate($templateId);
-
-        // Set the new width for the annotation
-        $newWidth = 600; // New static width for annotation
-
-        // Calculate the new height to maintain the aspect ratio
-        $originalWidth = $size['width'];
-        $originalHeight = $size['height'];
-        $newHeight = ($newWidth / $originalWidth) * $originalHeight;
-
-        // Calculate the scale factors
-        $scaleX = $originalWidth / $newWidth;
-        $scaleY = $originalHeight / $newHeight;
-
-        foreach ($data->signers as $signer) {
-            if ($signer->id == $signer_id) {
-                foreach ($signer->requestFields as $field) {
-                    if ($field->page_index == ($pageNumber - 1)) {
-                        // Original coordinates
-                        $originalX = $field->x;
-                        $originalY = $field->y;
         
-                        $width = $field->width;
-                        $height = $field->height;
+
+        // Check if the file exists
+        if (!file_exists($pdfPath)) {
+            return response()->json([
+                'message' => 'PDF file not found',
+            ], 404);
+        }
         
-                        // Calculate the new coordinates based on the scaling
-                        $newX = $originalX * $scaleX;
-                        $newY = $originalY * $scaleY;
         
-                        // Handle signature field
-                        if ($field->type == 'signature') {
-                            if (!in_array($signer->id, $processedSigners)) {
-                                $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
-                                $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
-                                $fullName = $contactFirstName . ' ' . $contactLastName;
-                                $processedSigners[] = $signer->id;
+        
+
+        // Signed PDF file path
+        $signedFileName = 'signed_' . Str::afterLast($data->file, '/');  // Example: 'signed_1726043140_sample.pdf'
+        $signedFilePath = public_path('files/' . $signedFileName);
+
+        // Initialize FPDI and check if a signed file already exists
+        $pdf = new Fpdi();
+
+        if (file_exists($signedFilePath)) {
+            // If signed file already exists, load that file
+            $pdfPath = $signedFilePath;
+        } else {
+            // If not, load the original PDF file
+            $pdfPath = public_path($data->file);
+            
+            $pdfPath = $this->dFile($request_id);
+        }
+
+        // Set the source file
+        $pageCount = $pdf->setSourceFile($pdfPath);
+
+        // Array to track processed signer IDs
+        $processedSigners = [];
+
+        // Loop through all pages and add the annotation
+        for ($pageNumber = 1; $pageNumber <= $pageCount; $pageNumber++) {
+            // Import each page
+            $templateId = $pdf->importPage($pageNumber);
+
+            // Get the page size of the imported page
+            $size = $pdf->getTemplateSize($templateId);
+
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $pdf->useTemplate($templateId);
+
+            // Set the new width for the annotation
+            $newWidth = 600; // New static width for annotation
+
+            // Calculate the new height to maintain the aspect ratio
+            $originalWidth = $size['width'];
+            $originalHeight = $size['height'];
+            $newHeight = ($newWidth / $originalWidth) * $originalHeight;
+
+            // Calculate the scale factors
+            $scaleX = $originalWidth / $newWidth;
+            $scaleY = $originalHeight / $newHeight;
+
+            foreach ($data->signers as $signer) {
+                if ($signer->id == $signer_id) {
+                    foreach ($signer->requestFields as $field) {
+                        if ($field->page_index == ($pageNumber - 1)) {
+                            // Original coordinates
+                            $originalX = $field->x;
+                            $originalY = $field->y;
+            
+                            $width = $field->width;
+                            $height = $field->height;
+            
+                            // Calculate the new coordinates based on the scaling
+                            $newX = $originalX * $scaleX;
+                            $newY = $originalY * $scaleY;
+            
+                            // Handle signature field
+                            if ($field->type == 'signature') {
+                                if (!in_array($signer->id, $processedSigners)) {
+                                    $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
+                                    $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
+                                    $fullName = $contactFirstName . ' ' . $contactLastName;
+                                    $processedSigners[] = $signer->id;
+                                }
+            
+                                // Convert signer name to image
+                                $signatureImagePath = $this->createSignatureImage($fullName,$protection_key);
+
+                                //\Log::info('protection key hr: '.$protection_key);
+            
+                                // Image dimensions and position
+                                $imageWidth = $width * $scaleX;
+                                $imageHeight = $height * $scaleY;
+                                $imageHeight = $imageHeight;
+            
+                                // Check if the image file exists
+                                if (file_exists($signatureImagePath)) {
+                                    // Add the signature image to the PDF
+                                    $pdf->Image($signatureImagePath, $newX, $newY, $imageWidth, $imageHeight);
+                                }
                             }
-        
-                            // Convert signer name to image
-                            $signatureImagePath = $this->createSignatureImage($fullName);
-        
-                            // Image dimensions and position
-                            $imageWidth = $width * $scaleX;
-                            $imageHeight = $height * $scaleY;
-        
+            
+                            // Handle text input field
+                            elseif ($field->type == 'textinput') {
+                                $answer = $field->answer;
+            
+                                // Set font and size (adjust to fit your needs)
+                                $pdf->SetFont('Helvetica', '', 16);
+                                
+                                // Calculate the text position and width
+                                $textX = $newX;
+                                $textY = $newY;
+            
+                                // Optionally, adjust the text to fit within the field's width
+                                $pdf->SetXY($textX, $textY);
+            
+                                // Place the text on the PDF (adjust width for fitting within field)
+                                $pdf->MultiCell($width * $scaleX, 10, $answer);
+                            }elseif($field->type == 'mention'){
+                                
+                                $answer = $field->question;
+            
+                                // Set font and size (adjust to fit your needs)
+                                $pdf->SetFont('Helvetica', '', 16);
+                                
+                                // Calculate the text position and width
+                                $textX = $newX;
+                                $textY = $newY;
+            
+                                // Optionally, adjust the text to fit within the field's width
+                                $pdf->SetXY($textX, $textY);
+            
+                                // Place the text on the PDF (adjust width for fitting within field)
+                                $pdf->MultiCell($width * $scaleX, 10, $answer);
+                                
+                            }elseif ($field->type == 'radio') {
+                        // Retrieve all radio buttons associated with the current field
+                        $radioButtons = RadioButton::where('field_id', $field->id)->get();
+                    
+                        // Check if field answer is valid and points to an existing radio button
+                        if (!is_null($field->answer) && isset($radioButtons[$field->answer])) {
+                            // Get the selected radio button based on the index stored in field answer
+                            $selectedRadioButton = $radioButtons[$field->answer];
+                    
+                            // Get the position for the selected radio button
+                            $radioX = $selectedRadioButton->x; // X position of the selected radio button
+                            $radioY = $selectedRadioButton->y; // Y position of the selected radio button
+                    
+                            // Apply the same scaling and transformations as the signature image
+                            $scaledX = $radioX * $scaleX; // Apply horizontal scaling (if necessary)
+                            $scaledY = $radioY * $scaleY; // Apply vertical scaling (if necessary)
+                    
+                            // Set the size of the radio button image (adjust as needed)
+                            $imageWidth = 8;  // Width for the radio button image
+                            $imageHeight = 8; // Height for the radio button image
+                    
+                            // Determine which image to use based on selection status
+                            $radioImagePath = public_path('radio-checked.png');
+                    
                             // Check if the image file exists
-                            if (file_exists($signatureImagePath)) {
-                                // Add the signature image to the PDF
-                                $pdf->Image($signatureImagePath, $newX, $newY, $imageWidth, $imageHeight);
-                            }
-                        }
-        
-                        // Handle text input field
-                        elseif ($field->type == 'textinput') {
-                            $answer = $field->answer;
-        
-                            // Set font and size (adjust to fit your needs)
-                            $pdf->SetFont('Helvetica', '', 16);
-                            
-                            // Calculate the text position and width
-                            $textX = $newX;
-                            $textY = $newY;
-        
-                            // Optionally, adjust the text to fit within the field's width
-                            $pdf->SetXY($textX, $textY);
-        
-                            // Place the text on the PDF (adjust width for fitting within field)
-                            $pdf->MultiCell($width * $scaleX, 10, $answer);
-                        }elseif($field->type == 'mention'){
-                            
-                            $answer = $field->question;
-        
-                            // Set font and size (adjust to fit your needs)
-                            $pdf->SetFont('Helvetica', '', 16);
-                            
-                            // Calculate the text position and width
-                            $textX = $newX;
-                            $textY = $newY;
-        
-                            // Optionally, adjust the text to fit within the field's width
-                            $pdf->SetXY($textX, $textY);
-        
-                            // Place the text on the PDF (adjust width for fitting within field)
-                            $pdf->MultiCell($width * $scaleX, 10, $answer);
-                            
-                        }elseif ($field->type == 'radio') {
-                    // Retrieve all radio buttons associated with the current field
-                    $radioButtons = RadioButton::where('field_id', $field->id)->get();
-                
-                    // Check if field answer is valid and points to an existing radio button
-                    if (!is_null($field->answer) && isset($radioButtons[$field->answer])) {
-                        // Get the selected radio button based on the index stored in field answer
-                        $selectedRadioButton = $radioButtons[$field->answer];
-                
-                        // Get the position for the selected radio button
-                        $radioX = $selectedRadioButton->x; // X position of the selected radio button
-                        $radioY = $selectedRadioButton->y; // Y position of the selected radio button
-                
-                        // Apply the same scaling and transformations as the signature image
-                        $scaledX = $radioX * $scaleX; // Apply horizontal scaling (if necessary)
-                        $scaledY = $radioY * $scaleY; // Apply vertical scaling (if necessary)
-                
-                        // Set the size of the radio button image (adjust as needed)
-                        $imageWidth = 8;  // Width for the radio button image
-                        $imageHeight = 8; // Height for the radio button image
-                
-                        // Determine which image to use based on selection status
-                        $radioImagePath = public_path('radio-checked.png');
-                
-                        // Check if the image file exists
-                        if (file_exists($radioImagePath)) {
-                            // Add the radio button image to the PDF at the scaled position
-                            $pdf->Image($radioImagePath, $scaledX, $scaledY, $imageWidth, $imageHeight);
-                        } else {
-                            // Fallback if the image is not found
-                            $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
-                            $pdf->Text($scaledX, $scaledY, '✓'); // Simple text fallback (✓ if selected)
-                        }
-                    } else {
-                        // No valid answer or radio button found, handle unselected or fallback
-                        $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
-                        $pdf->Text($newX, $newY, '○'); // Simple text fallback (empty circle for unselected)
-                    }
-                }elseif($field->type == 'checkbox') {
-                            // Answer is either 'true' (checked) or 'false' (unchecked)
-                            $isChecked = $field->answer === 'true';
-                        
-                            // Set dimensions for checkbox (adjust as needed)
-                            $boxSize = 5; // Set a fixed box size or adjust based on your scaling
-                        
-                            // Draw the checkbox (a square)
-                            $pdf->Rect($newX, $newY, $boxSize, $boxSize);
-                        
-                            // If checked, draw a checkmark manually using lines
-                            if ($isChecked) {
-                                // Drawing a simple checkmark using lines
-                                $pdf->Line($newX + 1, $newY + 2, $newX + 2, $newY + 4); // Diagonal line (left)
-                                $pdf->Line($newX + 2, $newY + 4, $newX + 4, $newY + 1); // Diagonal line (right)
+                            if (file_exists($radioImagePath)) {
+                                // Add the radio button image to the PDF at the scaled position
+                                $pdf->Image($radioImagePath, $scaledX, $scaledY, $imageWidth, $imageHeight);
                             } else {
-                                // If not checked, draw an 'X' or leave it empty
-                                // Option 2: Drawing an 'X' if unchecked (if you prefer marking unchecked boxes)
-                                $pdf->Line($newX, $newY, $newX + $boxSize, $newY + $boxSize); // Diagonal line from top-left to bottom-right
-                                $pdf->Line($newX + $boxSize, $newY, $newX, $newY + $boxSize); // Diagonal line from top-right to bottom-left
+                                // Fallback if the image is not found
+                                $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
+                                $pdf->Text($scaledX, $scaledY, '✓'); // Simple text fallback (✓ if selected)
+                            }
+                        } else {
+                            // No valid answer or radio button found, handle unselected or fallback
+                            $pdf->SetFont('Helvetica', 'B', 10); // Adjust font and size for text fallback
+                            $pdf->Text($newX, $newY, '○'); // Simple text fallback (empty circle for unselected)
+                        }
+                    }elseif($field->type == 'checkbox') {
+                                // Answer is either 'true' (checked) or 'false' (unchecked)
+                                $isChecked = $field->answer === 'true';
+                            
+                                // Set dimensions for checkbox (adjust as needed)
+                                $boxSize = 5; // Set a fixed box size or adjust based on your scaling
+                            
+                                // Draw the checkbox (a square)
+                                $pdf->Rect($newX, $newY, $boxSize, $boxSize);
+                            
+                                // If checked, draw a checkmark manually using lines
+                                if ($isChecked) {
+                                    // Drawing a simple checkmark using lines
+                                    $pdf->Line($newX + 1, $newY + 2, $newX + 2, $newY + 4); // Diagonal line (left)
+                                    $pdf->Line($newX + 2, $newY + 4, $newX + 4, $newY + 1); // Diagonal line (right)
+                                } else {
+                                    // If not checked, draw an 'X' or leave it empty
+                                    // Option 2: Drawing an 'X' if unchecked (if you prefer marking unchecked boxes)
+                                    $pdf->Line($newX, $newY, $newX + $boxSize, $newY + $boxSize); // Diagonal line from top-left to bottom-right
+                                    $pdf->Line($newX + $boxSize, $newY, $newX, $newY + $boxSize); // Diagonal line from top-right to bottom-left
+                                }
+                                
+                                
+                            }elseif($field->type == 'readonlytext'){
+                                
+                                $answer = $field->question;
+            
+                                // Set font and size (adjust to fit your needs)
+                                $pdf->SetFont('Helvetica', '', 16);
+                                
+                                // Calculate the text position and width
+                                $textX = $newX;
+                                $textY = $newY;
+            
+                                // Optionally, adjust the text to fit within the field's width
+                                $pdf->SetXY($textX, $textY);
+            
+                                // Place the text on the PDF (adjust width for fitting within field)
+                                $pdf->MultiCell($width * $scaleX, 12, $answer);
+                                
+                            }
+
+                        }
+                        
+                        if ($field->type == 'initials') {
+                            // Retrieve the first and last names from the signer contact details
+                            $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
+                            $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
+                            
+                            // Original coordinates
+                            $originalX = $field->x;
+                            $originalY = $field->y;
+            
+                            $width = $field->width;
+                            $height = $field->height;
+            
+                            // Calculate the new coordinates based on the scaling
+                            $newX = $originalX * $scaleX;
+                            $newY = $originalY * $scaleY;
+                            
+                            // Get the initials by taking the first letter of each name
+                            $initials = strtoupper(substr($contactFirstName, 0, 1)) . strtoupper(substr($contactLastName, 0, 1));
+                            
+                            // Create initials image
+                            $imagePath = $this->createInitialsImage($initials);
+                            
+                            // Define the position for the initials image (adjust $newX and $newY accordingly)
+                            $initialsY = $newY; // Y position for initials
+                            
+                            // Set default X position
+                            $defaultX = 0; // Default X position
+                        
+                            // Determine the X position based on alignment
+                            switch (strtolower($field->question)) {
+                                case 'left':
+                                    $initialsX = $defaultX; // Align to the left
+                                    break;
+                                case 'center':
+                                    $pageWidth = $pdf->GetPageWidth();
+                                    $imageWidth = 40; // Width of the image
+                                    $initialsX = ($pageWidth - $imageWidth) / 2; // Center horizontally
+                                    break;
+                                case 'right':
+                                    $pageWidth = $pdf->GetPageWidth();
+                                    $imageWidth = 40; // Width of the image
+                                    $initialsX = $pageWidth - $imageWidth; // Align to the right
+                                    break;
+                                default:
+                                    $initialsX = $defaultX; // Default X position if position is not recognized
                             }
                             
-                            
-                        }elseif($field->type == 'readonlytext'){
-                            
-                            $answer = $field->question;
-        
-                            // Set font and size (adjust to fit your needs)
-                            $pdf->SetFont('Helvetica', '', 16);
-                            
-                            // Calculate the text position and width
-                            $textX = $newX;
-                            $textY = $newY;
-        
-                            // Optionally, adjust the text to fit within the field's width
-                            $pdf->SetXY($textX, $textY);
-        
-                            // Place the text on the PDF (adjust width for fitting within field)
-                            $pdf->MultiCell($width * $scaleX, 12, $answer);
-                            
+                            // Add initials image to the PDF at the specified position
+                            $pdf->Image($imagePath, $initialsX, $initialsY, 40, 20); // Adjust width and height as needed
                         }
-
-                    }
-                    
-                    if ($field->type == 'initials') {
-                        // Retrieve the first and last names from the signer contact details
-                        $contactFirstName = $signer->signerContactDetail->contact_first_name ?? 'Not Found';
-                        $contactLastName = $signer->signerContactDetail->contact_last_name ?? 'Not Found';
-                        
-                        // Original coordinates
-                        $originalX = $field->x;
-                        $originalY = $field->y;
-        
-                        $width = $field->width;
-                        $height = $field->height;
-        
-                        // Calculate the new coordinates based on the scaling
-                        $newX = $originalX * $scaleX;
-                        $newY = $originalY * $scaleY;
-                        
-                        // Get the initials by taking the first letter of each name
-                        $initials = strtoupper(substr($contactFirstName, 0, 1)) . strtoupper(substr($contactLastName, 0, 1));
-                        
-                        // Create initials image
-                        $imagePath = $this->createInitialsImage($initials);
-                        
-                        // Define the position for the initials image (adjust $newX and $newY accordingly)
-                        $initialsY = $newY; // Y position for initials
-                        
-                        // Set default X position
-                        $defaultX = 0; // Default X position
-                    
-                        // Determine the X position based on alignment
-                        switch (strtolower($field->question)) {
-                            case 'left':
-                                $initialsX = $defaultX; // Align to the left
-                                break;
-                            case 'center':
-                                $pageWidth = $pdf->GetPageWidth();
-                                $imageWidth = 40; // Width of the image
-                                $initialsX = ($pageWidth - $imageWidth) / 2; // Center horizontally
-                                break;
-                            case 'right':
-                                $pageWidth = $pdf->GetPageWidth();
-                                $imageWidth = 40; // Width of the image
-                                $initialsX = $pageWidth - $imageWidth; // Align to the right
-                                break;
-                            default:
-                                $initialsX = $defaultX; // Default X position if position is not recognized
-                        }
-                        
-                        // Add initials image to the PDF at the specified position
-                        $pdf->Image($imagePath, $initialsX, $initialsY, 40, 20); // Adjust width and height as needed
                     }
                 }
             }
+            
         }
+
+        // Save the new or updated signed PDF
+        $pdf->Output($signedFilePath, 'F');
         
+        $signedPath = 'files/' . $signedFileName;
+            
+        UserRequest::where('id',$request_id)->update(['signed_file'=>$signedPath]);
+
+        return response()->json([
+            'message' => 'PDF annotated and saved successfully',
+            'signed_pdf' => asset('files/' . $signedFileName),
+        ], 200);
+
     }
-
-    // Save the new or updated signed PDF
-    $pdf->Output($signedFilePath, 'F');
-    
-    $signedPath = 'files/' . $signedFileName;
-        
-    UserRequest::where('id',$request_id)->update(['signed_file'=>$signedPath]);
-
-    return response()->json([
-        'message' => 'PDF annotated and saved successfully',
-        'signed_pdf' => asset('files/' . $signedFileName),
-    ], 200);
-
-}
     
     
+    public function convertPdfVersion($oldPdfPath, $newPdfPath)
+    {
+        // Command to run Ghostscript
+        $command = "gswin64c -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sOutputFile=" . $newPdfPath . " " . $oldPdfPath;
+
+        // Execute the shell command
+        shell_exec($command);
+
+        // Check if the new PDF was created successfully
+        if (file_exists($newPdfPath)) {
+            return response()->json(['message' => 'PDF version converted to 1.4 successfully.']);
+        } else {
+            return response()->json(['message' => 'Failed to convert PDF version.'], 500);
+        }
+    }
     
     /**
      * Create an image from the signer name
@@ -2330,55 +2424,89 @@ public function declineRequest(Request $request){
      * @param string $name
      * @return string Path to the generated image
      */
-    private function createSignatureImage($name)
-    {
-        // Path to the font file
-        $fontPath = public_path('BrightSunshine.ttf'); // Replace with the path to your handwritten font
-    
-        // Path to save the signature image
-        $imagePath = public_path('files/signatures/' . time() . '_signature.png');
-    
-        // Set initial image dimensions
-        $width = 720;
-        $height = 400;
-        $im = imagecreatetruecolor($width, $height);
-    
-        // Allocate a color for the background (transparent)
-        $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-        imagefill($im, 0, 0, $transparent);
-    
-        // Enable alpha blending and save alpha channel
-        imagealphablending($im, false);
-        imagesavealpha($im, true);
-    
-        // Allocate a color for the text (black)
-        $textColor = imagecolorallocate($im, 0, 0, 0);
-    
-        // Start with a large font size
-        $fontSize = 200;
-        $box = imagettfbbox($fontSize, 0, $fontPath, $name);
-    
-        // Calculate text width and adjust font size
+    private function createSignatureImage($name, $protectionKey)
+{
+    // Paths to the font files
+    $signatureFontPath = public_path('BrightSunshine.ttf'); // Handwritten font for signature
+    $protectionFontPath = public_path('arial.ttf'); // Arial font file for protection key
+
+    // Path to save the signature image
+    $imagePath = public_path('files/signatures/' . time() . '_signature.png');
+
+    // Set initial image dimensions
+    $width = 720;
+    $height = 500; // Adjust height to make room for the text
+    $im = imagecreatetruecolor($width, $height);
+
+    // Allocate a color for the background (transparent)
+    $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+    imagefill($im, 0, 0, $transparent);
+
+    // Enable alpha blending and save alpha channel
+    imagealphablending($im, false);
+    imagesavealpha($im, true);
+
+    // Allocate a color for the text (black)
+    $textColor = imagecolorallocate($im, 0, 0, 0);
+
+    // Add the signature name (First Line)
+    $fontSize = 200;
+    $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
+    $textWidth = $box[2] - $box[0];
+    $signatureHeight = $box[1] - $box[7]; // Calculate signature height
+
+    // Adjust font size if text is too wide
+    while ($textWidth > $width - 50) {
+        $fontSize -= 1;
+        $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
         $textWidth = $box[2] - $box[0];
-        while ($textWidth > $width - 50) {
-            $fontSize -= 1;
-            $box = imagettfbbox($fontSize, 0, $fontPath, $name);
-            $textWidth = $box[2] - $box[0];
-        }
-    
-        // Calculate text position
-        $y = $height / 1.7;
-        $x = ($width - $textWidth) / 2;
-    
-        // Add text to image
-        imagettftext($im, $fontSize, 0, $x, $y, $textColor, $fontPath, $name);
-    
-        // Save the image with PNG format to maintain transparency
-        imagepng($im, $imagePath);
-        imagedestroy($im);
-    
-        return $imagePath;
+        $signatureHeight = $box[1] - $box[7]; // Recalculate height after adjustment
     }
+
+    // Calculate position for signature name
+    $y = $height / 2; // Centering the name vertically
+    $x = ($width - $textWidth) / 2;
+
+    // Add signature name text
+    imagettftext($im, $fontSize, 0, $x, $y, $textColor, $signatureFontPath, $name);
+
+    // Add the combined "Verified by Signature1618" text and protection key on the same line
+    $verifiedText = 'Verified by Signature1618';
+    $verifiedFontSize = 25; // Font size for verified text
+    $verifiedBox = imagettfbbox($verifiedFontSize, 0, $protectionFontPath, $verifiedText);
+    $verifiedTextWidth = $verifiedBox[2] - $verifiedBox[0];
+
+    // Add the protection key
+    $keyFontSize = 25; // Same size for both
+    $keyBox = imagettfbbox($keyFontSize, 0, $protectionFontPath, $protectionKey);
+    $keyTextWidth = $keyBox[2] - $keyBox[0];
+
+    // Calculate total width of the combined text
+    $totalTextWidth = $verifiedTextWidth + 1 + $keyTextWidth; // Add some spacing between the two strings
+
+    // Calculate position for the combined text to center it
+    $combinedX = ($width - $totalTextWidth) / 2;
+    
+    // Increase spacing between signature and the "Verified by" text based on signature height
+    $verifiedY = $y + $signatureHeight - 60; // Added 30px gap between the signature and verification text
+
+    // Add the "Verified by Signature1618" text
+    imagettftext($im, $verifiedFontSize, 0, $combinedX, $verifiedY, $textColor, $protectionFontPath, $verifiedText);
+
+    // Add the protection key next to the "Verified by Signature1618" text
+    $keyX = $combinedX + $verifiedTextWidth + 20; // Place it after the verified text with spacing
+    imagettftext($im, $keyFontSize, 0, $keyX, $verifiedY, $textColor, $protectionFontPath, $protectionKey);
+
+    // Save the image with PNG format to maintain transparency
+    imagepng($im, $imagePath);
+    imagedestroy($im);
+
+    return $imagePath;
+}
+
+
+
+
     
     private function createInitialsImage($initials)
 {
@@ -2434,6 +2562,56 @@ public function declineRequest(Request $request){
     imagedestroy($im);
 
     return $imagePath;
+}
+
+public function generateProtectionKey($user_id)
+{
+    // Get user settings
+    $user_settings = UserGlobalSetting::where('user_id', $user_id)
+        ->where('meta_key', 'protection')
+        ->first();
+
+    // Determine protection type (default to 'standard' if not set)
+    if ($user_settings) {
+        $protection_type = $user_settings->meta_value;
+    } else {
+        $protection_type = 'standard';
+    }
+
+    // Generate protection key based on type (without base signature)
+    switch ($protection_type) {
+        case 'numerical':
+            // Generate a random numerical ID format (ID followed by random numbers)
+            $random_number = rand(1000000000, 9999999999); // 10-digit number
+            $protection_key = 'ID' . $random_number . ' •';
+            break;
+
+        case 'advanced':
+            // Full set of Greek symbols
+            $greek_symbols = [
+                'Α', 'Β', 'Γ', 'Δ', 'Ε', 'Ζ', 'Η', 'Θ', 'Ι', 'Κ', 
+                'Λ', 'Μ', 'Ν', 'Ξ', 'Ο', 'Π', 'Ρ', 'Σ', 'Τ', 'Υ', 
+                'Φ', 'Χ', 'Ψ', 'Ω'
+            ];
+
+            // Pick 6 random symbols
+            $random_greek_symbols = implode('', array_rand(array_flip($greek_symbols), 6));
+
+            // Generate random numbers
+            $random_number = rand(100000, 999999); // 6-digit number
+
+            $protection_key = $random_greek_symbols . $random_number . ' •';
+            break;
+
+        case 'standard':
+        default:
+            // Return an empty string for the 'standard' type
+            $protection_key = ' •'; 
+            break;
+    }
+
+    // Return or use the generated protection key
+    return $protection_key;
 }
 
 

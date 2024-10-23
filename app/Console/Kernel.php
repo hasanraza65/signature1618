@@ -17,6 +17,7 @@ use App\Models\Subscription;
 use App\Models\PaymentMethod;
 use App\Models\Transaction;
 use App\Models\BillingInfo;
+use App\Models\UserGlobalSetting;
 use Stripe\Stripe;
 use Stripe\Customer;
 use Stripe\Charge;
@@ -37,12 +38,13 @@ class Kernel extends ConsoleKernel
 
             //reminder 
             $data = RequestReminderDate::all();
-            $subject = "Reminder to sign the document";
+            $subject = "Dp Sign the document";
             foreach($data as $date){
                 $reminderDate = Carbon::parse($date->date);
                 \Log::info('reminder date '.$reminderDate);
                 \Log::info('today date '.Carbon::today());
                 if ($reminderDate->isSameDay(Carbon::today())) {
+
                     
                     // APPROVER NOTIFICATION
                     $request_obj_approver = UserRequest::where('id',$date->request_id)
@@ -52,7 +54,15 @@ class Kernel extends ConsoleKernel
 
                     if($request_obj_approver){
 
-                        $subject = "Reminder to approve the document";
+                        $sender_user = User::find($request_obj_approver->user_id);
+                        $globalsettings = UserGlobalSetting::where('user_id',$sender_user->id)->where('meta_key','company')->first();
+                        if(!$globalsettings){
+                            $company_name = $sender_user->name.' '.$sender_user->last_name;
+                        }else{
+                            $company_name = $globalsettings->meta_value;
+                        }
+
+                        $subject = "Reminder: Do Approve ".$request_obj_approver->file_name.' from '.$company_name;
 
                         $approver_obj = Approver::where('request_id',$request_obj_approver->id)
                         ->where('status','pending')
@@ -93,6 +103,17 @@ class Kernel extends ConsoleKernel
                         $signer_obj = Signer::where('request_id',$request_obj->id)
                         ->where('status','pending')
                         ->get();
+
+
+                        $sender_user = User::find($request_obj->user_id);
+                        $globalsettings = UserGlobalSetting::where('user_id',$sender_user->id)->where('meta_key','company')->first();
+                        if(!$globalsettings){
+                            $company_name = $sender_user->name.' '.$sender_user->last_name;
+                        }else{
+                            $company_name = $globalsettings->meta_value;
+                        }
+
+                        $subject = "Reminder: Do Sign ".$request_obj->file_name.' from '.$company_name;
 
                         foreach($signer_obj as $signer){
 

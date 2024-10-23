@@ -81,7 +81,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #244BED; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #0018A8; color: #000000; width: 600px; margin: 0 auto;" width="600">
                                         <tbody>
                                             <tr>
                                                 <td class="column column-1" width="100%" style="font-weight: 400; text-align: left; padding-bottom: 20px; padding-left: 50px; padding-right: 50px; padding-top: 20px; vertical-align: top;">
@@ -132,7 +132,7 @@
                                                         <tr>
                                                             <td class="pad">
                                                                 <div class="alignment" align="center">
-                                                                    <a href="{{ env('APP_URL') }}/approve/?d={{$user_d['requestUID']}}&a={{$user_d['signerUID']}}" target="_blank" style="background-color:#009c4a; border-radius:10px; color:#ffffff; display:block; font-family: Arial, Helvetica, sans-serif; font-size:22px; font-weight:400; padding-bottom:5px; padding-top:5px; text-align:center; text-decoration:none; width:65%;"><span style="padding-left:20px; padding-right:20px; font-size:22px; display:inline-block; letter-spacing:normal;"><span style="line-height: 44px;">Access Dossier</span></span></a>
+                                                                    <a href="{{ env('APP_URL') }}/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}" target="_blank" style="background-color:#009c4a; border-radius:10px; color:#ffffff; display:block; font-family: Arial, Helvetica, sans-serif; font-size:22px; font-weight:400; padding-bottom:5px; padding-top:5px; text-align:center; text-decoration:none; width:65%;"><span style="padding-left:20px; padding-right:20px; font-size:22px; display:inline-block; letter-spacing:normal;"><span style="line-height: 44px;">Access Dossier</span></span></a>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -179,7 +179,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #244BED; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                    <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #0018A8; color: #000000; width: 600px; margin: 0 auto;" width="600">
                                         <tbody>
                                             <tr>
                                                 <td class="column column-1" width="100%" style="font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top;">
@@ -188,7 +188,7 @@
                                                             <td class="pad">
                                                                 <div style="color:#ebebeb; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 400; letter-spacing: 0px; line-height: 120%; text-align: center;">
                                                                     <p style="margin: 0; margin-bottom: 16px;">Request Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener">Signature1618</a></p>
-                                                                    <p style="margin: 0;">If you are having trouble approving the document, please visit this link from an internet connected computer. {{ env('APP_URL') }}/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}.</p>
+																	<p style="margin: 0;">Your information is protected by Signature1618's advanced encryption, ensuring the highest level of security for your documents. If you have any questions or need assistance signing, please visit our <a href="https://signature1618.com/help-center/">support center</a>.</p>
                                                                 </div>
                                                             </td>
                                                         </tr>

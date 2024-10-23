@@ -99,7 +99,7 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                        <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                        <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #0018A8; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
                                             <tbody>
                                                 <tr>
                                                     <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 20px; padding-left: 50px; padding-right: 50px; padding-top: 20px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
@@ -157,7 +157,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                       <td style="border: 1px solid #101112; padding: 8px;">Amount Paid</td>
-                                                                      <td style="border: 1px solid #101112; padding: 8px;">{{$user_d['amount']}}</td>
+                                                                      <td style="border: 1px solid #101112; padding: 8px;">${{$user_d['amount']}}</td>
                                                                     </tr>
                                                                     <tr>
                                                                       <td style="border: 1px solid #101112; padding: 8px;">Subscription Period</td>
@@ -230,7 +230,7 @@
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #244BED; padding:20px; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
+                                            <table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #0018A8; padding:20px; border-radius: 0; color: #000000; width: 600px; margin: 0 auto;" width="600">
                                                 <tbody>
                                                     <tr>
                                                         <td class="column column-1" width="100%" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; padding-bottom: 5px; padding-top: 5px; vertical-align: top; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;">
@@ -238,8 +238,9 @@
                                                                 <tr>
                                                                     <td class="pad">
                                                                         <div style="color:#ebebeb;direction:ltr;font-family:Arial, Helvetica, sans-serif;font-size:16px;font-weight:400;letter-spacing:0px;line-height:120%;text-align:center;mso-line-height-alt:19.2px;">
-                                                                            <p style="margin: 0;">Email Sent Via <a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener" bis_size="{&quot;x&quot;:874,&quot;y&quot;:753,&quot;w&quot;:104,&quot;h&quot;:18,&quot;abs_x&quot;:874,&quot;abs_y&quot;:812}">Signature1618</a></p>
-                                                                        </div>
+                                                                            <p style="margin: 0;"><a href="signature1618.com" target="_blank" style="text-decoration: none; color: #FFD700;" rel="noopener" bis_size="{&quot;x&quot;:874,&quot;y&quot;:753,&quot;w&quot;:104,&quot;h&quot;:18,&quot;abs_x&quot;:874,&quot;abs_y&quot;:812}">Signature1618</a></p>
+																			<p style="margin: 0;">16192 Coastal Highway, Lewes, Delaware 19958 </p>
+																		</div>
                                                                     </td>
                                                                 </tr>
                                                             </table>
