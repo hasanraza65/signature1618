@@ -173,76 +173,70 @@ class SubscriptionController extends Controller
     }
 
 
-    public function createSubscribe($amount, $transaction_id, $plan_id, $payment_cycle){
-
+    public function createSubscribe($amount, $transaction_id, $plan_id, $payment_cycle)
+    {
         $userId = Auth::user()->id;
-
-        $data = Subscription::where('user_id',$userId)->first();
+    
+        // Retrieve existing subscription and plan data
+        $data = Subscription::where('user_id', $userId)->first();
         $plan_data = Plan::find($plan_id);
-        
-        if(!$data){
+    
+        // Initialize subscription if it doesn't exist
+        if (!$data) {
             $data = new Subscription();
         }
-        
+    
+        // Check if the plan is a downgrade (e.g., from 4 to any lower plan)
+        if ($data->plan_id == 4 && $plan_id < 4) {
+            // If downgrading, delete related team data
+            Team::where('user_id', $userId)->delete();
+        }
+    
+        // Set subscription properties
         $data->user_id = $userId;
         $data->plan_id = $plan_id;
         $data->price = $amount;
         $data->payment_cycle = $payment_cycle;
         $data->payment_id = $transaction_id;
         $data->status = 1;
-
-        $days = 30;
-        if ($payment_cycle == "monthly") {
-            $days = 30;
-        } elseif ($payment_cycle == "yearly") {
-            $days = 365;
-        }
-
-        $today = Carbon::now();
-        $expirydate = $today->addDays($days)->toDateString();
-
+    
+        // Determine subscription duration
+        $days = $payment_cycle == "yearly" ? 365 : 30;
+        $expirydate = Carbon::now()->addDays($days)->toDateString();
+    
         $data->expiry_date = $expirydate;
-
-        if(!$data){
-            $data->save();
-        }else{
+    
+        // Save or update the subscription data
+        if ($data->exists) {
             $data->update();
+        } else {
+            $data->save();
         }
-
-        //update transaction
+    
+        // Update transaction record
         $transaction = Transaction::find($transaction_id);
-        $transaction->plan_id = $plan_id;
-        $transaction->update();
-
-        //send mail 
-
-        $useremail = Auth::user()->email;
-        $subject = 'Subscription Confirmed : Signature1618 ';
-        $today = Carbon::now();
-        $invitation_date = $data->created_at;
-        // Format the date
-        $formattedDate = $invitation_date->format('m/d/Y');
+        if ($transaction) {
+            $transaction->plan_id = $plan_id;
+            $transaction->update();
+        }
+    
+        // Send subscription confirmation email
+        $user = Auth::user();
         $dataUser = [
-            'email' => Auth::user()->email,
-            'first_name' => Auth::user()->name,
-            'last_name' => Auth::user()->last_name,
-            'invitation_date' => $formattedDate,
+            'email' => $user->email,
+            'first_name' => $user->name,
+            'last_name' => $user->last_name,
+            'invitation_date' => $data->created_at->format('m/d/Y'),
             'plan_name' => $plan_data->plan_name,
             'amount' => $amount,
             'subscription_period' => $payment_cycle,
             'next_billing_date' => $expirydate,
-             
-         ];
-
-         Mail::to($useremail)->send(new \App\Mail\NewSubscription($dataUser, $subject));
-
-        //ending send mail
-
+        ];
+    
+        Mail::to($user->email)->send(new \App\Mail\NewSubscription($dataUser, 'Subscription Confirmed : Signature1618'));
+    
         return true;
-
-
     }
-
     
     public function cancelSubscription(Request $request){
 

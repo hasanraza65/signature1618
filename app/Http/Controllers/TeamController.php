@@ -14,38 +14,39 @@ use App\Models\UserGlobalSetting;
 
 class TeamController extends Controller
 {
-   public function index()
-{
-    if (Auth::user()->user_role == 1) {
-        $data = Team::with(['userDetail', 'memberDetail'])
-            ->orderBy('id', 'desc')
-            ->get();
-    } else {
-        $team_plan = Subscription::where('user_id', Auth::user()->id)->first();
-        $team_data = Team::where('email', Auth::user()->email)
-            ->whereNot('status', 2)
-            ->first();
+    public function index()
+    {
+        if (Auth::user()->user_role == 1) {
+            $data = Team::with(['userDetail', 'memberDetail'])
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            $team_plan = Subscription::where('user_id', Auth::user()->id)->first();
+            $team_data = Team::where('email', Auth::user()->email)
+                ->whereNot('status', 2)
+                ->first();
 
-        $user_id = $team_data ? $team_data->user_id : Auth::user()->id;
+            $user_id = $team_data ? $team_data->user_id : Auth::user()->id;
 
-        $data = Team::with(['userDetail', 'memberDetail'])
-            ->where('user_id', $user_id)
-            ->orderBy('id', 'desc')
-            ->get();
+            $data = Team::with(['userDetail', 'memberDetail'])
+                ->where('user_id', $user_id)
+                ->orderBy('id', 'desc')
+                ->get();
+        }
+
+        // Always maintain the same structure
+        $teamResponse = $data->isEmpty() ? [] : $data;  // Ensure $teamResponse is always an array
+        //$userDetail = Auth::user(); // Get userDetail for the authenticated user
+        $userDetail = User::find($user_id);
+
+        return response()->json([
+            'data' => [
+                'teams' => $teamResponse,  // Array of teams or empty array if no teams
+                'userDetail' => $userDetail  // Always return userDetail
+            ],
+            'message' => 'Success'
+        ], 200);
     }
-
-    // Always maintain the same structure
-    $teamResponse = $data->isEmpty() ? [] : $data;  // Ensure $teamResponse is always an array
-    $userDetail = Auth::user(); // Get userDetail for the authenticated user
-
-    return response()->json([
-        'data' => [
-            'teams' => $teamResponse,  // Array of teams or empty array if no teams
-            'userDetail' => $userDetail  // Always return userDetail
-        ],
-        'message' => 'Success'
-    ], 200);
-}
 
 
     public function store(Request $request)

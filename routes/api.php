@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+
+
 Route::post('/add-signer-pdf', [App\Http\Controllers\RequestController::class, 'addSignerPDF']);
 
 //Route::get('auth/google', [AuthController::class, 'redirectToGoogle'])->middleware('web');
@@ -98,6 +100,9 @@ Route::middleware('auth:api')->group(function () {
 
         //User Request Module
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
+        
+        Route::post('/upload-thumbnail', [App\Http\Controllers\RequestController::class, 'uploadThumbnail']);
+        
         Route::get('/inbox', [App\Http\Controllers\RequestController::class, 'inbox']);
         Route::get('/get_file/{id}', [App\Http\Controllers\RequestController::class, 'getFileBase']);
         Route::post('/create_request_draft', [App\Http\Controllers\RequestController::class, 'createDraft']);

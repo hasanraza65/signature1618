@@ -353,7 +353,8 @@ class ContactController extends Controller
             ->first();
 
             if($data){
-                $data->delete();
+                $data->is_deleted = 1;
+                $data->update();
             }
             
         }
