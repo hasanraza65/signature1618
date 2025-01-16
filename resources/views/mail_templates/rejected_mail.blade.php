@@ -73,7 +73,7 @@
 	</style>
 </head>
 
-<body>
+<body style="background-color: #ffffff; margin: 0; padding: 0; -webkit-text-size-adjust: none; text-size-adjust: none;">
 		<div class="header">
 			<table class="row-content stack" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color:#0018A8; border-radius: 0; color: #101112; width: 600px; margin: 0 auto;" width="600">
 				<tbody>

@@ -23,13 +23,6 @@ Route::get('/', function () {
 Route::get('/test', function () {
     return view('test');
 });
-Route::get('/test2', function () {
-    return view('test2');
-});
-
-Route::get('/test3', function () {
-    return view('test3');
-});
 
 Route::get('/phpinfo', function () {
     phpinfo();
@@ -45,6 +38,8 @@ Route::get('/dump-autoload', function () {
 Route::get('/charge', function () {
     return view('charge');
 });
+
+Route::get('/testcharge', [App\Http\Controllers\RequestController::class, 'testCharge']); 
 
 
 Route::get('/generate_sign/{name}', [App\Http\Controllers\ProfileManagementController::class, 'generateSignature']); 

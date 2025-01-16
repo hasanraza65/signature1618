@@ -14,6 +14,7 @@ use App\Models\Approver;
 use App\Models\RadioButton;
 use App\Models\RequestLog;
 use App\Models\UserGlobalSetting;
+use App\Models\OtpCharge;
 use Auth;
 use DB;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +28,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use setasign\Fpdi\Fpdi;
 use Spatie\PdfToImage\Pdf as SpatiePdf; 
-
+use Stripe\Stripe;
+use Stripe\Charge;
+use Stripe\PaymentIntent;
+use Stripe\Customer;
 
 
 
@@ -940,7 +944,7 @@ public function declineRequest(Request $request){
             $phone = $getContact->contact_phone;
 
             if($phone!= null && $phone != ""){
-                $this->sendSMSOTP($phone, $otp);
+                $this->sendSMSOTP($phone, $otp, $requestdata->user_id, $requestdata->id, $getUser->id);
             }
 
            
@@ -1617,18 +1621,131 @@ public function declineRequest(Request $request){
         return "Mail sent";
     }
 
-    public function sendSMSOTP($phone, $otp)
+    public function sendSMSOTP($phone, $otp, $sender_id, $request_id, $signer_user_id)
     {
         $to = $phone;
-        $message = 'Your OTP for Signature1618: '.$otp;
-        //$senderName = 'Signature1618'; // Replace 'YourSenderName' with your desired sender name
+        $message = 'Your OTP for Signature1618: ' . $otp;
 
+        // Charge user
+        $senderUser = User::find($sender_id);
+        if ($senderUser) {
+            $stripe_token = $senderUser->stripe_token;
 
+            $otpcharge = OtpCharge::where('request_id', $request_id)
+                ->where('signer_user_id', $signer_user_id)
+                ->first();
+
+            if (!$stripe_token) {
+                // Save as a failed payment due to missing stripe token
+                $otpcharge = $otpcharge ?? new OtpCharge();
+                $otpcharge->request_id = $request_id;
+                $otpcharge->signer_user_id = $signer_user_id;
+                $otpcharge->amount = 0.90;
+                $otpcharge->stripe_message = 'No Stripe token available for this user.';
+                $otpcharge->status = 0;
+                $otpcharge->transaction_id = "";
+                $otpcharge->save();
+
+                $this->twilio->sendSMS($to, $message);
+
+                return response()->json(['message' => 'SMS sent and charge completed successfully']);
+            }
+
+            if (!$otpcharge || $otpcharge->status != 1) {
+                $amount = 0.90;
+                $stripe_amount = $amount * 100;
+
+                Stripe::setApiKey(env('STRIPE_SECRET'));
+
+                try {
+                    $customer = Customer::retrieve($stripe_token);
+                    $paymentMethod = $customer->invoice_settings->default_payment_method;
+
+                    if (!$paymentMethod) {
+                        return response()->json(['error' => 'No default payment method found for this customer.'], 400);
+                    }
+
+                    $paymentIntent = PaymentIntent::create([
+                        'amount' => $stripe_amount,
+                        'currency' => 'usd',
+                        'customer' => $stripe_token,
+                        'payment_method' => $paymentMethod,
+                        'off_session' => true,
+                        'confirm' => true,
+                        'description' => 'SMS OTP charge for Signature1618',
+                    ]);
+
+                    $otpcharge = $otpcharge ?? new OtpCharge();
+                    $otpcharge->request_id = $request_id;
+                    $otpcharge->signer_user_id = $signer_user_id;
+                    $otpcharge->amount = $amount;
+                    $otpcharge->stripe_message = $paymentIntent->status;
+                    $otpcharge->status = $paymentIntent->status === 'succeeded' ? 1 : 0;
+                    $otpcharge->transaction_id = $paymentIntent->id ?? ''; // Store transaction ID if available
+                    $otpcharge->save();
+                    
+                    if ($paymentIntent->status !== 'succeeded') {
+                        return response()->json(['error' => 'Payment not completed, status: ' . $paymentIntent->status], 500);
+                    }
+
+                } catch (\Exception $e) {
+                    $otpcharge = $otpcharge ?? new OtpCharge();
+                    $otpcharge->request_id = $request_id;
+                    $otpcharge->signer_user_id = $signer_user_id;
+                    $otpcharge->amount = $amount;
+                    $otpcharge->stripe_message = $e->getMessage();
+                    $otpcharge->status = 0;
+                    $otpcharge->transaction_id = "";
+                    $otpcharge->save();
+
+                    return response()->json(['error' => $e->getMessage()], 500);
+                }
+            }
+        }
+
+        // Send SMS after the charge is successful
         $this->twilio->sendSMS($to, $message);
 
-        return true;
+        return response()->json(['message' => 'SMS sent and charge completed successfully']);
+    }
 
-        //return response()->json(['message' => 'SMS sent successfully']);
+    public function testCharge()
+    {
+        $stripe_token = 'cus_R4pfyyge0NwLb0';
+    
+        // Set up Stripe API key
+        Stripe::setApiKey('sk_test_51OpS8qB0Nlv2z5Xgr2fM7Ewp1HAec0u5ovlLG3rLVqH3SA3a1r5dRl2p910lvR5TkFoHZZzFbbU7qifwm213nKQo00dGJu0ECF');
+    
+        try {
+            // Retrieve the customer's default payment method
+            $customer = Customer::retrieve($stripe_token);
+            $paymentMethod = $customer->invoice_settings->default_payment_method;
+    
+            if (!$paymentMethod) {
+                return response()->json(['error' => 'No default payment method found for this customer.'], 400);
+            }
+    
+            // Create and confirm the PaymentIntent with the default payment method
+            $paymentIntent = PaymentIntent::create([
+                'amount' => 90, // Amount in cents
+                'currency' => 'usd',
+                'customer' => $stripe_token,
+                'payment_method' => $paymentMethod,
+                'off_session' => true, // Indicates that this payment is being made without user interaction
+                'confirm' => true, // Confirm the PaymentIntent immediately
+                'description' => 'SMS OTP charge for Signature1618',
+            ]);
+    
+            // Optional: Check the status of the payment
+            if ($paymentIntent->status === 'succeeded') {
+                return "Payment succeeded";
+            } else {
+                return "Payment not completed, status: " . $paymentIntent->status;
+            }
+        } catch (\Exception $e) {
+            // Handle the error (log it, notify, etc.)
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy(Request $request,$id){
