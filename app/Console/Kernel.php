@@ -38,7 +38,7 @@ class Kernel extends ConsoleKernel
 
             //reminder 
             $data = RequestReminderDate::all();
-            $subject = "Dp Sign the document";
+            $subject = "Do Sign the document";
             foreach($data as $date){
                 $reminderDate = Carbon::parse($date->date);
                 \Log::info('reminder date '.$reminderDate);
@@ -78,7 +78,7 @@ class Kernel extends ConsoleKernel
                                 'expiry_date'=>$request_obj_approver->expiry_date,
                                 'file_name'=>$request_obj_approver->file_name,
                                 'company_name'=> $user_obj->company,
-                                'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
+                                'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj_approver->unique_id,
                                 'signerUID'=>$approver->unique_id,
@@ -125,7 +125,7 @@ class Kernel extends ConsoleKernel
                                 'expiry_date'=>$request_obj->expiry_date,
                                 'file_name'=>$request_obj->file_name,
                                 'company_name'=> $user_obj->company,
-                                'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
+                                'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj->unique_id,
                                 'signerUID'=>$signer->unique_id,

@@ -30,7 +30,8 @@ class User extends Authenticatable
         'last_name',
         'unique_id',
         'google_id',
-        'is_verified'
+        'is_verified',
+        'contact_type',
     ];
 
     /**

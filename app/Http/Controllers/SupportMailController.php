@@ -36,7 +36,7 @@ class SupportMailController extends Controller
 
     public function store(Request $request)
     {
-        $email = "ranahasanraza24@gmail.com";
+        $email = "support@siganture1618.com";
         $useremail = Auth::user()->email;
         $subject = 'New support request: ' . $request->subject;
         $today = Carbon::now();

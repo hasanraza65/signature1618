@@ -14,4 +14,13 @@ class Common
     
         return $date->format('m/d/Y H:i') . ' GMT +2'; 
     }
+
+    public static function onlyDateFormat($date)
+    {
+        // Ensure $date is a valid Carbon instance
+        $date = Carbon::parse($date);
+
+    
+        return $date->format('m/d/Y'); 
+    }
 }

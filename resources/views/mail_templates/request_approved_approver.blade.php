@@ -20,7 +20,7 @@
                 You have approved {{$user_d['document_name']}}.
             </p>
             <p style="font-size: 16px; line-height: 1.5; margin: 10px 0;">
-                A record of your refusal of this dossier has been recorded.
+                The dossier has been sent to the pertinent signatories.
             </p>
 
             <p style="font-size: 16px; line-height: 1.5; margin: 20px 0 10px 0;">

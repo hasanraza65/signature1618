@@ -69,7 +69,7 @@
                                                         </tr>
                                                         <tr>
                                                             <td style="border: 1px solid #101112; padding: 8px;">Invitation Sent Date</td>
-                                                            <td style="border: 1px solid #101112; padding: 8px;">{{ \App\Helpers\Common::dateFormat($user_d['invitation_date']) }}</td>
+                                                            <td style="border: 1px solid #101112; padding: 8px;">{{ \App\Helpers\Common::onlyDateFormat($user_d['invitation_date']) }}</td>
                                                         </tr>
                                                     </table>
                                                     <p style="color: #101112; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 400; line-height: 120%; margin-bottom: 16px;">

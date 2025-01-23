@@ -39,6 +39,10 @@ Route::get('/charge', function () {
     return view('charge');
 });
 
+Route::get('/server-time', function () {
+    return now(); // Displays the current time
+});
+
 Route::get('/testcharge', [App\Http\Controllers\RequestController::class, 'testCharge']); 
 
 

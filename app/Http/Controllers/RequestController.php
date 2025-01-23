@@ -1112,6 +1112,8 @@ public function declineRequest(Request $request){
         //manage signed file 
 
         $this->addSignerPDF($requestdata->id,$signeruser->id, $protection_key);
+        
+        $requestdata = UserRequest::where('unique_id',$request->request_unique_id)->first();
 
         //ending manage signed file
 
@@ -1988,7 +1990,7 @@ public function declineRequest(Request $request){
                         'expiry_date'=>$request_obj_approver->expiry_date,
                         'file_name'=>$request_obj_approver->file_name,
                         'company_name'=> $sender_user->company,
-                        'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
+                        'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                         'email' => $email,
                         'requestUID'=>$request_obj_approver->unique_id,
                         'signerUID'=>$approver->unique_id,
@@ -2038,7 +2040,7 @@ public function declineRequest(Request $request){
                     'expiry_date'=>$request_obj->expiry_date,
                     'file_name'=>$request_obj->file_name,
                     'company_name'=> $sender_user->company,
-                    'receiver_name'=> $user_obj->name.''.$user_obj->last_name,
+                    'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                     'email' => $email,
                     'requestUID'=>$request_obj->unique_id,
                     'signerUID'=>$signer->unique_id,
@@ -2433,7 +2435,7 @@ public function declineRequest(Request $request){
                                     $radioImagePath = public_path('radio-checked.png');
                                     $selectedRadioButton = RadioButton::where('field_id', $field->id)->get()[$field->answer] ?? null;
                                     if ($selectedRadioButton && file_exists($radioImagePath)) {
-                                        $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 8, 8);
+                                        $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 10, 10);
                                     } else {
                                         $pdf->SetFont('Helvetica', 'B', 10);
                                         $pdf->Text($newX, $newY, '✓');
@@ -2441,18 +2443,47 @@ public function declineRequest(Request $request){
                                     break;
     
                                 case 'checkbox':
-                                    $pdf->Rect($newX, $newY, 5, 5);
-                                    if ($field->answer === 'true') {
-                                        $pdf->Line($newX + 1, $newY + 2, $newX + 2, $newY + 4);
-                                        $pdf->Line($newX + 2, $newY + 4, $newX + 4, $newY + 1);
-                                    }
-                                    break;
+                                // Set the paths for the checked and unchecked images
+                                $checkedImagePath = public_path('checked.png');
+                                $uncheckedImagePath = public_path('unchecked.png');
+                            
+                                // Determine the image to use based on the answer
+                                $imagePath = ($field->answer === 'true') ? $checkedImagePath : $uncheckedImagePath;
+                            
+                                // Check if the file exists before adding the image
+                                if (file_exists($imagePath)) {
+                                    $pdf->Image($imagePath, $newX, $newY, 10, 10); // Adjust the size (8x8) as needed
+                                } else {
+                                    // Fallback if the image does not exist
+                                    $pdf->SetFont('Helvetica', 'B', 10);
+                                    $pdf->Text($newX, $newY, '✓'); // Placeholder for the checkmark
+                                }
+                                break;
+
     
                                 case 'initials':
+                                    
+                                    
+                                    $newY = $newY-5;
+                                    $newX = $newX-5;
+                                    //$newY = 192.0875;
+                                    
+                                    if(isset($field->question)){
+                                        if($field->question === "center"){
+                                        $newX = 88;
+                                        }elseif($field->question === "right"){
+                                            $newX = 184;
+                                        }
+                                        
+                                        
+                                    }
+                                    
+                                    
+                                    
                                     $initials = strtoupper(substr($signer->signerContactDetail->contact_first_name, 0, 1)) . strtoupper(substr($signer->signerContactDetail->contact_last_name, 0, 1));
                                     $initialsImagePath = $this->createInitialsImage($initials);
                                     if (file_exists($initialsImagePath)) {
-                                        $pdf->Image($initialsImagePath, $newX, $newY, 40, 40);
+                                        $pdf->Image($initialsImagePath, $newX, $newY, 40, 20);
                                     }
                                     break;
                             }
@@ -2467,7 +2498,9 @@ public function declineRequest(Request $request){
         $pdf->Output($signedFile, 'F');
     
         // Upload the signed file back to AWS S3
-        $uploaded = Storage::disk('s3')->put($signedFilePath, file_get_contents($signedFile));
+        $uploaded = Storage::disk('s3')->put($signedFilePath, file_get_contents($signedFile), [
+            'ContentType' => 'application/pdf',
+        ]);
         
         $signedPath = Storage::disk('s3')->url($signedFilePath);
         
@@ -2483,6 +2516,37 @@ public function declineRequest(Request $request){
     }
 
     
+    function RoundedRect($pdf, $x, $y, $w, $h, $r, $style = 'S') {
+        $k = $pdf->k;
+        $hp = $pdf->h;
+        $MyArc = 4/3 * (sqrt(2) - 1);
+    
+        // Move to the start point
+        $pdf->_out(sprintf('%.2F %.2F m', ($x + $r) * $k, ($hp - $y) * $k));
+    
+        // Draw the sides
+        $pdf->_out(sprintf('%.2F %.2F l', ($x + $w - $r) * $k, ($hp - $y) * $k));
+        $pdf->_Arc($x + $w - $r + $r * $MyArc, $y + $r, $x + $w - $r, $y + $r - $r * $MyArc, $x + $w - $r, $y + $r);
+    
+        $pdf->_out(sprintf('%.2F %.2F l', ($x + $w) * $k, ($hp - ($y + $h)) * $k));
+        $pdf->_Arc($x + $w - $r, $y + $h - $r, $x + $w - $r + $r * $MyArc, $y + $h - $r, $x + $w - $r, $y + $h - $r);
+    
+        $pdf->_out(sprintf('%.2F %.2F l', ($x + $r) * $k, ($hp - ($y + $h)) * $k));
+        $pdf->_Arc($x + $r - $r * $MyArc, $y + $h - $r, $x + $r, $y + $h - $r + $r * $MyArc, $x + $r, $y + $h - $r);
+    
+        $pdf->_out(sprintf('%.2F %.2F l', $x * $k, ($hp - $y) * $k));
+        $pdf->_Arc($x + $r, $y + $r - $r * $MyArc, $x + $r - $r * $MyArc, $y + $r, $x + $r, $y + $r);
+    
+        $pdf->_out($style == 'F' ? 'f' : 'S'); // Fill or Stroke the rectangle
+    }
+    
+    function _Arc($pdf, $x1, $y1, $x2, $y2, $x3, $y3) {
+        $h = $pdf->h;
+        $pdf->_out(sprintf('%.2F %.2F %.2F %.2F %.2F %.2F c ', 
+            $x1 * $pdf->k, ($h - $y1) * $pdf->k,
+            $x2 * $pdf->k, ($h - $y2) * $pdf->k,
+            $x3 * $pdf->k, ($h - $y3) * $pdf->k));
+    }
         
         
         public function convertPdfVersion($oldPdfPath, $newPdfPath)

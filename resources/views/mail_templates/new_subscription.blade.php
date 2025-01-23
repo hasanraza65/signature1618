@@ -20,20 +20,20 @@
             
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Plan:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Plan</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['plan_name']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Amount Paid:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Amount Paid</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">${{$user_d['amount']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Subscription Period:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Subscription Period</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['subscription_period']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Next Billing Date:</td>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{ \App\Helpers\Common::dateFormat($user_d['next_billing_date']) }}</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Next Billing Date</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{ \App\Helpers\Common::onlyDateFormat($user_d['next_billing_date']) }}</td>
                 </tr>
             </table>
 

@@ -38,7 +38,7 @@
 
             <!-- Button to Download Document -->
             <p style="text-align: center; margin: 20px 0;">
-                <a href="{{ url($filePath) }}" style="background-color: #009c4a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Download Document</a>
+                <a href="{{ $filePath }}" style="background-color: #009c4a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Download Document</a>
             </p>
 
             <p style="font-size: 16px; line-height: 1.5; margin: 20px 0 10px 0;">

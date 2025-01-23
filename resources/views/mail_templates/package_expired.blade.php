@@ -21,24 +21,24 @@
             </p>
 
             <!-- Renew Now Button -->
-            <a href="https://signature1618.app/login" style="display: block; width: 50%; max-width: 300px; margin: 20px auto; padding: 12px; background-color: #009c4a; color: #ffffff; text-align: center; border-radius: 10px; text-decoration: none; font-size: 19px;">Renew Now</a>
+            <a href="https://signature1618.app" style="display: block; width: 50%; max-width: 300px; margin: 20px auto; padding: 12px; background-color: #009c4a; color: #ffffff; text-align: center; border-radius: 10px; text-decoration: none; font-size: 19px;">Renew Now</a>
 
             <!-- Subscription Details Table -->
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Plan:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Plan</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['plan_name']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Status:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Status</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['substatus']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">End Date:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">End Date</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['end_date']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Price:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Price</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">${{$user_d['price']}}</td>
                 </tr>
             </table>

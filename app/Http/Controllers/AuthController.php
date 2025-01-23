@@ -63,11 +63,41 @@ class AuthController extends Controller
 
         // Check if the user already exists in your database
         $user = User::where('email', $googleUserEmail)->first();
+    
 
         if ($user) {
             // If the user already exists, log them in
             Auth::login($user, true);
+            
+            if($user->contact_type == 1){
+                
+
+                //sending welcome mail
+                $dataUserWelcome = [
+                    'first_name' => $user->name,
+                    'last_name' => $user->last_name,
+                    
+                ];
+            
+                $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+            
+                Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+                //ending welcome mail
+                
+                \Log::info('mail to '.$user->email);
+                
+                
+                
+                $update_user = User::where('email', $googleUserEmail)->first();
+                $update_user->contact_type = 0;
+                $update_user->google_id = $googleUserId;
+                $update_user->is_verified = 1;
+                $update_user->update();
+            }
+            
         } else {
+            
+            
             // If the user doesn't exist, create a new user
             $user = User::create([
                 'name' => $firstName,
@@ -82,6 +112,18 @@ class AuthController extends Controller
             //ending update global settings
 
             Auth::login($user, true);
+            
+            //sending welcome mail
+            $dataUserWelcome = [
+                'first_name' => $user->name,
+                'last_name' => $user->last_name,
+                
+            ];
+        
+            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+        
+            Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+            //ending welcome mail
         }
 
         // Check if the user has a subscription plan

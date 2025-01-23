@@ -80,7 +80,7 @@
                                                                 <tr>
                                                             
                                                                     <td style="border: 1px solid #101112; padding: 8px;">Joined Date</td>
-                                                                    <td style="border: 1px solid #101112; padding: 8px;"> {{ \App\Helpers\Common::dateFormat($user_d['joined_date']) }}</td>                                                 
+                                                                    <td style="border: 1px solid #101112; padding: 8px;"> {{ \App\Helpers\Common::onlyDateFormat($user_d['joined_date']) }}</td>                                                 
                                                                 </tr>                                                        
                                                             
                                                               </table>

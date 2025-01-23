@@ -22,22 +22,22 @@
             </p>
 
             <!-- Access Dossier Button -->
-            <a href="https://signature1618.app/login" style="display: block; width: 50%; max-width: 300px; margin: 20px auto; padding: 12px; background-color: #009c4a; color: #ffffff; text-align: center; border-radius: 10px; text-decoration: none; font-size: 19px;">Access Dossier</a>
+            <a href="{{ env('APP_URL') }}/signer/sign/?d={{$user_d['requestUID']}}&s={{$user_d['signerUID']}}" style="display: block; width: 50%; max-width: 300px; margin: 20px auto; padding: 12px; background-color: #009c4a; color: #ffffff; text-align: center; border-radius: 10px; text-decoration: none; font-size: 19px;">Access Dossier</a>
 
             <!-- Dossier Details Table -->
             <p style="font-size: 16px; line-height: 1.5; margin-top: 20px;">Here are the details of the dossier:</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Dossier:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Dossier</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['file_name']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Requested by:</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Requested by</td>
                     <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{$user_d['company_name']}}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Expiration Date:</td>
-                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{ \App\Helpers\Common::dateFormat($user_d['expiry_date']) }}</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">Expiration Date</td>
+                    <td style="border: 1px solid #101112; padding: 8px; font-size: 16px;">{{ \App\Helpers\Common::onlyDateFormat($user_d['expiry_date']) }}</td>
                 </tr>
             </table>
 
