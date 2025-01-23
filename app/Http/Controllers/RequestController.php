@@ -2435,7 +2435,7 @@ public function declineRequest(Request $request){
                                     $radioImagePath = public_path('radio-checked.png');
                                     $selectedRadioButton = RadioButton::where('field_id', $field->id)->get()[$field->answer] ?? null;
                                     if ($selectedRadioButton && file_exists($radioImagePath)) {
-                                        $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 10, 10);
+                                        $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 8, 8);
                                     } else {
                                         $pdf->SetFont('Helvetica', 'B', 10);
                                         $pdf->Text($newX, $newY, '✓');
@@ -2452,7 +2452,7 @@ public function declineRequest(Request $request){
                             
                                 // Check if the file exists before adding the image
                                 if (file_exists($imagePath)) {
-                                    $pdf->Image($imagePath, $newX, $newY, 10, 10); // Adjust the size (8x8) as needed
+                                    $pdf->Image($imagePath, $newX, $newY, 8, 8); // Adjust the size (8x8) as needed
                                 } else {
                                     // Fallback if the image does not exist
                                     $pdf->SetFont('Helvetica', 'B', 10);

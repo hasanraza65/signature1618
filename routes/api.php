@@ -89,6 +89,8 @@ Route::middleware('auth:api')->group(function () {
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
 
+        Route::get('/check_plan', [App\Http\Controllers\SubscriptionController::class, 'checkLimitStatus']); 
+
         //CONTACTS Module
         Route::resource('/contacts', App\Http\Controllers\ContactController::class);
         Route::post('/bulk_import_contacts', [App\Http\Controllers\ContactController::class, 'bulkImport']); 

@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\Transaction;
 use App\Models\PaymentMethod;
 use App\Models\Team;
+use App\Models\UserRequest;
 use Auth;
 use Mail;
 use Carbon\Carbon;
@@ -381,6 +382,53 @@ class SubscriptionController extends Controller
             \Log::error('Stripe Payment Intent Error: ' . $e->getMessage());
             return "Error: " . $e->getMessage();
         }
+    }
+
+    public function checkLimitStatus(){
+
+        $current_plan = Subscription::where('user_id',Auth::user()->id)
+        ->orderBy('id','desc')
+        ->first();
+
+        if($current_plan){
+
+            if($current_plan->status == 0){
+                return response()->json([
+                    'message' => "You don't have any active plan.",
+                    'error_code' => 'no_active_plan'
+                ], 200);
+            }
+
+            if($current_plan->plan_id == 2){
+
+                $total_requests = UserRequest::where('user_id', Auth::user()->id)
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->whereYear('created_at', Carbon::now()->year)
+                ->count('id');
+
+                if($total_requests > 20){
+
+                    return response()->json([
+                        'message' => "You have reached your permited number of dossier for this month. Upgrade to Pro or Enterprise plan to send unlimited dossiers.",
+                        'error_code' => 'limit_reached'
+                    ], 200);
+                }
+            }
+
+            return response()->json([
+                'message' => "Success.",
+                'error_code' => 'success'
+            ], 200); 
+            
+        }else{
+
+            return response()->json([
+                'message' => "You don't have any active plan.",
+                'error_code' => 'no_active_plan'
+            ], 200);
+        }
+
+
     }
 
 }
