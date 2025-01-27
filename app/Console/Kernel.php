@@ -36,6 +36,12 @@ class Kernel extends ConsoleKernel
     {
         $schedule->call(function () {
 
+            // Get today's date in 'Y-m-d' format
+            $today = Carbon::today()->toDateString(); // e.g., "2023-10-25"
+
+            // Delete rows where the date is older than today
+            RequestReminderDate::where('date', '<', $today)->delete();
+
             //reminder 
             $data = RequestReminderDate::all();
             $subject = "Do Sign the document";

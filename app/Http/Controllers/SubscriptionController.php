@@ -406,7 +406,7 @@ class SubscriptionController extends Controller
                 ->whereYear('created_at', Carbon::now()->year)
                 ->count('id');
 
-                if($total_requests > 20){
+                if($total_requests >= 20){
 
                     return response()->json([
                         'message' => "You have reached your permited number of dossier for this month. Upgrade to Pro or Enterprise plan to send unlimited dossiers.",

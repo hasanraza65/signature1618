@@ -346,6 +346,8 @@ public function declineRequest(Request $request){
             if (!isset($requestData['status'])) {
                 throw new \Exception("Status key is missing in the request data.");
             }
+            
+            \Log::info('function hit');
     
             // Assuming you need to access specific keys
             $status = $requestData['status'];
@@ -354,6 +356,8 @@ public function declineRequest(Request $request){
             if(isset($requestData['reminder_dates']) && $requestData['reminder_dates'] != null){
                 $reminder_dates = $requestData['reminder_dates'];
             }
+            
+            //return response()->json($reminder_dates);
             
             if(isset($requestData['approvers']) && $requestData['approvers'] != null){
                 $approvers = $requestData['approvers'];
@@ -397,16 +401,24 @@ public function declineRequest(Request $request){
             $userRequestData->update();
 
             //create reminder dates
-            if(isset($reminder_dates) && $reminder_dates != null){
-                foreach($reminder_dates as $date){
-
-                    $reminderdate_obj = new RequestReminderDate();
-                    $reminderdate_obj->request_id = $userRequestData->id;
-                    $reminderdate_obj->date = $date['reminder_date'];
-                    $reminderdate_obj->save();
-
-                }
-            }
+            
+            //if($status != 'draft'){
+                if(isset($reminder_dates) && $reminder_dates != null){
+                    
+                    RequestReminderDate::where('request_id',$userRequestData->id)->delete();
+                    
+                    foreach ($reminder_dates as $date) {
+                         
+                    
+                        $reminderdate_obj = new RequestReminderDate();
+                        $reminderdate_obj->request_id = $userRequestData->id;
+                        $reminderdate_obj->date = $date['reminder_date'];
+                        $reminderdate_obj->save();
+                    }
+                } 
+            //}   
+            
+            
             
             //ending create reminder dates
 

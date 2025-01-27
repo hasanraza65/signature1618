@@ -102,5 +102,13 @@ Route::get('/paris-time', function () {
     ]);
 });
 
+Route::get('/run-scheduler', function () {
+    // Run the scheduler
+    Artisan::call('schedule:run');
+
+    // Return a message indicating the scheduler has been run
+    return 'Scheduler has been executed.';
+});
+
 
 //Route::get('/custom-charge', [App\Http\Controllers\SubscriptionController::class, 'customCharge']);
