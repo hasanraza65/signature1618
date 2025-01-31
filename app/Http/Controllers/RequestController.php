@@ -471,11 +471,11 @@ class RequestController extends Controller
                 $userRequestData->hash = $hash;
                 $userRequestData->update();
             }
+            
+             RequestReminderDate::where('request_id', $userRequestData->id)->delete();
 
             //if($status != 'draft'){
             if (isset($reminder_dates) && $reminder_dates != null) {
-
-                RequestReminderDate::where('request_id', $userRequestData->id)->delete();
 
                 foreach ($reminder_dates as $date) {
 
@@ -2462,7 +2462,7 @@ class RequestController extends Controller
         $output = shell_exec($command);
 
         // Log the command output for debugging
-        \Log::info("Ghostscript Output: {$output}");
+        //\Log::info("Ghostscript Output: {$output}");
 
         // Check if the output PDF was created and is not empty
         if (file_exists($outputPdfPath) && filesize($outputPdfPath) > 0) {
@@ -2508,7 +2508,7 @@ class RequestController extends Controller
         $output = shell_exec($command);
 
         // Log the command output for debugging
-        \Log::info("Ghostscript Output: {$output}");
+        //\Log::info("Ghostscript Output: {$output}");
 
         // Check if the output PDF was created and is not empty
         if (file_exists($outputPdfPath) && filesize($outputPdfPath) > 0) {
@@ -2588,31 +2588,35 @@ class RequestController extends Controller
 
                             // Field Type Handling
                             switch ($field->type) {
-                                case 'signature':
-                                    $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
-                                    $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
-                                    if (file_exists($signatureImagePath)) {
-                                        
-                                        $signatureUrl = 'https://certificate.signature1618.app/?r='.$data->unique_id.'&s='.$signer->unique_id;
-
-                                        // Add a link area where the image will be placed
-                                        if($data->sign_certificate == 'public'){
-                                            $link = $pdf->AddLink();
-                                            $pdf->SetLink($link, 0, $signatureUrl);
+                               case 'signature':
+                                $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
+                                $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
+                                $signatureUrl = 'https://certificate.signature1618.app/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
+                            
+                                if (file_exists($signatureImagePath)) {
+                                    // Reapply links for previously processed signers
+                                    foreach ($processedSigners as $processedSignerId) {
+                                        $existingSigner = $data->signers->firstWhere('id', $processedSignerId);
+                                        if ($existingSigner) {
+                                            $existingSignatureUrl = 'https://certificate.signature1618.app/?r=' . $data->unique_id . '&s=' . $existingSigner->unique_id;
+                                            
+                                            // Ensure the previous signatures get back their links
+                                            $pdf->Link($existingSigner->x * $scaleX, $existingSigner->y * $scaleY, $existingSigner->width * $scaleX, $existingSigner->height * $scaleY, $existingSignatureUrl);
                                         }
-                                        
-                                        
-                                        // Place the image and apply the clickable link
-                                        $pdf->Image($signatureImagePath, $newX, $newY, $width, $height);
-                                        
-                                        if($data->sign_certificate == 'public'){
-                                        $pdf->Link($newX, $newY, $width, $height, $signatureUrl);
-                                        }
-                                        
-                                        
                                     }
-                                    $processedSigners[] = $signer->id;
-                                    break;
+                            
+                                    // Add link for the new signer
+                                    if ($data->sign_certificate == 'public') {
+                                        $pdf->Link($newX, $newY, $width, $height, $signatureUrl);
+                                    }
+                            
+                                    // Add the signature image
+                                    $pdf->Image($signatureImagePath, $newX, $newY, $width, $height);
+                                }
+                            
+                                // Mark this signer as processed
+                                $processedSigners[] = $signer->id;
+                                break;
 
                                 case 'textinput':
                                 case 'mention':
@@ -2680,6 +2684,68 @@ class RequestController extends Controller
                             }
                         }
                     }
+                }elseif($signer->id != $signer_id && $signer->status == 'signed'){
+                    
+                    
+                    
+                    //putting links for other signed signers again 
+                    
+                    foreach ($signer->requestFields as $field) {
+                        
+                        if ($data->sign_certificate == 'public') {
+                       
+                        if ($field->page_index == ($pageNumber - 1)) {
+                            
+                            
+                            
+                            $newX = $field->x * $scaleX;
+                            $newY = $field->y * $scaleY;
+                            $width = $field->width * $scaleX;
+                            $height = $field->height * $scaleY;
+
+                            // Field Type Handling
+                            switch ($field->type) {
+                               case 'signature':
+                                   
+                               
+                                $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
+                                $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
+                                $signatureUrl = 'https://certificate.signature1618.app/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
+                            
+                                
+                                // Reapply links for previously processed signers
+                               
+                             
+                                    
+                                $existingSigner = $data->signers->firstWhere('id', $signer->id);
+                                if ($existingSigner) {
+                                            
+                                    
+                                            
+                                    $existingSignatureUrl = 'https://certificate.signature1618.app/?r=' . $data->unique_id . '&s=' . $existingSigner->unique_id;
+                                    
+                                    
+                                    $link = $pdf->AddLink();
+                                    $pdf->SetLink($link, 0, $existingSignatureUrl);
+                                            
+                                    // Ensure the previous signatures get back their links
+                                    $pdf->Link($newX, $newY, $width, $height, $existingSignatureUrl);
+
+                                }
+                               
+                            
+                                // Mark this signer as processed
+                                $processedSigners[] = $signer->id;
+                                break;
+                                
+                            }
+                        }
+                        
+                        }
+                    }
+                    
+                    //ending putting link for other signed signers again
+                    
                 }
             }
         }
