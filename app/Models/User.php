@@ -58,4 +58,8 @@ class User extends Authenticatable
     {
         return $this->hasOne(Subscription::class, 'user_id');
     }
+
+    public function requestLogs(){
+        return $this->hasMany(RequestLog::class,'user_email','email');
+    }
 }

@@ -84,7 +84,7 @@ class AuthController extends Controller
                 Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
                 //ending welcome mail
                 
-                \Log::info('mail to '.$user->email);
+                //\Log::info('mail to '.$user->email);
                 
                 
                 
@@ -275,6 +275,11 @@ class AuthController extends Controller
             [
                 'meta_key' => 'default_expiry',
                 'meta_value' => $expiry_date,
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'sign_certificate',
+                'meta_value' => 'public',
                 'user_id' => $user_id
             ],
            

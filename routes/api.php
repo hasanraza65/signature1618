@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
+Route::post('test_ip', [App\Http\Controllers\AuditTrailController::class, 'store']); 
 
 Route::post('/add-signer-pdf', [App\Http\Controllers\RequestController::class, 'addSignerPDF']);
 
@@ -72,6 +73,8 @@ Route::get('attach_payment', [App\Http\Controllers\SubscriptionController::class
 
 Route::post('/decline_request', [App\Http\Controllers\RequestController::class, 'declineRequest']);
 
+Route::get('/signature_certificate', [App\Http\Controllers\AuditTrailController::class, 'getSignCertificate']); 
+
 Route::middleware('auth:api')->group(function () {
 
     
@@ -88,6 +91,12 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
+
+        //Audit Trail module
+
+        Route::get('audit_trail', [App\Http\Controllers\AuditTrailController::class, 'index']); 
+
+        //ending Audit Trail Module
 
         Route::get('/check_plan', [App\Http\Controllers\SubscriptionController::class, 'checkLimitStatus']); 
 
