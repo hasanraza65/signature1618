@@ -97,13 +97,14 @@ class AuthController extends Controller
             
         } else {
             
-            
+            $uuid = Str::uuid();
             // If the user doesn't exist, create a new user
             $user = User::create([
                 'name' => $firstName,
                 'last_name' => $lastName, // Save the last name in the database
                 'email' => $googleUserEmail,
                 'google_id' => $googleUserId,
+                'unique_id' => $uuid,
                 'is_verified' => 1
             ]);
 

@@ -83,7 +83,7 @@ class Kernel extends ConsoleKernel
                             $dataUser = [
                                 'expiry_date'=>$request_obj_approver->expiry_date,
                                 'file_name'=>$request_obj_approver->file_name,
-                                'company_name'=> $user_obj->company,
+                                'company_name'=> $company_name,
                                 'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj_approver->unique_id,
@@ -130,7 +130,7 @@ class Kernel extends ConsoleKernel
                             $dataUser = [
                                 'expiry_date'=>$request_obj->expiry_date,
                                 'file_name'=>$request_obj->file_name,
-                                'company_name'=> $user_obj->company,
+                                'company_name'=> $company_name,
                                 'receiver_name'=> $user_obj->name.' '.$user_obj->last_name,
                                 'email' => $email,
                                 'requestUID'=>$request_obj->unique_id,
