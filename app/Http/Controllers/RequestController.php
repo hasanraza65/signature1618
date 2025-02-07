@@ -2591,7 +2591,7 @@ class RequestController extends Controller
                                case 'signature':
                                 $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
                                 $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
-                                $signatureUrl = 'https://certificate.signature1618.app/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
+                                $signatureUrl = 'https://certificate.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
                             
                                 if (file_exists($signatureImagePath)) {
                                     
@@ -2803,100 +2803,95 @@ class RequestController extends Controller
      * @return string Path to the generated image
      */
     private function createSignatureImage($name, $protectionKey, $sign_certificate)
-    {
-        // Paths to the font files
-        $signatureFontPath = public_path('BrightSunshine.ttf'); // Handwritten font for signature
-        $protectionFontPath = public_path('arial.ttf'); // Arial font file for protection key
+{
+    $signatureFontPath = public_path('BrightSunshine.ttf');
+    $protectionFontPath = public_path('arial.ttf');
 
-        // Path to save the signature image
-        $imagePath = public_path('files/signatures/' . time() . '_signature.png');
+    // Default image size
+    $width = 720;
+    $height = 500; 
 
-        // Set initial image dimensions
-        $width = 720;
-        $height = 500; // Adjust height to make room for the text
-        $im = imagecreatetruecolor($width, $height);
+    // Create image
+    $im = imagecreatetruecolor($width, $height);
+    $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+    imagefill($im, 0, 0, $transparent);
+    imagealphablending($im, false);
+    imagesavealpha($im, true);
 
-        // Allocate a color for the background (transparent)
-        $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-        imagefill($im, 0, 0, $transparent);
+    // Text colors
+    $textColor = imagecolorallocate($im, 0, 0, 0);
+    $linkColor = ($sign_certificate == 'public') ? imagecolorallocate($im, 0, 0, 255) : imagecolorallocate($im, 0, 0, 0);
 
-        // Enable alpha blending and save alpha channel
-        imagealphablending($im, false);
-        imagesavealpha($im, true);
+    // Initial font size
+    $fontSize = 200;
+    $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
+    $textWidth = $box[2] - $box[0];
+    $signatureHeight = $box[1] - $box[7];
 
-        // Allocate a color for the text (black)
-        $textColor = imagecolorallocate($im, 0, 0, 0);
-        
-        if($sign_certificate == 'public'){
-            $linkColor = imagecolorallocate($im, 0, 0, 255);
-        }else{
-            $linkColor = imagecolorallocate($im, 0, 0, 0);
-        }
-        
-
-        // Add the signature name (First Line)
-        $fontSize = 200;
-        $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
-        $textWidth = $box[2] - $box[0];
-        $signatureHeight = $box[1] - $box[7]; // Calculate signature height
-
-        // Adjust font size if text is too wide
-        while ($textWidth > $width - 50) {
-            $fontSize -= 1;
-            $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
-            $textWidth = $box[2] - $box[0];
-            $signatureHeight = $box[1] - $box[7]; // Recalculate height after adjustment
-        }
-
-        // Calculate position for signature name
-        $y = $height / 2; // Centering the name vertically
-        $x = ($width - $textWidth) / 2;
-
-        // Add signature name text
-        imagettftext($im, $fontSize, 0, $x, $y, $textColor, $signatureFontPath, $name);
-
-        // Add the combined "Verified by Signature1618" text and protection key on the same line
-        $verifiedText = 'Verified by Signature1618';
-        $verifiedFontSize = 25; // Font size for verified text
-        $verifiedBox = imagettfbbox($verifiedFontSize, 0, $protectionFontPath, $verifiedText);
-        $verifiedTextWidth = $verifiedBox[2] - $verifiedBox[0];
-
-        // Add the protection key
-        $keyFontSize = 25; // Same size for both
-        $keyBox = imagettfbbox($keyFontSize, 0, $protectionFontPath, $protectionKey);
-        $keyTextWidth = $keyBox[2] - $keyBox[0];
-
-        // Calculate total width of the combined text
-        $totalTextWidth = $verifiedTextWidth + 1 + $keyTextWidth; // Add some spacing between the two strings
-
-        // Calculate position for the combined text to center it
-        $combinedX = ($width - $totalTextWidth) / 2;
-
-        // Increase spacing between signature and the "Verified by" text based on signature height
-        $dynamicGap = max(10, $signatureHeight * 0.15); // Dynamic gap based on signature height
-        $verifiedY = $y + $signatureHeight + $dynamicGap; // Use dynamic gap
-
-        // Adjust the Y position of the verified text to account for a more consistent spacing
-        if (strlen($name) < 20) { // If the name is short
-            $verifiedY -= 40; // Reduce the gap for shorter names
-        } elseif (strlen($name) >= 30) { // If the name is long
-            $verifiedY += 30; // Increase the gap for longer names
-        }
-
-        // Add the "Verified by Signature1618" text
-        imagettftext($im, $verifiedFontSize, 0, $combinedX, $verifiedY, $linkColor, $protectionFontPath, $verifiedText);
-
-        // Add the protection key next to the "Verified by Signature1618" text
-        $keyX = $combinedX + $verifiedTextWidth + 20; // Place it after the verified text with spacing
-        imagettftext($im, $keyFontSize, 0, $keyX, $verifiedY, $linkColor, $protectionFontPath, $protectionKey);
-
-        // Save the image with PNG format to maintain transparency
-        imagepng($im, $imagePath);
-        imagedestroy($im);
-
-        return $imagePath;
+    // **Dynamically Adjust Image Width & Height**
+    if ($textWidth > $width - 50) {
+        $scaleFactor = $textWidth / ($width - 100);
+        $width = min(1200, $width * $scaleFactor);  // Increase width up to 1200 max
+        $height = min(700, $height * $scaleFactor); // Increase height proportionally
     }
 
+    // Recreate the image with new dimensions
+    $im = imagecreatetruecolor($width, $height);
+    imagefill($im, 0, 0, $transparent);
+    imagealphablending($im, false);
+    imagesavealpha($im, true);
+
+    // Adjust font size if text is too wide
+    while ($textWidth > $width - 50 && $fontSize > 80) {
+        $fontSize -= 5;
+        $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
+        $textWidth = $box[2] - $box[0];
+        $signatureHeight = $box[1] - $box[7];
+    }
+
+    // **Position Signature Name**
+    $y = $height / 2; 
+    $x = ($width - $textWidth) / 2;
+    imagettftext($im, $fontSize, 0, $x, $y, $textColor, $signatureFontPath, $name);
+
+    // **Position Verified Text**
+    $verifiedText = '•Verified by Signature1618';
+    $verifiedFontSize = 45;
+    $verifiedBox = imagettfbbox($verifiedFontSize, 0, $protectionFontPath, $verifiedText);
+    $verifiedTextWidth = $verifiedBox[2] - $verifiedBox[0];
+
+    $keyFontSize = 45;
+    $keyBox = imagettfbbox($keyFontSize, 0, $protectionFontPath, $protectionKey);
+    $keyTextWidth = $keyBox[2] - $keyBox[0];
+
+    $totalTextWidth = $verifiedTextWidth + ($protectionKey ? 1 + $keyTextWidth : 0);
+    $combinedX = ($width - $totalTextWidth) / 2;
+
+    // **Dynamic Verified Text Positioning**
+    $dynamicGap = max(20, $signatureHeight * 0.15); 
+    $verifiedY = $y + $signatureHeight - 65; 
+
+    if (strlen($name) <= 10) { 
+    $verifiedY -= 25; // Move up more for very short names
+    } elseif (strlen($name) <= 20) { 
+        $verifiedY -= 75; // Slightly move up for mid-length names
+    } elseif (strlen($name) >= 25) { 
+        $verifiedY += 70; // Lower for very long names
+    }
+    
+    
+
+    // Add verified text
+    $fullText = '•Verified by Signature1618' . $protectionKey;
+    imagettftext($im, $verifiedFontSize, 0, $combinedX, $verifiedY, $linkColor, $protectionFontPath, $fullText);
+
+    // Save the image
+    $imagePath = public_path('files/signatures/' . time() . '_signature.png');
+    imagepng($im, $imagePath);
+    imagedestroy($im);
+
+    return $imagePath;
+}
 
     private function createInitialsImage($initials)
     {
@@ -3024,6 +3019,147 @@ class RequestController extends Controller
         // Return or use the generated protection key
         return $protection_key;
     }
+    
+    
+    public function duplicatePost(Request $request){
+
+        $request_id = $request->request_id;
+
+        $request_data = UserRequest::find($request_id);
+
+        if (!$request_data) {
+            return response()->json([
+                'message' => 'No data available.'
+            ], 400);
+        }
+
+        $approvers = Approver::where('request_id',$request_id)->get();
+
+        //storing new request clone draft
+
+        $new_request = $request_data->replicate();
+        $new_request->status  = 'draft';
+        $new_request->unique_id = Str::uuid();
+        $new_request->created_at = now();
+        if(count($approvers) > 0){
+            $new_request->approve_status = 0;
+        }
+
+        // Handle file duplication on AWS S3
+        if (!empty($request_data->file_key)) {
+            $oldFileKey = $request_data->file_key;
+            $newFileKey = 'duplicate_' . Str::random(10) . '_' . $oldFileKey;
+
+            try {
+                // Retrieve the original file from S3
+                $fileContent = Storage::disk('s3')->get($oldFileKey);
+
+                // Upload it as a new file
+                Storage::disk('s3')->put($newFileKey, $fileContent);
+
+                // Generate the new file URL
+                $newFileUrl = Storage::disk('s3')->url($newFileKey);
+
+                // Assign new file details to the cloned request
+                $new_request->file_key = $newFileKey;
+                $new_request->file = $newFileUrl;
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Error duplicating file: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+
+        $new_request->signed_file = null;
+        $new_request->signed_file_key = null;
+        $new_request->sent_date = now();
+        $new_request->signers_received_at = null;
+        $new_request->save();
+
+        //ending storing new request clone draft
+
+         //storing approvers
+         foreach($approvers as $approver){
+
+            $approver_data = Approver::find($approver->id);
+            $new_approver = $approver_data->replicate();
+            $new_approver->status = 'pending';
+            $new_approver->request_id = $new_request->id;
+            $new_approver->unique_id = Str::uuid();
+            $new_approver->approved_date = null;
+            $new_approver->rejected_date = null;
+            $new_approver->created_at = now();
+            $new_approver->save();
+
+         }
+         //ending approvers
+
+        //storing signers 
+
+        $signers = Signer::where('request_id',$request_id)->get();
+
+        foreach($signers as $signer){
+
+            $signer_data = Signer::find($signer->id);
+            $new_signer =  $signer_data->replicate();
+            $new_signer->request_id = $new_request->id;
+            $new_signer->status = 'pending';
+            $new_signer->unique_id = Str::uuid();
+            $new_signer->signed_date = null;
+            if($request_data->sms_otp == 1 || $request_data->email_otp == 1){
+                $new_signer->otp_verified = 0;
+                $new_signer->otp_verified_date = null;
+            }
+            $new_signer->save();
+
+            $signer_fields = RequestField::where('recipientId',$signer->id)->get();
+
+            foreach($signer_fields as $signer_field){
+
+                $new_field = new RequestField();
+                $new_field->request_id = $new_request->id;
+                $new_field->type = $signer_field->type;
+                $new_field->x = $signer_field->x;
+                $new_field->y = $signer_field->y;
+                $new_field->height = $signer_field->height;
+                $new_field->width = $signer_field->width;
+                $new_field->recipientId = $new_signer->id;
+                $new_field->question = $signer_field->question;
+                $new_field->page_index	= $signer_field->page_index;
+                $new_field->is_required = $signer_field->is_required;
+                $new_field->answer = $signer_field->answer;
+                $new_field->save();
+
+                if($signer_field->type == "radio"){
+
+                    $field_radios = RadioButton::where('field_id',$signer_field->id)->get();
+
+                    foreach($field_radios as $field_radio){
+                        $new_radio = new RadioButton();
+                        $new_radio->field_id = $new_field->id;
+                        $new_radio->option_question = $field_radio->option_question;
+                        $new_radio->x = $field_radio->x;
+                        $new_radio->y = $field_radio->y;
+                        $new_radio->save();
+                    }
+                   
+
+                }
+
+            }
+
+        }
+
+        //ending signers
+
+        return response()->json([
+            'request_u_id' => $new_request->unique_id,
+            'message' => 'Duplicate request has been created.'
+        ], 200);
+
+    }
+
 
 
 }

@@ -110,6 +110,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/add_image_element', [App\Http\Controllers\ManagePDFController::class, 'addImageElement']);
 
         //User Request Module
+
+        Route::post('/duplicate-request', [App\Http\Controllers\RequestController::class, 'duplicatePost']);
+
         Route::resource('/user_request', App\Http\Controllers\RequestController::class);
         
         Route::post('/upload-thumbnail', [App\Http\Controllers\RequestController::class, 'uploadThumbnail']);

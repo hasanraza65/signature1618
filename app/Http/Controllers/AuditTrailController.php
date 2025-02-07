@@ -14,8 +14,15 @@ class AuditTrailController extends Controller
 
         UserRequest::findOrFail($request->request_id);
 
-        $data = UserRequest::with(['signers','signers.signerContactDetail','signers.signerContactDetail.contactUserDetail.requestLogs','userDetail'])
-        ->where('id',$request->request_id)
+        $data = UserRequest::with([
+            'signers',
+            'signers.signerContactDetail',
+            'signers.signerContactDetail.contactUserDetail.requestLogs' => function ($query) use ($request) {
+                $query->where('request_id', $request->request_id); // Apply request_id filter here
+            },
+            'userDetail'
+        ])
+        ->where('id', $request->request_id)
         ->first();
 
         return response()->json([
