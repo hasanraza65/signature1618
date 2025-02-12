@@ -2591,7 +2591,7 @@ class RequestController extends Controller
                                case 'signature':
                                 $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
                                 $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
-                                $signatureUrl = 'https://certificate.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
+                                $signatureUrl = 'https://certificates.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
                             
                                 if (file_exists($signatureImagePath)) {
                                     
@@ -2803,95 +2803,199 @@ class RequestController extends Controller
      * @return string Path to the generated image
      */
     private function createSignatureImage($name, $protectionKey, $sign_certificate)
-{
-    $signatureFontPath = public_path('BrightSunshine.ttf');
-    $protectionFontPath = public_path('arial.ttf');
-
-    // Default image size
-    $width = 720;
-    $height = 500; 
-
-    // Create image
-    $im = imagecreatetruecolor($width, $height);
-    $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-    imagefill($im, 0, 0, $transparent);
-    imagealphablending($im, false);
-    imagesavealpha($im, true);
-
-    // Text colors
-    $textColor = imagecolorallocate($im, 0, 0, 0);
-    $linkColor = ($sign_certificate == 'public') ? imagecolorallocate($im, 0, 0, 255) : imagecolorallocate($im, 0, 0, 0);
-
-    // Initial font size
-    $fontSize = 200;
-    $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
-    $textWidth = $box[2] - $box[0];
-    $signatureHeight = $box[1] - $box[7];
-
-    // **Dynamically Adjust Image Width & Height**
-    if ($textWidth > $width - 50) {
-        $scaleFactor = $textWidth / ($width - 100);
-        $width = min(1200, $width * $scaleFactor);  // Increase width up to 1200 max
-        $height = min(700, $height * $scaleFactor); // Increase height proportionally
-    }
-
-    // Recreate the image with new dimensions
-    $im = imagecreatetruecolor($width, $height);
-    imagefill($im, 0, 0, $transparent);
-    imagealphablending($im, false);
-    imagesavealpha($im, true);
-
-    // Adjust font size if text is too wide
-    while ($textWidth > $width - 50 && $fontSize > 80) {
-        $fontSize -= 5;
+    {
+        $signatureFontPath = public_path('BrightSunshine.ttf');
+        $protectionFontPath = public_path('arial.ttf');
+    
+        // Default image size
+        $width = 720;
+        $height = 500;
+    
+        // Create base image
+        $im = imagecreatetruecolor($width, $height);
+        $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+        imagefill($im, 0, 0, $transparent);
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+    
+        // Text colors
+        $textColor = imagecolorallocate($im, 0, 0, 0);
+        $linkColor = ($sign_certificate == 'public') ? imagecolorallocate($im, 0, 0, 255) : imagecolorallocate($im, 0, 0, 0);
+    
+        // Initial font size
+        $fontSize = 200;
         $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
         $textWidth = $box[2] - $box[0];
         $signatureHeight = $box[1] - $box[7];
+    
+        // **Dynamically Adjust Image Width & Height**
+        if ($textWidth > $width - 50) {
+            $scaleFactor = $textWidth / ($width - 100);
+            $width = min(1200, $width * $scaleFactor);
+            $height = min(700, $height * $scaleFactor);
+        }
+    
+        // Recreate the image with new dimensions
+        $im = imagecreatetruecolor($width, $height);
+        imagefill($im, 0, 0, $transparent);
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+    
+        // Adjust font size if text is too wide
+        while ($textWidth > $width - 50 && $fontSize > 80) {
+            $fontSize -= 5;
+            $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
+            $textWidth = $box[2] - $box[0];
+            $signatureHeight = $box[1] - $box[7];
+        }
+    
+        // **Special Case: If Name is Short (10 or less)**
+        if (strlen($name) <= 10) {
+            // Increase width dynamically (Minimum 900px)
+            $width = max(1200, $textWidth + 250);
+            
+            // Adjust height proportionally
+            $height = ($textWidth > 600) ? 700 : 500;
+    
+            // Recreate image again with new dimensions
+            $im = imagecreatetruecolor($width, $height);
+            imagefill($im, 0, 0, $transparent);
+            imagealphablending($im, false);
+            imagesavealpha($im, true);
+    
+            // **Recalculate positioning after resizing**
+            $box = imagettfbbox($fontSize, 0, $signatureFontPath, $name);
+            $textWidth = $box[2] - $box[0];
+            $signatureHeight = $box[1] - $box[7];
+        }
+        $sign_img_space = 5;
+        if (strlen($name) <= 20) {
+            $sign_img_space = 22;
+        }
+    
+        // **Position Signature Name**
+        $y = $height / 2; 
+        $x = ($width - $textWidth) / 2 + $sign_img_space;
+        imagettftext($im, $fontSize, 0, $x, $y, $textColor, $signatureFontPath, $name);
+    
+        // **Position Verified Text**
+        $verifiedText = '•Verified by Signature1618';
+        $verifiedFontSize = 45;
+        $verifiedBox = imagettfbbox($verifiedFontSize, 0, $protectionFontPath, $verifiedText);
+        $verifiedTextWidth = $verifiedBox[2] - $verifiedBox[0];
+    
+        $keyFontSize = 45;
+        $keyBox = imagettfbbox($keyFontSize, 0, $protectionFontPath, $protectionKey);
+        $keyTextWidth = $keyBox[2] - $keyBox[0];
+    
+        $totalTextWidth = $verifiedTextWidth + ($protectionKey ? 1 + $keyTextWidth : 0);
+        $combinedX = ($width - $totalTextWidth) / 2;
+    
+        // **Dynamic Verified Text Positioning**
+        $dynamicGap = max(20, $signatureHeight * 0.15); 
+        $verifiedY = $y + $signatureHeight - 65; 
+    
+        if (strlen($name) <= 10) { 
+            $verifiedY -= 25; // Move up more for very short names
+        }elseif (strlen($name) <= 15) { 
+            $verifiedY -= 60;
+        }elseif (strlen($name) <= 20) { 
+            $verifiedY -= 75; // Slightly move up for mid-length names
+        } elseif (strlen($name) >= 25) { 
+            $verifiedY += 70; // Lower for very long names
+        }
+    
+        // Add verified text
+        $fullText = '•Verified by Signature1618' . $protectionKey;
+        imagettftext($im, $verifiedFontSize, 0, $combinedX, $verifiedY, $linkColor, $protectionFontPath, $fullText);
+    
+        // Save the image
+        $imagePath = public_path('files/signatures/' . time() . '_signature.png');
+        imagepng($im, $imagePath);
+        imagedestroy($im);
+    
+        return $imagePath;
     }
 
-    // **Position Signature Name**
-    $y = $height / 2; 
-    $x = ($width - $textWidth) / 2;
-    imagettftext($im, $fontSize, 0, $x, $y, $textColor, $signatureFontPath, $name);
 
-    // **Position Verified Text**
-    $verifiedText = '•Verified by Signature1618';
-    $verifiedFontSize = 45;
-    $verifiedBox = imagettfbbox($verifiedFontSize, 0, $protectionFontPath, $verifiedText);
-    $verifiedTextWidth = $verifiedBox[2] - $verifiedBox[0];
 
-    $keyFontSize = 45;
-    $keyBox = imagettfbbox($keyFontSize, 0, $protectionFontPath, $protectionKey);
-    $keyTextWidth = $keyBox[2] - $keyBox[0];
+    
+    public function generateProtectionKey($user_id)
+    {
+        // Get user settings
+        $user_settings = UserGlobalSetting::where('user_id', $user_id)
+            ->where('meta_key', 'protection')
+            ->first();
 
-    $totalTextWidth = $verifiedTextWidth + ($protectionKey ? 1 + $keyTextWidth : 0);
-    $combinedX = ($width - $totalTextWidth) / 2;
+        // Determine protection type (default to 'standard' if not set)
+        if ($user_settings) {
+            $protection_type = $user_settings->meta_value;
+        } else {
+            $protection_type = 'standard';
+        }
+        
+        $empty_space = "";
 
-    // **Dynamic Verified Text Positioning**
-    $dynamicGap = max(20, $signatureHeight * 0.15); 
-    $verifiedY = $y + $signatureHeight - 65; 
+        // Generate protection key based on type (without base signature)
+        switch ($protection_type) {
+            case 'numerical':
+                
+                $empty_space = " ";
+                // Generate a random numerical ID format (ID followed by random numbers)
+                $random_number = rand(1000000000, 9999999999); // 10-digit number
+                $protection_key = 'ID' . $random_number . '•';
+                break;
 
-    if (strlen($name) <= 10) { 
-    $verifiedY -= 25; // Move up more for very short names
-    } elseif (strlen($name) <= 20) { 
-        $verifiedY -= 75; // Slightly move up for mid-length names
-    } elseif (strlen($name) >= 25) { 
-        $verifiedY += 70; // Lower for very long names
+            case 'advanced':
+                
+                $empty_space = " ";
+                // Full set of Greek symbols
+                $greek_symbols = [
+                    'Α',
+                    'Β',
+                    'Γ',
+                    'Δ',
+                    'Ε',
+                    'Ζ',
+                    'Η',
+                    'Θ',
+                    'Ι',
+                    'Κ',
+                    'Λ',
+                    'Μ',
+                    'Ν',
+                    'Ξ',
+                    'Ο',
+                    'Π',
+                    'Ρ',
+                    'Σ',
+                    'Τ',
+                    'Υ',
+                    'Φ',
+                    'Χ',
+                    'Ψ',
+                    'Ω'
+                ];
+
+                // Pick 6 random symbols
+                $random_greek_symbols = implode('', array_rand(array_flip($greek_symbols), 6));
+
+                // Generate random numbers
+                $random_number = rand(100000, 999999); // 6-digit number
+
+                $protection_key = $random_greek_symbols . $random_number . '•';
+                break;
+
+            case 'standard':
+            default:
+                // Return an empty string for the 'standard' type
+                $protection_key = '•';
+                break;
+        }
+
+        // Return or use the generated protection key
+        return  $empty_space.$protection_key;
     }
-    
-    
-
-    // Add verified text
-    $fullText = '•Verified by Signature1618' . $protectionKey;
-    imagettftext($im, $verifiedFontSize, 0, $combinedX, $verifiedY, $linkColor, $protectionFontPath, $fullText);
-
-    // Save the image
-    $imagePath = public_path('files/signatures/' . time() . '_signature.png');
-    imagepng($im, $imagePath);
-    imagedestroy($im);
-
-    return $imagePath;
-}
 
     private function createInitialsImage($initials)
     {
@@ -2947,77 +3051,6 @@ class RequestController extends Controller
         imagedestroy($im);
 
         return $imagePath;
-    }
-
-    public function generateProtectionKey($user_id)
-    {
-        // Get user settings
-        $user_settings = UserGlobalSetting::where('user_id', $user_id)
-            ->where('meta_key', 'protection')
-            ->first();
-
-        // Determine protection type (default to 'standard' if not set)
-        if ($user_settings) {
-            $protection_type = $user_settings->meta_value;
-        } else {
-            $protection_type = 'standard';
-        }
-
-        // Generate protection key based on type (without base signature)
-        switch ($protection_type) {
-            case 'numerical':
-                // Generate a random numerical ID format (ID followed by random numbers)
-                $random_number = rand(1000000000, 9999999999); // 10-digit number
-                $protection_key = 'ID' . $random_number . '•';
-                break;
-
-            case 'advanced':
-                // Full set of Greek symbols
-                $greek_symbols = [
-                    'Α',
-                    'Β',
-                    'Γ',
-                    'Δ',
-                    'Ε',
-                    'Ζ',
-                    'Η',
-                    'Θ',
-                    'Ι',
-                    'Κ',
-                    'Λ',
-                    'Μ',
-                    'Ν',
-                    'Ξ',
-                    'Ο',
-                    'Π',
-                    'Ρ',
-                    'Σ',
-                    'Τ',
-                    'Υ',
-                    'Φ',
-                    'Χ',
-                    'Ψ',
-                    'Ω'
-                ];
-
-                // Pick 6 random symbols
-                $random_greek_symbols = implode('', array_rand(array_flip($greek_symbols), 6));
-
-                // Generate random numbers
-                $random_number = rand(100000, 999999); // 6-digit number
-
-                $protection_key = $random_greek_symbols . $random_number . '•';
-                break;
-
-            case 'standard':
-            default:
-                // Return an empty string for the 'standard' type
-                $protection_key = '•';
-                break;
-        }
-
-        // Return or use the generated protection key
-        return $protection_key;
     }
     
     
@@ -3075,6 +3108,7 @@ class RequestController extends Controller
         $new_request->signed_file_key = null;
         $new_request->sent_date = now();
         $new_request->signers_received_at = null;
+        $new_request->file_name = $request->request_name;
         $new_request->save();
 
         //ending storing new request clone draft

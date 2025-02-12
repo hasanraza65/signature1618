@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserRequest;
+use App\Models\Signer;
+use App\Models\Approver;
+use App\Models\UserGlobalSetting;
 use Illuminate\Http\Request;
 use App\Models\Contact;
 use App\Models\User;
@@ -202,11 +206,106 @@ class ContactController extends Controller
         $data->contact_phone = $request->phone;
         $data->contact_language = $request->language;
         $data->update();
+
+        //if contact update from in progress request 
+
+        if($request->request_id != null){
+
+            if($request->request_contact_type == "approver"){
+                $this->sendRequestMailApprover($request->email=null, $request->first_name=null, $request->last_name=null, $request->request_id=null, $request->approver_id=null);
+            }elseif($request->request_contact_type == "signer"){
+                $this->sendRequestMailSigner($request->email=null, $request->first_name=null, $request->last_name=null, $request->request_id=null, $request->signer_id=null);
+            }   
+            
+        }
+
+        
+
+        //ending if contact update from in progress request
     
         return response()->json([
             'data' => $data,
             'message' => 'Success'
         ], 200);
+    }
+
+    public function sendRequestMailSigner($email=null, $first_name=null, $last_name=null, $request_id, $signer_id){
+
+        $userRequest = UserRequest::find($request_id);
+
+        //get company name 
+        $admin_user = User::find($userRequest->user_id);
+        $globalsettings = UserGlobalSetting::where('user_id', $admin_user->user_id)->where('meta_key', 'company')->first();
+        if (!$globalsettings) {
+            $company_name = $admin_user->name . ' ' . $admin_user->last_name;
+        } else {
+            $company_name = $globalsettings->meta_value;
+        }
+        //end get company name
+
+        $signer_data = Signer::find($signer_id);
+
+
+        $dataUser = [
+            'email' => $email,
+            'receiver_name' => $first_name . ' ' . $last_name,
+            'signerUID' => $signer_data->unique_id,
+            'requestUID' => $userRequest->unique_id,
+            'company_name' => $company_name,
+            'file_name' => $userRequest->file_name,
+            'sender_first_name' => $admin_user->name,
+            'sender_last_name' => $admin_user->last_name,
+            'sender_name' => $admin_user->name . ' ' . $admin_user->last_name,
+            'expiry_date' => $userRequest->expiry_date,
+            
+        ];
+
+        $subject = 'Signature Request for ' . $userRequest->file_name . ' from ' . $company_name;
+
+        \Mail::to($email)->send(new \App\Mail\NewRequest($dataUser, $subject));
+
+        return true;
+
+    }
+
+    public function sendRequestMailApprover($email=null, $first_name=null, $last_name=null, $request_id=null, $approver_id=null){
+
+        $userRequest = UserRequest::find($request_id);
+
+        //get company name 
+        $admin_user = User::find($userRequest->user_id);
+        $globalsettings = UserGlobalSetting::where('user_id', $admin_user->user_id)->where('meta_key', 'company')->first();
+        if (!$globalsettings) {
+            $company_name = $admin_user->name . ' ' . $admin_user->last_name;
+        } else {
+            $company_name = $globalsettings->meta_value;
+        }
+        //end get company name
+
+        $signer_data = Approver::find($approver_id);
+
+
+        $dataUser = [
+            'email' => $email,
+            'receiver_name' => $first_name . ' ' . $last_name,
+            'signerUID' => $signer_data->unique_id,
+            'requestUID' => $userRequest->unique_id,
+            'company_name' => $company_name,
+            'file_name' => $userRequest->file_name,
+            'sender_first_name' => $admin_user->name,
+            'sender_last_name' => $admin_user->last_name,
+            'sender_name' => $admin_user->name . ' ' . $admin_user->last_name,
+            'expiry_date' => $userRequest->expiry_date,
+            
+        ];
+
+
+        $subject = 'Approval Request for ' . $userRequest->file_name . ' from ' . $company_name;
+
+        \Mail::to($email)->send(new \App\Mail\ApproverMail($dataUser, $subject));
+
+        return true;
+
     }
 
     public function updatePhones(Request $request){
