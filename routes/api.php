@@ -30,6 +30,11 @@ Route::post('/add-signer-pdf', [App\Http\Controllers\RequestController::class, '
 
 Route::post('auth/google', [AuthController::class, 'handleGoogleCallback']);
 
+Route::middleware(['web'])->group(function () {
+    Route::get('auth/linkedin', [AuthController::class, 'redirectToLinkedIn']);
+    Route::get('auth/linkedin/callback', [AuthController::class, 'handleLinkedInCallback']);
+});
+
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/signin', [AuthController::class, 'login']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
@@ -91,6 +96,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
+
+        Route::get('auth_data', [App\Http\Controllers\AuthController::class, 'getAuthData']);
 
         //Audit Trail module
 

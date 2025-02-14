@@ -34,6 +34,150 @@ class AuthController extends Controller
     {
 
     }
+    
+    public function redirectToLinkedIn()
+    {
+        try {
+            \Log::info('Redirecting to LinkedIn...');
+            return Socialite::driver('linkedin-openid')->redirect();
+        } catch (\Exception $e) {
+            \Log::error('LinkedIn Redirect Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to redirect to LinkedIn.'], 500);
+        }
+    }
+
+    /*
+    public function handleLinkedInCallback()
+    {
+        try {
+            $linkedinUser = Socialite::driver('linkedin-openid')->user();
+            
+            // Log user details to verify response
+            \Log::info('LinkedIn User:', (array) $linkedinUser);
+    
+            // Normal processing
+            return response()->json(['user' => $linkedinUser]);
+    
+        } catch (\Exception $e) {
+            \Log::error('LinkedIn OAuth Error: ' . $e->getMessage());
+    
+            return response()->json(['error' => 'LinkedIn authentication failed', 'message' => $e->getMessage()], 401);
+        }
+    } */
+    
+   
+
+    public function handleLinkedInCallback()
+    {
+        try {
+            $linkedinUser = Socialite::driver('linkedin-openid')->user();
+
+            $linkedinUserEmail = $linkedinUser->getEmail();
+            $linkedinUserName = $linkedinUser->getName();
+            $linkedinUserId = $linkedinUser->getId();
+
+            // Split the full name into first name and last name
+            $nameParts = explode(' ', $linkedinUserName);
+            $firstName = $nameParts[0];
+            $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
+
+            // Check if user already exists
+            $user = User::where('email', $linkedinUserEmail)->first();
+
+            if ($user) {
+                Auth::login($user, true);
+
+                if ($user->contact_type == 1) {
+                    $dataUserWelcome = [
+                        'first_name' => $user->name,
+                        'last_name' => $user->last_name,
+                    ];
+
+                    $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+                    Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+
+                    $user->update([
+                        'contact_type' => 0,
+                        'linkedin_id' => $linkedinUserId,
+                        'is_verified' => 1
+                    ]);
+                }
+            } else {
+                $uuid = Str::uuid();
+
+                $user = User::create([
+                    'name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $linkedinUserEmail,
+                    'linkedin_id' => $linkedinUserId,
+                    'unique_id' => $uuid,
+                    'is_verified' => 1
+                ]);
+
+                $this->updateDefaultSettings($user->id);
+                Auth::login($user, true);
+
+                $dataUserWelcome = [
+                    'first_name' => $user->name,
+                    'last_name' => $user->last_name,
+                ];
+
+                $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+                Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+            }
+
+            // Check if user has a subscription plan
+            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            if (!$plan) {
+                $trialPlan = Plan::where('is_trial', 1)->first();
+                $planId = $trialPlan ? $trialPlan->id : 1;
+
+                $subscription = new Subscription();
+                $subscription->user_id = $user->id;
+                $subscription->plan_id = $planId;
+                $subscription->price = 0;
+                $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
+                $subscription->save();
+
+                $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            }
+
+            // Generate Passport token
+            $token = $user->createToken('LaravelAuthApp')->accessToken;
+
+            // Get user global settings
+            $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
+            
+            return redirect("https://signature1618.app/signin?token=$token");
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
+                'plan' => $plan,
+                'user_global_settings' => $userGlobalSettings
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'LinkedIn authentication failed'], 401);
+        }
+    }
+    
+    public function getAuthData(Request $request){
+        
+        $user = User::find(Auth::user()->id);
+        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+        $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
+        
+         return response()->json([
+                'user' => $user,
+                'plan' => $plan,
+                'user_global_settings' => $userGlobalSettings
+            ], 200);
+            
+        
+    }
+    
+   
 
     public function redirectToGoogle()
     {
@@ -256,6 +400,8 @@ class AuthController extends Controller
 
     public function updateDefaultSettings($user_id){
 
+        
+
         $expiry_date = $this->generateExpiryData();
         UserGlobalSetting::insert([
             [
@@ -283,10 +429,36 @@ class AuthController extends Controller
                 'meta_value' => 'public',
                 'user_id' => $user_id
             ],
+            [
+                'meta_key' => 'brand_bg_color',
+                'meta_value' => '#f8fafc',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'brand_button_color',
+                'meta_value' => '#009c4a',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'brand_header_color',
+                'meta_value' => '#f8fafc',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'brand_button_text_color',
+                'meta_value' => '#fffff',
+                'user_id' => $user_id
+            ],
+            [
+                'meta_key' => 'brand_enable',
+                'meta_value' => 0,
+                'user_id' => $user_id
+            ]
            
         ]);
 
     }
+
 
 
     public function generateExpiryData()
