@@ -152,6 +152,34 @@ class ProfileManagementController extends Controller
 
     }
 
+    public function changeFavImg(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'fav_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
+        ]);
+
+        // Get the authenticated user
+        $user = Auth::user();
+
+        // Store the new profile image
+        if ($request->hasFile('fav_img')) {
+            $image = $request->file('fav_img');
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $image->move(public_path('fav_imgs'), $imageName);
+
+            $user->fav_img = 'fav_imgs/'.$imageName;
+            $user->update();
+
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Failed to update profile image'], 400);
+    }
+
     public function changeLogoImg(Request $request)
     {
         // Validate the incoming request

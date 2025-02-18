@@ -111,6 +111,8 @@ class ContactController extends Controller
         $data->contact_language = $request->language ? $request->language : "en";
         $data->unique_id = $request->contact_unique_id;
         $data->save();
+
+        $data->email = $request->email;
     
         return response()->json([
             'data' => $data,

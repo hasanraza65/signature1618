@@ -68,6 +68,8 @@ class AuditTrailController extends Controller
             "sender_name" => $sender_user->name.' '.$sender_user->user_last_name,
             "sender_email" => $sender_user->email,
             "signed_image" => $signer_data->signed_image,
+            "original_file_name"=>$request_data->original_file_name,
+            "file_name" => $request_data->file_name
 
         ];
 
