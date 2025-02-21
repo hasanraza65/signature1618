@@ -806,10 +806,11 @@ class RequestController extends Controller
         // Step 3: Read the stream into a string
         $pdfContent = stream_get_contents($pdfStream);
         fclose($pdfStream); // Close the stream
-
+        
+        
         //Branding variables
 
-        $user_branding = UserGlobalSetting::where('user_id', $requestdata->user_id)
+        $user_branding = UserGlobalSetting::where('user_id', $data->user_id)
             ->where('meta_key', 'brand_enable')
             ->where('meta_value', 1)
             ->first();
@@ -817,17 +818,15 @@ class RequestController extends Controller
         $user_brand_vars = null;
 
         if ($user_branding) {
-            $user_brand_vars = UserGlobalSetting::where('user_id', $requestdata->user_id)
+            $user_brand_vars = UserGlobalSetting::where('user_id', $data->user_id)
                 ->whereIn('meta_key', ['brand_bg_color', 'brand_button_color', 'brand_header_color', 'brand_button_text_color'])
                 ->pluck('meta_value', 'meta_key'); // Fetch key-value pairs
-
-            $user_brand_vars['fav_img'] = Auth::user()->fav_img ?? null;
+                
+                 $user_brand_vars['fav_img'] = Auth::user()->fav_img ?? null;
         }
-
+        
         // Return as object
         $user_brand_vars = $user_brand_vars ? (object) $user_brand_vars : null;
-
-        //ending Btanding variables
 
         // Step 4: Generate response with base64 encoded file content
         return response()->json([
@@ -993,7 +992,29 @@ class RequestController extends Controller
                 'message' => 'File not found.'
             ], 404);
         } */
+        
+        
+        //Branding variables
 
+        $user_branding = UserGlobalSetting::where('user_id', $data->user_id)
+            ->where('meta_key', 'brand_enable')
+            ->where('meta_value', 1)
+            ->first();
+
+        $user_brand_vars = null;
+
+        if ($user_branding) {
+            $user_brand_vars = UserGlobalSetting::where('user_id', $data->user_id)
+                ->whereIn('meta_key', ['brand_bg_color', 'brand_button_color', 'brand_header_color', 'brand_button_text_color'])
+                ->pluck('meta_value', 'meta_key'); // Fetch key-value pairs
+
+            $user_brand_vars['fav_img'] = Auth::user()->fav_img ?? null;
+        }
+
+        // Return as object
+        $user_brand_vars = $user_brand_vars ? (object) $user_brand_vars : null;
+
+        //ending Btanding variables
 
 
         // Read the file content
@@ -1003,6 +1024,7 @@ class RequestController extends Controller
         return response()->json([
             'data' => $data,
             'pdf_file' => $data->file, // Convert file content to base64
+            'user_brand_vars' => $user_brand_vars,
             'signed_file' => '',
             'message' => 'Success'
         ], 200);
