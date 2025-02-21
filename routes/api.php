@@ -90,7 +90,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('change-profile-img', [App\Http\Controllers\ProfileManagementController::class, 'changeProfileImg']);
     Route::post('change-company-name', [App\Http\Controllers\ProfileManagementController::class, 'changeCompanyName']);
     Route::post('change-logo-img', [App\Http\Controllers\ProfileManagementController::class, 'changeLogoImg']);
-
+    Route::post('change-fav-img', [App\Http\Controllers\ProfileManagementController::class, 'changeFavImg']);
     Route::get('logout', [AuthController::class, 'logout']);
 
     Route::get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);

@@ -807,11 +807,34 @@ class RequestController extends Controller
         $pdfContent = stream_get_contents($pdfStream);
         fclose($pdfStream); // Close the stream
 
+        //Branding variables
+
+        $user_branding = UserGlobalSetting::where('user_id', $requestdata->user_id)
+            ->where('meta_key', 'brand_enable')
+            ->where('meta_value', 1)
+            ->first();
+
+        $user_brand_vars = null;
+
+        if ($user_branding) {
+            $user_brand_vars = UserGlobalSetting::where('user_id', $requestdata->user_id)
+                ->whereIn('meta_key', ['brand_bg_color', 'brand_button_color', 'brand_header_color', 'brand_button_text_color'])
+                ->pluck('meta_value', 'meta_key'); // Fetch key-value pairs
+
+            $user_brand_vars['fav_img'] = Auth::user()->fav_img ?? null;
+        }
+
+        // Return as object
+        $user_brand_vars = $user_brand_vars ? (object) $user_brand_vars : null;
+
+        //ending Btanding variables
+
         // Step 4: Generate response with base64 encoded file content
         return response()->json([
             'data' => $data,
             'pdf_file' => $data->file, // Consistent base64 encoding
             'signed_file' => $data->signed_file,
+            'user_brand_vars' => $user_brand_vars,
             'message' => 'Success'
         ], 200);
 
