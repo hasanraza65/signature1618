@@ -154,10 +154,6 @@ class ProfileManagementController extends Controller
 
     public function changeFavImg(Request $request)
     {
-        // Validate the incoming request
-        $request->validate([
-            'fav_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
-        ]);
 
         // Get the authenticated user
         $user = Auth::user();
@@ -175,17 +171,23 @@ class ProfileManagementController extends Controller
                 'data' => $user,
                 'message' => 'Success'
             ], 200);
+        }else{
+            $user->fav_img = null;
+            $user->update();
+            
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
         }
 
-        return response()->json(['message' => 'Failed to update profile image'], 400);
+        return response()->json(['message' => 'Failed to update fav image'], 400);
     }
 
     public function changeLogoImg(Request $request)
     {
         // Validate the incoming request
-        $request->validate([
-            'company_logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
-        ]);
+       
 
         // Get the authenticated user
         $user = Auth::user();
@@ -203,10 +205,19 @@ class ProfileManagementController extends Controller
                 'data' => $user,
                 'message' => 'Success'
             ], 200);
+        }else{
+            $user->company_logo = null;
+            $user->update();
+            
+            return response()->json([
+                'data' => $user,
+                'message' => 'Success'
+            ], 200);
         }
 
-        return response()->json(['message' => 'Failed to update profile image'], 400);
+        return response()->json(['message' => 'Failed to update logo image'], 400);
     }
+
 
     public function generateSignature($name)
 {
