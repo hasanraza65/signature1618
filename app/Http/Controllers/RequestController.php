@@ -659,6 +659,7 @@ class RequestController extends Controller
         }
 
         $sender = User::find($data->user_id);
+        
 
         if ($data->is_trash == 1) {
 
@@ -821,8 +822,6 @@ class RequestController extends Controller
             $user_brand_vars = UserGlobalSetting::where('user_id', $data->user_id)
                 ->whereIn('meta_key', ['brand_bg_color', 'brand_button_color', 'brand_header_color', 'brand_button_text_color'])
                 ->pluck('meta_value', 'meta_key'); // Fetch key-value pairs
-
-
                 
                  $user_brand_vars['fav_img'] = $sender->fav_img;
                  $user_brand_vars['company_logo'] =  $sender->company_logo;
@@ -1011,7 +1010,7 @@ class RequestController extends Controller
                 ->whereIn('meta_key', ['brand_bg_color', 'brand_button_color', 'brand_header_color', 'brand_button_text_color'])
                 ->pluck('meta_value', 'meta_key'); // Fetch key-value pairs
 
-            $user_brand_vars['fav_img'] = $sender->fav_img;
+            $user_brand_vars['fav_img'] =  $sender->fav_img;
             $user_brand_vars['company_logo'] =  $sender->company_logo;
         }
 
@@ -2640,7 +2639,7 @@ class RequestController extends Controller
                                case 'signature':
                                 $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
                                 $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
-                                $signatureUrl = 'https://certificates.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
+                                $signatureUrl = 'https://certificate.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
                             
                                 if (file_exists($signatureImagePath)) {
                                     

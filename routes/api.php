@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SalesforceController;
 
 
 /*
@@ -19,6 +20,16 @@ use App\Http\Controllers\AuthController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
+// Step 1: Redirect to Salesforce for authentication
+Route::get('/salesforce/login', [SalesforceController::class, 'redirectToSalesforce']);
+
+// Step 2: Handle the callback and store access token
+Route::get('/salesforce/callback', [SalesforceController::class, 'handleSalesforceCallback']);
+
+// Step 3: Fetch contacts from Salesforce and save to Laravel
+Route::get('/salesforce/import-contacts', [SalesforceController::class, 'importContacts'])->middleware('auth:api');
 
 
 Route::post('test_ip', [App\Http\Controllers\AuditTrailController::class, 'store']); 

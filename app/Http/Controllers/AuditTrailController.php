@@ -65,7 +65,7 @@ class AuditTrailController extends Controller
             "signed_at" => $signer_data->signed_date ?? "",
             "signer_location" => $signer_data->signer_ip_address ?? "",
             "signer_ip_address" => $signer_data->signer_ip_address ?? "",
-            "sender_name" => $sender_user->name.' '.$sender_user->user_last_name,
+            "sender_name" => $sender_user->name.' '.$sender_user->last_name,
             "sender_email" => $sender_user->email,
             "signed_image" => $signer_data->signed_image,
             "original_file_name"=>$request_data->original_file_name,

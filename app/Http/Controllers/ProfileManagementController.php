@@ -84,23 +84,23 @@ class ProfileManagementController extends Controller
 
     public function changeProfileImg(Request $request)
     {
-        // Validate the incoming request
-        $request->validate([
-            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust max file size as per your requirement
-        ]);
-
         // Get the authenticated user
         $user = Auth::user();
 
-        // Store the new profile image
-        if ($request->hasFile('profile_img')) {
-            $image = $request->file('profile_img');
-            $imageName = time().'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('profile_images'), $imageName);
+        // If profile_img is null, remove the existing image from DB and storage
+        if (!$request->hasFile('profile_img')) {
+            if ($user->profile_img) {
+                $imagePath = public_path($user->profile_img);
+                
+                // Delete the file from storage if it exists
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
 
-           
-            $user->profile_img = 'profile_images/'.$imageName;
-            $user->save();
+                // Remove the profile image path from the database
+                $user->profile_img = null;
+                $user->save();
+            }
 
             return response()->json([
                 'data' => $user,
@@ -108,7 +108,32 @@ class ProfileManagementController extends Controller
             ], 200);
         }
 
-        return response()->json(['message' => 'Failed to update profile image'], 400);
+        // Validate the incoming request
+        $request->validate([
+            'profile_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Store the new profile image
+        $image = $request->file('profile_img');
+        $imageName = time().'.'.$image->getClientOriginalExtension();
+        $image->move(public_path('profile_images'), $imageName);
+
+        // Delete the old image from storage if it exists
+        if ($user->profile_img) {
+            $oldImagePath = public_path($user->profile_img);
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+        }
+
+        // Update the new profile image path in DB
+        $user->profile_img = 'profile_images/'.$imageName;
+        $user->save();
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'Success'
+        ], 200);
     }
 
     public function changeCompanyName(Request $request){
