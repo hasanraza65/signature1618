@@ -63,4 +63,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(RequestLog::class, 'user_email', 'email');
     }
+    
+    public function aiActivities()
+    {
+        return $this->hasMany(AIActivity::class);
+    }
 }

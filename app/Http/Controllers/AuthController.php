@@ -24,6 +24,8 @@ use DB;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Passport\Token;
 use Google_Client;
+use Illuminate\Support\Facades\Http;
+
 
 
 class AuthController extends Controller
@@ -67,56 +69,56 @@ class AuthController extends Controller
     
    
 
-    public function handleLinkedInCallback()
-    {
-        try {
-            $linkedinUser = Socialite::driver('linkedin-openid')->user();
+    public function handleLinkedInCallback(Request $request)
+{
+    try {
+        $linkedinUser = Socialite::driver('linkedin-openid')->user();
 
-            $linkedinUserEmail = $linkedinUser->getEmail();
-            $linkedinUserName = $linkedinUser->getName();
-            $linkedinUserId = $linkedinUser->getId();
+        $linkedinUserEmail = $linkedinUser->getEmail();
+        $linkedinUserName = $linkedinUser->getName();
+        $linkedinUserId = $linkedinUser->getId();
 
-            // Split the full name into first name and last name
-            $nameParts = explode(' ', $linkedinUserName);
-            $firstName = $nameParts[0];
-            $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
+        // Split the full name into first name and last name
+        $nameParts = explode(' ', $linkedinUserName);
+        $firstName = $nameParts[0];
+        $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
 
-            // Check if user already exists
-            $user = User::where('email', $linkedinUserEmail)->first();
+        // Check if user already exists
+        $user = User::where('email', $linkedinUserEmail)->first();
+        
+        $fbc = $request->fbc;
+        $fbp = $request->fbp;
+        $externalId = $request->externalId;
 
-            if ($user) {
-                Auth::login($user, true);
+        if (!$user) {
+            $uuid = Str::uuid();
 
-                if ($user->contact_type == 1) {
-                    $dataUserWelcome = [
-                        'first_name' => $user->name,
-                        'last_name' => $user->last_name,
-                    ];
+            $user = User::create([
+                'name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $linkedinUserEmail,
+                'linkedin_id' => $linkedinUserId,
+                'unique_id' => $uuid,
+                'is_verified' => 1
+            ]);
 
-                    $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
-                    Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+            // Call function to send data to Google Sheet
+            $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
 
-                    $user->update([
-                        'contact_type' => 0,
-                        'linkedin_id' => $linkedinUserId,
-                        'is_verified' => 1
-                    ]);
-                }
-            } else {
-                $uuid = Str::uuid();
+            $this->updateDefaultSettings($user->id);
+            Auth::login($user, true);
 
-                $user = User::create([
-                    'name' => $firstName,
-                    'last_name' => $lastName,
-                    'email' => $linkedinUserEmail,
-                    'linkedin_id' => $linkedinUserId,
-                    'unique_id' => $uuid,
-                    'is_verified' => 1
-                ]);
+            $dataUserWelcome = [
+                'first_name' => $user->name,
+                'last_name' => $user->last_name,
+            ];
 
-                $this->updateDefaultSettings($user->id);
-                Auth::login($user, true);
+            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+            Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+        } else {
+            Auth::login($user, true);
 
+            if ($user->contact_type == 1) {
                 $dataUserWelcome = [
                     'first_name' => $user->name,
                     'last_name' => $user->last_name,
@@ -124,43 +126,126 @@ class AuthController extends Controller
 
                 $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
                 Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+                
+                
+                $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
+
+                $user->update([
+                    'contact_type' => 0,
+                    'linkedin_id' => $linkedinUserId,
+                    'is_verified' => 1
+                ]);
+                
             }
-
-            // Check if user has a subscription plan
-            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
-            if (!$plan) {
-                $trialPlan = Plan::where('is_trial', 1)->first();
-                $planId = $trialPlan ? $trialPlan->id : 1;
-
-                $subscription = new Subscription();
-                $subscription->user_id = $user->id;
-                $subscription->plan_id = $planId;
-                $subscription->price = 0;
-                $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
-                $subscription->save();
-
-                $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
-            }
-
-            // Generate Passport token
-            $token = $user->createToken('LaravelAuthApp')->accessToken;
-
-            // Get user global settings
-            $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
-            
-            return redirect("https://signature1618.app/signin?token=$token");
-
-            return response()->json([
-                'token' => $token,
-                'user' => $user,
-                'plan' => $plan,
-                'user_global_settings' => $userGlobalSettings
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'LinkedIn authentication failed'], 401);
         }
+
+        // Check if user has a subscription plan
+        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+        if (!$plan) {
+            $trialPlan = Plan::where('is_trial', 1)->first();
+            $planId = $trialPlan ? $trialPlan->id : 1;
+
+            $subscription = new Subscription();
+            $subscription->user_id = $user->id;
+            $subscription->plan_id = $planId;
+            $subscription->price = 0;
+            $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
+            $subscription->save();
+
+            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+        }
+
+        // Generate Passport token
+        $token = $user->createToken('LaravelAuthApp')->accessToken;
+
+        // Get user global settings
+        $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
+        
+        return redirect("https://signature1618.app/signin?token=$token");
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+            'plan' => $plan,
+            'user_global_settings' => $userGlobalSettings
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'LinkedIn authentication failed'], 401);
     }
+    }
+
+    /**
+     * Send user data to Google Sheet using API
+     */
+    private function sendDataToGoogleSheet($user, $fbc=null, $fbp=null, $externalId=null)
+{
+    $apiUrl = "https://script.google.com/macros/s/AKfycbzpTMnfCUrLEAc9B_WCPcgMY6JP3xSoqtSDtdp9yeOEIHQg24JLegO9iBkHZ685iDzGrw/exec";
+
+    $postData = [
+        "id" => $user->id,
+        "name" => $user->name,
+        "last_name" => $user->last_name,
+        "email" => $user->email,
+        "username" => $user->username,
+        "user_role" => $user->user_role,
+        "email_verified_at" => $user->email_verified_at,
+        "profile_img" => $user->profile_img,
+        "status" => $user->status,
+        "phone" => $user->phone,
+        "language" => $user->language,
+        "company" => $user->company,
+        "company_size" => $user->company_size,
+        "company_logo" => $user->company_logo,
+        "use_company" => $user->use_company,
+        "contact_type" => $user->contact_type,
+        "stripe_token" => $user->stripe_token,
+        "unique_id" => $user->unique_id,
+        "is_verified" => $user->is_verified,
+        "google_id" => $user->google_id,
+        "linkedin_id" => $user->linkedin_id,
+        "accept_terms" => $user->accept_terms,
+        "fav_img" => $user->fav_img,
+        "created_at" => $user->created_at->toIso8601String(),
+        "updated_at" => $user->updated_at->toIso8601String(),
+        "externalId" => $user->unique_id,
+        "fbc" => $fbc,
+        'fbp' => $fbp,
+        'externalId' => $externalId
+    ];
+
+    // Convert data to JSON
+    $jsonData = json_encode($postData);
+
+    // Initialize cURL
+    $ch = curl_init();
+
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData); // Send JSON data
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json', // Set JSON content type
+        'Content-Length: ' . strlen($jsonData)
+    ]);
+
+    // Execute cURL request
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    // Close cURL session
+    curl_close($ch);
+
+    // Log response for debugging
+    \Log::info('Google Sheets API Response:', [
+        'response' => $response,
+        'status_code' => $httpCode
+    ]);
+}
+
+
     
     public function getAuthData(Request $request){
         
@@ -207,6 +292,10 @@ class AuthController extends Controller
 
         // Check if the user already exists in your database
         $user = User::where('email', $googleUserEmail)->first();
+        
+        $fbc = $request->fbc;
+        $fbp = $request->fbp;
+        $externalId = $request->externalId;
     
 
         if ($user) {
@@ -222,11 +311,14 @@ class AuthController extends Controller
                     'last_name' => $user->last_name,
                     
                 ];
+
             
                 $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
             
                 Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
                 //ending welcome mail
+
+                $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
                 
                 //\Log::info('mail to '.$user->email);
                 
@@ -252,11 +344,10 @@ class AuthController extends Controller
                 'is_verified' => 1
             ]);
 
-            //update global settings
-            $this->updateDefaultSettings($user->id);
-            //ending update global settings
-
+            
             Auth::login($user, true);
+            
+            $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
             
             //sending welcome mail
             $dataUserWelcome = [
@@ -269,6 +360,10 @@ class AuthController extends Controller
         
             Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
             //ending welcome mail
+
+            //update global settings
+            $this->updateDefaultSettings($user->id);
+            //ending update global settings
         }
 
         // Check if the user has a subscription plan
@@ -572,6 +667,61 @@ class AuthController extends Controller
         return response(["message" => "OTP Not Matched"],401);
 
     }
+
+    public function registerWithoutOTP(Request $request)
+    {
+        $input = $request->all();
+        
+        // Validation rules
+        $rules = [
+            'name' => 'required|max:55',
+            'email' => 'required|unique:users',
+            'password' => 'required',
+        ];
+        
+        $validator = Validator::make($input, $rules);
+        if ($validator->fails()) {
+            return response(["status" => 400, "message" => $validator->errors()->first(), "data" => []], 400);
+        }
+
+        // Hash password and create user
+        $input['password'] = bcrypt($request->password);
+        $user = User::create($input);
+        $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
+
+        // Assign trial subscription
+        $trialplan = Plan::where('is_trial', 1)->first();
+        $plan_id = $trialplan ? $trialplan->id : 1;
+
+        $subscription = new Subscription();
+        $subscription->user_id = $user->id;
+        $subscription->plan_id = $plan_id;
+        $subscription->price = 0;
+        $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
+        $subscription->save();
+
+        // Retrieve plan details
+        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+
+        // Send welcome email
+        $dataUserWelcome = [
+            'first_name' => $user->name,
+            'last_name' => $user->last_name,
+        ];
+        
+        $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+        Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+
+        // Return response
+        return response([
+            "status" => 200,
+            'user' => $user,
+            'plan' => $plan,
+            'message' => 'Registration successful',
+            'access_token' => $accessToken
+        ]);
+    }
+
 
     public function resendOtp(Request $request){
 

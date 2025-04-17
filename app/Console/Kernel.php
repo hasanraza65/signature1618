@@ -326,6 +326,11 @@ class Kernel extends ConsoleKernel
         })->dailyAt('00:00')->timezone('Europe/Paris'); // Run daily at midnight Paris time
 
         //ending update subscriptions
+        
+    
+        
+      $schedule->command('app:send-campaign-emails')
+             ->dailyAt('18:00');
     }
 
     /**

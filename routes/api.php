@@ -46,6 +46,7 @@ Route::middleware(['web'])->group(function () {
     Route::get('auth/linkedin/callback', [AuthController::class, 'handleLinkedInCallback']);
 });
 
+Route::post('/join_signup', [AuthController::class, 'registerWithoutOTP']);
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/signin', [AuthController::class, 'login']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
