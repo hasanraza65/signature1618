@@ -3,6 +3,26 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
+
+use App\Models\User;
+use Illuminate\Support\Str;
+
+Route::get('/generate-api-keys', function () {
+
+    $users = User::whereNull('api_secret')->get();
+
+    foreach ($users as $user) {
+        $user->api_key = 'pk_' . Str::random(30);
+        $user->api_secret = 'sk_' . Str::random(50);
+        $user->save();
+    }
+
+    return response()->json([
+        'message' => 'API keys generated successfully',
+        'count' => $users->count()
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes

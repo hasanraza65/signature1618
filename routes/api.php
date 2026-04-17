@@ -109,6 +109,16 @@ Route::middleware('auth:api')->group(function () {
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
 
+        Route::post('/generate_api_keys', [App\Http\Controllers\AuthController::class, 'generateMyKeys']); 
+
+        //promo code 
+
+        Route::post('/verify_promo', [App\Http\Controllers\PromoCodeController::class, 'verifyPromo']); 
+        Route::post('/promo_subscription', [App\Http\Controllers\SubscriptionController::class, 'promoSubscription']); 
+
+
+        //ending promo code
+
         Route::get('auth_data', [App\Http\Controllers\AuthController::class, 'getAuthData']);
 
         //Audit Trail module
@@ -211,7 +221,13 @@ Route::middleware('auth:api')->group(function () {
 
         Route::get('/admin_dashboard', [App\Http\Controllers\DashboardController::class, 'stat']);
 
+        Route::apiResource('promo-codes', App\Http\Controllers\PromoCodeController::class);
+
     } );
 
 
 });
+
+
+Route::post('/request_new_licence', [App\Http\Controllers\PromoCodeController::class, 'requestPromoCode'])
+    ->middleware('api.key');

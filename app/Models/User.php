@@ -32,6 +32,7 @@ class User extends Authenticatable
         'google_id',
         'is_verified',
         'contact_type',
+        'promo_used',
     ];
 
     /**

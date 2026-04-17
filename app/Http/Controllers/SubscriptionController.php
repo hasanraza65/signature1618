@@ -19,6 +19,9 @@ use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
+use App\Models\PromoCode;
+use App\Models\User;
+use App\Models\UsedPromo;
 
 
 class SubscriptionController extends Controller
@@ -429,6 +432,122 @@ class SubscriptionController extends Controller
         }
 
 
+    }
+
+
+    public function promoSubscription(Request $request)
+    {
+
+        $amount = null; 
+
+        $promo_code_data = PromoCode::where('promo_code',$request->promo_code)->first();
+        
+
+        $payment_cycle = $request->billing_cycle ?? "monthly";
+        $promo_code = $request->promo_code;
+
+        $promo_data = PromoCode::where('promo_code',$promo_code)->where('status',1)->first();
+
+        if(!$promo_data){
+
+            return response()->json(['message'=>"Promo code not available", "error_code"=>"invalid_promo_code"], 400);
+        }
+
+        $plan_id = $promo_data->plan_id; 
+
+        $userId = Auth::user()->id;
+    
+        // Retrieve existing subscription and plan data
+        $data = new Subscription();
+        $plan_data = Plan::find($plan_id);
+    
+    
+        // Set subscription properties
+        $data->user_id = $userId;
+        $data->plan_id = $plan_id;
+        if($payment_cycle == "yearly"){
+            $data->price = $plan_data->per_year_charges;
+        }else{
+            $data->price = $plan_data->per_month_charges;
+        }   
+        
+        $data->payment_cycle = $payment_cycle;
+        $data->status = 1;
+        $data->promo_id = $promo_data->id;
+        // Determine subscription duration
+        $expirydate = Carbon::now()->addMonths($promo_data->duration_months)->toDateString();
+        $data->expiry_date = $expirydate;
+        // Save or update the subscription data
+        $data->save();
+
+
+        //storing transaction 
+
+        $transaction = new Transaction();
+        $transaction->user_id = Auth::user()->id;
+        $transaction->transaction_id = null; // Use Payment Intent ID as the transaction ID
+        $transaction->card_last_4 = null;
+        $transaction->card_expiry_month = null;
+        $transaction->card_expiry_year = null;
+        $transaction->card_brand = null;
+        $transaction->amount = 0;
+    
+        // Add additional transaction details
+        $transaction->first_name = $request->input('first_name');
+        $transaction->last_name = $request->input('last_name');
+        $transaction->email = $request->input('email');
+        $transaction->phone = $request->input('phone');
+        $transaction->organization = $request->input('organization');
+        $transaction->address_1 = $request->input('address_1');
+        $transaction->address_2 = $request->input('address_2');
+        $transaction->address_3 = $request->input('address_3');
+        $transaction->city = $request->input('city');
+        $transaction->postal = $request->input('postal');
+        $transaction->state = $request->input('state');
+        $transaction->country = $request->input('country');
+        $transaction->vat_number = $request->input('vat_number');
+    
+        $transaction->save();
+
+        //ending storing transaction
+
+        //updating user promo used status 
+
+        $user_data = User::find(Auth::user()->id);
+        $user_data->promo_used = 1;
+        $user_data->update();
+
+        UsedPromo::create([
+            'user_id' => Auth::id(),
+            'promo_code' => $promo_code,
+        ]);
+        
+
+        $promo_code = PromoCode::where('promo_code',$request->promo_code)->first();
+        $promo_code->status = 2;
+        $promo_code->update();
+
+        //ending updating user promo status
+    
+    
+        // Send subscription confirmation email
+        $user = Auth::user();
+        $dataUser = [
+            'email' => $user->email,
+            'first_name' => $user->name,
+            'last_name' => $user->last_name,
+            'invitation_date' => $data->created_at->format('m/d/Y'),
+            'plan_name' => $plan_data->plan_name,
+            'amount' => $amount,
+            'subscription_period' => $payment_cycle,
+            'next_billing_date' => $expirydate,
+        ];
+    
+        Mail::to($user->email)->send(new \App\Mail\NewSubscription($dataUser, 'Subscription Confirmed : Signature1618'));
+    
+        return response()->json([
+            'message' => 'Subscription was successful',
+        ], 200);
     }
 
 }

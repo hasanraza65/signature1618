@@ -36,7 +36,7 @@ class AuthController extends Controller
     {
 
     }
-    
+
     public function redirectToLinkedIn()
     {
         try {
@@ -53,72 +53,61 @@ class AuthController extends Controller
     {
         try {
             $linkedinUser = Socialite::driver('linkedin-openid')->user();
-            
+
             // Log user details to verify response
             \Log::info('LinkedIn User:', (array) $linkedinUser);
-    
+
             // Normal processing
             return response()->json(['user' => $linkedinUser]);
-    
+
         } catch (\Exception $e) {
             \Log::error('LinkedIn OAuth Error: ' . $e->getMessage());
-    
+
             return response()->json(['error' => 'LinkedIn authentication failed', 'message' => $e->getMessage()], 401);
         }
     } */
-    
-   
+
+
 
     public function handleLinkedInCallback(Request $request)
-{
-    try {
-        $linkedinUser = Socialite::driver('linkedin-openid')->user();
+    {
+        try {
+            $linkedinUser = Socialite::driver('linkedin-openid')->user();
 
-        $linkedinUserEmail = $linkedinUser->getEmail();
-        $linkedinUserName = $linkedinUser->getName();
-        $linkedinUserId = $linkedinUser->getId();
+            $linkedinUserEmail = $linkedinUser->getEmail();
+            $linkedinUserName = $linkedinUser->getName();
+            $linkedinUserId = $linkedinUser->getId();
 
-        // Split the full name into first name and last name
-        $nameParts = explode(' ', $linkedinUserName);
-        $firstName = $nameParts[0];
-        $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
+            // Split the full name into first name and last name
+            $nameParts = explode(' ', $linkedinUserName);
+            $firstName = $nameParts[0];
+            $lastName = isset($nameParts[1]) ? implode(' ', array_slice($nameParts, 1)) : '';
 
-        // Check if user already exists
-        $user = User::where('email', $linkedinUserEmail)->first();
-        
-        $fbc = $request->fbc;
-        $fbp = $request->fbp;
-        $externalId = $request->externalId;
+            // Check if user already exists
+            $user = User::where('email', $linkedinUserEmail)->first();
 
-        if (!$user) {
-            $uuid = Str::uuid();
+            $fbc = $request->fbc;
+            $fbp = $request->fbp;
+            $externalId = $request->externalId;
 
-            $user = User::create([
-                'name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $linkedinUserEmail,
-                'linkedin_id' => $linkedinUserId,
-                'unique_id' => $uuid,
-                'is_verified' => 1
-            ]);
+            if (!$user) {
+                $uuid = Str::uuid();
 
-            // Call function to send data to Google Sheet
-            $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
+                $user = User::create([
+                    'name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $linkedinUserEmail,
+                    'linkedin_id' => $linkedinUserId,
+                    'unique_id' => $uuid,
+                    'is_verified' => 1
+                ]);
 
-            $this->updateDefaultSettings($user->id);
-            Auth::login($user, true);
+                // Call function to send data to Google Sheet
+                $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
 
-            $dataUserWelcome = [
-                'first_name' => $user->name,
-                'last_name' => $user->last_name,
-            ];
+                $this->updateDefaultSettings($user->id);
+                Auth::login($user, true);
 
-            $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
-            Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
-        } else {
-            Auth::login($user, true);
-
-            if ($user->contact_type == 1) {
                 $dataUserWelcome = [
                     'first_name' => $user->name,
                     'last_name' => $user->last_name,
@@ -126,143 +115,155 @@ class AuthController extends Controller
 
                 $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
                 Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
-                
-                
-                $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
+            } else {
+                Auth::login($user, true);
 
-                $user->update([
-                    'contact_type' => 0,
-                    'linkedin_id' => $linkedinUserId,
-                    'is_verified' => 1
-                ]);
-                
+                if ($user->contact_type == 1) {
+                    $dataUserWelcome = [
+                        'first_name' => $user->name,
+                        'last_name' => $user->last_name,
+                    ];
+
+                    $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
+                    Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
+
+
+                    $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
+
+                    $user->update([
+                        'contact_type' => 0,
+                        'linkedin_id' => $linkedinUserId,
+                        'is_verified' => 1
+                    ]);
+
+                }
             }
-        }
 
-        // Check if user has a subscription plan
-        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
-        if (!$plan) {
-            $trialPlan = Plan::where('is_trial', 1)->first();
-            $planId = $trialPlan ? $trialPlan->id : 1;
-
-            $subscription = new Subscription();
-            $subscription->user_id = $user->id;
-            $subscription->plan_id = $planId;
-            $subscription->price = 0;
-            $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
-            $subscription->save();
-
+            // Check if user has a subscription plan
             $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            if (!$plan) {
+                $trialPlan = Plan::where('is_trial', 1)->first();
+                $planId = $trialPlan ? $trialPlan->id : 1;
+
+                $subscription = new Subscription();
+                $subscription->user_id = $user->id;
+                $subscription->plan_id = $planId;
+                $subscription->price = 0;
+                $subscription->expiry_date = Carbon::now()->addDays(14)->toDateString();
+                $subscription->save();
+
+                $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            }
+
+            // Generate Passport token
+            $token = $user->createToken('LaravelAuthApp')->accessToken;
+
+            // Get user global settings
+            $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
+
+            return redirect("https://signature1618.app/signin?token=$token");
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
+                'plan' => $plan,
+                'user_global_settings' => $userGlobalSettings
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'LinkedIn authentication failed'], 401);
         }
-
-        // Generate Passport token
-        $token = $user->createToken('LaravelAuthApp')->accessToken;
-
-        // Get user global settings
-        $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
-        
-        return redirect("https://signature1618.app/signin?token=$token");
-
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-            'plan' => $plan,
-            'user_global_settings' => $userGlobalSettings
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'LinkedIn authentication failed'], 401);
-    }
     }
 
     /**
      * Send user data to Google Sheet using API
      */
-    private function sendDataToGoogleSheet($user, $fbc=null, $fbp=null, $externalId=null)
-{
-    $apiUrl = "https://script.google.com/macros/s/AKfycbzpTMnfCUrLEAc9B_WCPcgMY6JP3xSoqtSDtdp9yeOEIHQg24JLegO9iBkHZ685iDzGrw/exec";
+    private function sendDataToGoogleSheet($user, $fbc = null, $fbp = null, $externalId = null)
+    {
+        $apiUrl = "https://script.google.com/macros/s/AKfycbzpTMnfCUrLEAc9B_WCPcgMY6JP3xSoqtSDtdp9yeOEIHQg24JLegO9iBkHZ685iDzGrw/exec";
 
-    $postData = [
-        "id" => $user->id,
-        "name" => $user->name,
-        "last_name" => $user->last_name,
-        "email" => $user->email,
-        "username" => $user->username,
-        "user_role" => $user->user_role,
-        "email_verified_at" => $user->email_verified_at,
-        "profile_img" => $user->profile_img,
-        "status" => $user->status,
-        "phone" => $user->phone,
-        "language" => $user->language,
-        "company" => $user->company,
-        "company_size" => $user->company_size,
-        "company_logo" => $user->company_logo,
-        "use_company" => $user->use_company,
-        "contact_type" => $user->contact_type,
-        "stripe_token" => $user->stripe_token,
-        "unique_id" => $user->unique_id,
-        "is_verified" => $user->is_verified,
-        "google_id" => $user->google_id,
-        "linkedin_id" => $user->linkedin_id,
-        "accept_terms" => $user->accept_terms,
-        "fav_img" => $user->fav_img,
-        "created_at" => $user->created_at->toIso8601String(),
-        "updated_at" => $user->updated_at->toIso8601String(),
-        "externalId" => $user->unique_id,
-        "fbc" => $fbc,
-        'fbp' => $fbp,
-        'externalId' => $externalId
-    ];
+        $postData = [
+            "id" => $user->id,
+            "name" => $user->name,
+            "last_name" => $user->last_name,
+            "email" => $user->email,
+            "username" => $user->username,
+            "user_role" => $user->user_role,
+            "email_verified_at" => $user->email_verified_at,
+            "profile_img" => $user->profile_img,
+            "status" => $user->status,
+            "phone" => $user->phone,
+            "language" => $user->language,
+            "company" => $user->company,
+            "company_size" => $user->company_size,
+            "company_logo" => $user->company_logo,
+            "use_company" => $user->use_company,
+            "contact_type" => $user->contact_type,
+            "stripe_token" => $user->stripe_token,
+            "unique_id" => $user->unique_id,
+            "is_verified" => $user->is_verified,
+            "google_id" => $user->google_id,
+            "linkedin_id" => $user->linkedin_id,
+            "accept_terms" => $user->accept_terms,
+            "fav_img" => $user->fav_img,
+            "created_at" => $user->created_at->toIso8601String(),
+            "updated_at" => $user->updated_at->toIso8601String(),
+            "externalId" => $user->unique_id,
+            "fbc" => $fbc,
+            'fbp' => $fbp,
+            'externalId' => $externalId
+        ];
 
-    // Convert data to JSON
-    $jsonData = json_encode($postData);
+        // Convert data to JSON
+        $jsonData = json_encode($postData);
 
-    // Initialize cURL
-    $ch = curl_init();
+        // Initialize cURL
+        $ch = curl_init();
 
-    // Set cURL options
-    curl_setopt($ch, CURLOPT_URL, $apiUrl);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData); // Send JSON data
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json', // Set JSON content type
-        'Content-Length: ' . strlen($jsonData)
-    ]);
+        // Set cURL options
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData); // Send JSON data
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json', // Set JSON content type
+            'Content-Length: ' . strlen($jsonData)
+        ]);
 
-    // Execute cURL request
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // Execute cURL request
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    // Close cURL session
-    curl_close($ch);
+        // Close cURL session
+        curl_close($ch);
 
-    // Log response for debugging
-    \Log::info('Google Sheets API Response:', [
-        'response' => $response,
-        'status_code' => $httpCode
-    ]);
-}
+        // Log response for debugging
+        \Log::info('Google Sheets API Response:', [
+            'response' => $response,
+            'status_code' => $httpCode
+        ]);
+    }
 
 
-    
-    public function getAuthData(Request $request){
-        
+
+    public function getAuthData(Request $request)
+    {
+
         $user = User::find(Auth::user()->id);
         $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
         $userGlobalSettings = UserGlobalSetting::where('user_id', $user->id)->get();
-        
-         return response()->json([
-                'user' => $user,
-                'plan' => $plan,
-                'user_global_settings' => $userGlobalSettings
-            ], 200);
-            
-        
+
+        return response()->json([
+            'user' => $user,
+            'plan' => $plan,
+            'user_global_settings' => $userGlobalSettings
+        ], 200);
+
+
     }
-    
-   
+
+
 
     public function redirectToGoogle()
     {
@@ -292,47 +293,47 @@ class AuthController extends Controller
 
         // Check if the user already exists in your database
         $user = User::where('email', $googleUserEmail)->first();
-        
+
         $fbc = $request->fbc;
         $fbp = $request->fbp;
         $externalId = $request->externalId;
-    
+
 
         if ($user) {
             // If the user already exists, log them in
             Auth::login($user, true);
-            
-            if($user->contact_type == 1){
-                
+
+            if ($user->contact_type == 1) {
+
 
                 //sending welcome mail
                 $dataUserWelcome = [
                     'first_name' => $user->name,
                     'last_name' => $user->last_name,
-                    
+
                 ];
 
-            
+
                 $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
-            
+
                 Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
                 //ending welcome mail
 
                 $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
-                
+
                 //\Log::info('mail to '.$user->email);
-                
-                
-                
+
+
+
                 $update_user = User::where('email', $googleUserEmail)->first();
                 $update_user->contact_type = 0;
                 $update_user->google_id = $googleUserId;
                 $update_user->is_verified = 1;
                 $update_user->update();
             }
-            
+
         } else {
-            
+
             $uuid = Str::uuid();
             // If the user doesn't exist, create a new user
             $user = User::create([
@@ -344,20 +345,20 @@ class AuthController extends Controller
                 'is_verified' => 1
             ]);
 
-            
+
             Auth::login($user, true);
-            
+
             $this->sendDataToGoogleSheet($user, $fbc, $fbp, $externalId);
-            
+
             //sending welcome mail
             $dataUserWelcome = [
                 'first_name' => $user->name,
                 'last_name' => $user->last_name,
-                
+
             ];
-        
+
             $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
-        
+
             Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
             //ending welcome mail
 
@@ -411,8 +412,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         //check user
-        $usercheck = User::where('email',$request->email)->first();
-        if($usercheck && $usercheck->contact_type == 1){
+        $usercheck = User::where('email', $request->email)->first();
+        if ($usercheck && $usercheck->contact_type == 1) {
 
             $usercheck->name = $request->name;
             $usercheck->last_name = $request->last_name;
@@ -423,63 +424,63 @@ class AuthController extends Controller
 
             $accessToken = $usercheck->createToken('LaravelAuthApp')->accessToken;
 
-           
+
 
             //sending email otp verification
-                $otp = new UserOtp();
-                $otp->user_id = $usercheck->id;
-                $otpcode = rand(100000, 999999);
-                $otp->otp = $otpcode;
-                $otp->save();
+            $otp = new UserOtp();
+            $otp->user_id = $usercheck->id;
+            $otpcode = rand(100000, 999999);
+            $otp->otp = $otpcode;
+            $otp->save();
 
-                $dataUser = [
-                    'email'=>$usercheck->email,
-                    'otp'=>$otpcode,
-                    'user_name'=>$usercheck->name.' '.$usercheck->last_name,
+            $dataUser = [
+                'email' => $usercheck->email,
+                'otp' => $otpcode,
+                'user_name' => $usercheck->name . ' ' . $usercheck->last_name,
             ];
 
-                $subject = $usercheck->name." Your Signup One-Time Password";
+            $subject = $usercheck->name . " Your Signup One-Time Password";
 
             Mail::to($usercheck->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
-                //ending email otp verification sending
+            //ending email otp verification sending
 
 
             //return response(['user' => $usercheck, 'access_token' => $accessToken]);
             return response(['user' => $usercheck, 'message' => 'OTP sent to your email id']);
 
         }
-        
+
         //ending check user
 
-            $input = $request->all();
-            $rules = array(
-                'name' => 'required|max:55',
-                'email' => 'required|unique:users',
-                'password' => 'required'
-            );
-            $validator = Validator::make($input, $rules);
-            if ($validator->fails()) {
-                return response(["status" => 400, "message" => $validator->errors()->first(), "data" => array()],400);
-            }
-            $input['password'] = bcrypt($request->password);
-            $user = User::create($input);
-            $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
+        $input = $request->all();
+        $rules = array(
+            'name' => 'required|max:55',
+            'email' => 'required|unique:users',
+            'password' => 'required'
+        );
+        $validator = Validator::make($input, $rules);
+        if ($validator->fails()) {
+            return response(["status" => 400, "message" => $validator->errors()->first(), "data" => array()], 400);
+        }
+        $input['password'] = bcrypt($request->password);
+        $user = User::create($input);
+        $accessToken = $user->createToken('LaravelAuthApp')->accessToken;
 
-            //sending email otp verification
-            $otp = new UserOtp();
-            $otp->user_id = $user->id;
-            $otpcode = rand(100000, 999999);
-            $otp->otp = $otpcode;
-            $otp->save();
+        //sending email otp verification
+        $otp = new UserOtp();
+        $otp->user_id = $user->id;
+        $otpcode = rand(100000, 999999);
+        $otp->otp = $otpcode;
+        $otp->save();
 
-            $dataUser = [
-                'email'=>$user->email,
-                'otp'=>$otpcode,
-                'user_name'=>$user->name.' '.$user->last_name
+        $dataUser = [
+            'email' => $user->email,
+            'otp' => $otpcode,
+            'user_name' => $user->name . ' ' . $user->last_name
         ];
 
-        $subject = $user->name." Your Signup One-Time Password";
+        $subject = $user->name . " Your Signup One-Time Password";
 
         Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
@@ -493,9 +494,10 @@ class AuthController extends Controller
         return response(["status" => 200, 'user' => $user, 'message' => 'OTP sent to your email id']);
     }
 
-    public function updateDefaultSettings($user_id){
+    public function updateDefaultSettings($user_id)
+    {
 
-        
+
 
         $expiry_date = $this->generateExpiryData();
         UserGlobalSetting::insert([
@@ -549,7 +551,7 @@ class AuthController extends Controller
                 'meta_value' => 0,
                 'user_id' => $user_id
             ]
-           
+
         ]);
 
     }
@@ -573,19 +575,20 @@ class AuthController extends Controller
         return json_encode($data);
     }
 
-    public function otpVerification(Request $request){
+    public function otpVerification(Request $request)
+    {
 
         $otp = $request->otp;
         $user_id = $request->user_id;
 
-        $data = UserOtp::where('user_id',$user_id)->where('otp',$otp)->first();
-        if($data){
+        $data = UserOtp::where('user_id', $user_id)->where('otp', $otp)->first();
+        if ($data) {
 
             //adding trial subscription
-            $trialplan = Plan::where('is_trial',1)->first();
-            if(!$trialplan){
+            $trialplan = Plan::where('is_trial', 1)->first();
+            if (!$trialplan) {
                 $plan_id = 1;
-            }else{
+            } else {
                 $plan_id = $trialplan->id;
             }
 
@@ -618,32 +621,32 @@ class AuthController extends Controller
                 $team_member->member_user_id = $user_id;
                 $team_member->update();
             } */
-            $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
-            if(!$plan){
+            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            if (!$plan) {
                 //adding trial subscription
-                $trialplan = Plan::where('is_trial',1)->first();
-                if(!$trialplan){
+                $trialplan = Plan::where('is_trial', 1)->first();
+                if (!$trialplan) {
                     $plan_id = 1;
-                }else{
-                    $plan_id = $trialplan->id;  
-                    
+                } else {
+                    $plan_id = $trialplan->id;
+
                 }
 
-                    $subscription = new Subscription();
-                    $subscription->user_id = $user->id;
-                    $subscription->plan_id = $plan_id;
-                    $subscription->price = 0;
+                $subscription = new Subscription();
+                $subscription->user_id = $user->id;
+                $subscription->plan_id = $plan_id;
+                $subscription->price = 0;
 
-                    //get expiry date
-                    $today = Carbon::now();
-                    $dateAfter14Days = $today->addDays(14)->toDateString();
-                    //ending get expiry date
+                //get expiry date
+                $today = Carbon::now();
+                $dateAfter14Days = $today->addDays(14)->toDateString();
+                //ending get expiry date
 
-                    $subscription->expiry_date = $dateAfter14Days;
-                    $subscription->save();
-                    //ending adding trial subscription
+                $subscription->expiry_date = $dateAfter14Days;
+                $subscription->save();
+                //ending adding trial subscription
 
-                    $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
+                $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
             }
             //ending plan detail
 
@@ -651,34 +654,34 @@ class AuthController extends Controller
             $dataUserWelcome = [
                 'first_name' => $user->name,
                 'last_name' => $user->last_name,
-                
+
             ];
-        
+
             $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
-        
+
             Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
             //ending welcome mail
 
-            return response(["status" => 200, 'user' => $user,'plan'=>$plan, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
-            
+            return response(["status" => 200, 'user' => $user, 'plan' => $plan, 'message' => 'OTP Matched', 'access_token' => $accessToken]);
+
 
         }
 
-        return response(["message" => "OTP Not Matched"],401);
+        return response(["message" => "OTP Not Matched"], 401);
 
     }
 
     public function registerWithoutOTP(Request $request)
     {
         $input = $request->all();
-        
+
         // Validation rules
         $rules = [
             'name' => 'required|max:55',
             'email' => 'required|unique:users',
             'password' => 'required',
         ];
-        
+
         $validator = Validator::make($input, $rules);
         if ($validator->fails()) {
             return response(["status" => 400, "message" => $validator->errors()->first(), "data" => []], 400);
@@ -708,7 +711,7 @@ class AuthController extends Controller
             'first_name' => $user->name,
             'last_name' => $user->last_name,
         ];
-        
+
         $subjectToWelcome = 'Welcome to Signature1618 - Sign and Manage Documents effortlessly!';
         Mail::to($user->email)->send(new \App\Mail\WelcomeEmail($dataUserWelcome, $subjectToWelcome));
 
@@ -723,14 +726,15 @@ class AuthController extends Controller
     }
 
 
-    public function resendOtp(Request $request){
+    public function resendOtp(Request $request)
+    {
 
         //$otp = $request->otp;
         $user_id = $request->user_id;
         $user = User::find($user_id);
 
-        $data = UserOtp::where('user_id',$user_id)->first();
-        if($data){
+        $data = UserOtp::where('user_id', $user_id)->first();
+        if ($data) {
 
             $data->delete();
 
@@ -744,12 +748,12 @@ class AuthController extends Controller
         $otp->save();
 
         $dataUser = [
-            'email'=>$user->email,
-            'otp'=>$otpcode,
-            'user_name'=>$user->name.' '.$user->last_name
+            'email' => $user->email,
+            'otp' => $otpcode,
+            'user_name' => $user->name . ' ' . $user->last_name
         ];
 
-        $subject = $user->name." Your Signup One-Time Password";
+        $subject = $user->name . " Your Signup One-Time Password";
 
         Mail::to($user->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
 
@@ -764,8 +768,8 @@ class AuthController extends Controller
     {
 
         //check user
-        $usercheck = User::where('email',$request->email)->first();
-        if($usercheck && $usercheck->contact_type == 1){
+        $usercheck = User::where('email', $request->email)->first();
+        if ($usercheck && $usercheck->contact_type == 1) {
 
             return response()->json(['error' => "You don't have any account here"], 401);
 
@@ -782,45 +786,45 @@ class AuthController extends Controller
         if (auth()->attempt($data)) {
             $user = Auth::user();
 
-            if($user->is_verified == 0){
-                return response()->json(['error' => "Please verify your account first", 'user_id'=>$user->id], 401);
+            if ($user->is_verified == 0) {
+                return response()->json(['error' => "Please verify your account first", 'user_id' => $user->id], 401);
             }
 
-            $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
-            if(!$plan){
+            $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
+            if (!$plan) {
                 //adding trial subscription
-                $trialplan = Plan::where('is_trial',1)->first();
-                if(!$trialplan){
+                $trialplan = Plan::where('is_trial', 1)->first();
+                if (!$trialplan) {
                     $plan_id = 1;
-                }else{
-                    $plan_id = $trialplan->id;  
-                    
+                } else {
+                    $plan_id = $trialplan->id;
+
                 }
 
-                    $subscription = new Subscription();
-                    $subscription->user_id = $user->id;
-                    $subscription->plan_id = $plan_id;
-                    $subscription->price = 0;
+                $subscription = new Subscription();
+                $subscription->user_id = $user->id;
+                $subscription->plan_id = $plan_id;
+                $subscription->price = 0;
 
-                    //get expiry date
-                    $today = Carbon::now();
-                    $dateAfter14Days = $today->addDays(14)->toDateString();
-                    //ending get expiry date
+                //get expiry date
+                $today = Carbon::now();
+                $dateAfter14Days = $today->addDays(14)->toDateString();
+                //ending get expiry date
 
-                    $subscription->expiry_date = $dateAfter14Days;
-                    $subscription->save();
-                    //ending adding trial subscription
+                $subscription->expiry_date = $dateAfter14Days;
+                $subscription->save();
+                //ending adding trial subscription
 
-                    $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',$user->id)->first();
+                $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', $user->id)->first();
             }
 
-            
+
 
             $token = $user->createToken('LaravelAuthApp')->accessToken;
 
-            $user_global_settings = UserGlobalSetting::where('user_id',$user->id)->get();
+            $user_global_settings = UserGlobalSetting::where('user_id', $user->id)->get();
 
-            
+
 
             return response()->json([
                 'token' => $token,
@@ -846,7 +850,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'User has been logged out'], 200);
     }
 
-    public function changePassword(Request $request) 
+    public function changePassword(Request $request)
     {
         // Validate the new password
         $request->validate([
@@ -874,7 +878,8 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function sendForgetMail(Request $request){
+    public function sendForgetMail(Request $request)
+    {
 
         $input = $request->all();
         $rules = array(
@@ -885,53 +890,54 @@ class AuthController extends Controller
             return response(["status" => 400, "message" => $validator->errors()->first(), "data" => null]);
         }
 
-        $user = User::where('email',$request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-        if(!$user){
-            return response(["status" => 400, "message" => "No any user available with this email."]); 
+        if (!$user) {
+            return response(["status" => 400, "message" => "No any user available with this email."]);
 
         }
 
         $otpdata = ResetOTP::where('email', $request->email)->delete();
-    
 
-            ///********** *///////
-            //sending email
-            ///********** *///////
-            $email = $request->email;
-    		$otp = random_int(100000, 999999);
 
-            //inserting to otp table
-            $otpData = new ResetOTP();
-            $otpData->email = $email;
-            $otpData->otp = $otp;
-            $otpData->save();
-            //ending inserting to otp table data
+        ///********** *///////
+        //sending email
+        ///********** *///////
+        $email = $request->email;
+        $otp = random_int(100000, 999999);
 
-            /*
+        //inserting to otp table
+        $otpData = new ResetOTP();
+        $otpData->email = $email;
+        $otpData->otp = $otp;
+        $otpData->save();
+        //ending inserting to otp table data
 
-            $content = 'Your OTP is '.$otp;
-            $response = Mail::raw("", function ($message) use ($email,$otp,$content) {
-            $body = new \Symfony\Component\Mime\Part\TextPart($content);
-            $message->to($email)
-                ->subject('Your OTP is '.$otp)
-                ->from("help@integrityflowers.co.uk")
-                ->setBody($body);
-            }); */
+        /*
 
-            $customerEmail = $email;
-            $dataUser = ['otp'=>$otp,
-                        'first_name'=>$user->name,
-                        'last_name' => $user->last_name
-                        ];
-            $subject = 'Password Reset OTP - Signature1618';
+        $content = 'Your OTP is '.$otp;
+        $response = Mail::raw("", function ($message) use ($email,$otp,$content) {
+        $body = new \Symfony\Component\Mime\Part\TextPart($content);
+        $message->to($email)
+            ->subject('Your OTP is '.$otp)
+            ->from("help@integrityflowers.co.uk")
+            ->setBody($body);
+        }); */
 
-            Mail::to($customerEmail)
+        $customerEmail = $email;
+        $dataUser = [
+            'otp' => $otp,
+            'first_name' => $user->name,
+            'last_name' => $user->last_name
+        ];
+        $subject = 'Password Reset OTP - Signature1618';
+
+        Mail::to($customerEmail)
             ->send(new \App\Mail\UserOTPMail($dataUser, $subject));
 
-            //ending sending email
+        //ending sending email
 
-            return response(["status" => 200, "message" => "OTP has been sent"]);
+        return response(["status" => 200, "message" => "OTP has been sent"]);
     }
 
     public function verifyOTP(Request $request)
@@ -972,7 +978,8 @@ class AuthController extends Controller
         return response(["status" => 200, "message" => "OTP Matched!"]);
     }
 
-    public function updatePassword(Request $request){
+    public function updatePassword(Request $request)
+    {
 
         $input = $request->all();
         $rules = array(
@@ -986,27 +993,51 @@ class AuthController extends Controller
 
         $otpdata = ResetOTP::where('email', $request->email)->first();
 
-        if($otpdata){
-            if($otpdata->status == 0){
+        if ($otpdata) {
+            if ($otpdata->status == 0) {
                 return response(["status" => 400, "message" => "Please verify your OTP first."]);
-            }elseif($otpdata->status == 1){
+            } elseif ($otpdata->status == 1) {
                 $otpdata->delete();
             }
-        }else{
+        } else {
             return response(["status" => 400, "message" => "Please verify your OTP first."]);
         }
-        
 
-        $user = User::where('email',$request->email)->first();
+
+        $user = User::where('email', $request->email)->first();
         $password = bcrypt($request->password);
         $user->password = $password;
         $user->update();
 
-        return response(["status" => 200, "message" => "Password Has Been Updated!", 'data'=>$user]); 
+        return response(["status" => 200, "message" => "Password Has Been Updated!", 'data' => $user]);
 
     }
 
-    
 
-   
+    public function generateMyKeys(Request $request)
+    {
+        $user = auth()->user(); // ✅ current logged-in user
+
+        // optional: prevent re-generating unless allowed
+        /*
+        if ($user->api_secret) {
+            return response()->json([
+                'message' => 'Keys already generated. Please regenerate if needed.'
+            ], 400);
+        } */
+
+        $plainSecret = 'sk_' . Str::random(50);
+
+        $user->api_key = 'pk_' . Str::random(30);
+        $user->api_secret = Hash::make($plainSecret);
+        $user->api_secret_shown_at = now();
+        $user->save();
+
+        return response()->json([
+            'api_key' => $user->api_key,
+            'api_secret' => $plainSecret, // ONLY TIME SHOWN
+        ]);
+    }
+
+
 }

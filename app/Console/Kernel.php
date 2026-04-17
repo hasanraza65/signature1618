@@ -165,6 +165,7 @@ class Kernel extends ConsoleKernel
                 ->update(['status' => 0]);
 
                 $subscriptions = Subscription::whereDate('expiry_date', $yesterday)
+                ->whereNull('promo_id')
                 ->get();
 
                 foreach($subscriptions as $sub_data){

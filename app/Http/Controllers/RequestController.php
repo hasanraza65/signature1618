@@ -298,7 +298,7 @@ class RequestController extends Controller
             $userRequest->file = $request->file;
             //$userRequest->thumbnail = $thumbnailPath;
             $userRequest->unique_id = $request->unique_id;
-            $userRequest->file_name = $request->file_name;
+            $userRequest->file_name = $request->original_file_name;
             $userRequest->file_key = $request->file_name;
             $userRequest->original_file_name = $request->original_file_name;
             $userRequest->num_of_pages = $request->num_of_pages ?? 1;
@@ -593,8 +593,10 @@ class RequestController extends Controller
 
                         $requestField->question = $field['question'] ?? null;
                     }
+                    
+                    
 
-                    $requestField->is_required = $field['is_required'] == 'true' ? 1 : 0;
+                    $requestField->is_required = ($field['is_required'] === 'true' || $field['is_required'] === true) ? 1 : 0;
                     $requestField->page_index = $field['page_index'];
                     // Assuming recipientId here refers to signer's id, you may need to adjust this
                     $requestField->recipientId = $signer->id;
@@ -2609,13 +2611,19 @@ class RequestController extends Controller
         // Initialize FPDI
         $pdf = new Fpdi();
         $pageCount = $pdf->setSourceFile($pdfPath);
+        
+    
 
         // Array to track processed signers
         $processedSigners = [];
 
         // Loop through each page of the PDF
         for ($pageNumber = 1; $pageNumber <= $pageCount; $pageNumber++) {
-            $templateId = $pdf->importPage($pageNumber);
+            
+             try {
+                 
+                 
+                 $templateId = $pdf->importPage($pageNumber);
             $size = $pdf->getTemplateSize($templateId);
             $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($templateId);
@@ -2624,31 +2632,39 @@ class RequestController extends Controller
             $newWidth = 600;
             $scaleX = $size['width'] / $newWidth;
             $scaleY = $size['height'] / (($newWidth / $size['width']) * $size['height']);
+            
 
             foreach ($data->signers as $signer) {
+                
+               
+                
                 if ($signer->id == $signer_id) {
+                    
+                    
+                    
                     foreach ($signer->requestFields as $field) {
-                        if ($field->page_index == ($pageNumber - 1)) {
-                            $newX = $field->x * $scaleX;
-                            $newY = $field->y * $scaleY;
-                            $width = $field->width * $scaleX;
-                            $height = $field->height * $scaleY;
-
-                            // Field Type Handling
-                            switch ($field->type) {
-                               case 'signature':
+                        
+                       
+                        
+                        if ($field->page_index == ($pageNumber - 1) || $field->type == 'initials') {
+                        
+                        
+                        $newX = $field->x * $scaleX;
+                        $newY = $field->y * $scaleY;
+                        $width = $field->width * $scaleX;
+                        $height = $field->height * $scaleY;
+                    
+                        // Field Type Handling
+                        switch ($field->type) {
+                            case 'signature':
                                 $fullName = $signer->signerContactDetail->contact_first_name . ' ' . $signer->signerContactDetail->contact_last_name;
                                 $signatureImagePath = $this->createSignatureImage($fullName, $protection_key, $data->sign_certificate);
                                 $signatureUrl = 'https://certificate.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
                             
                                 if (file_exists($signatureImagePath)) {
-                                    
-                                    
-
                                     $relativePath = str_replace('/home/signature1618/public_html/backend_code/public', '', $signatureImagePath);
-
                                     Signer::where('id',$signer_id)->update(['signed_image'=>$relativePath]);
-
+                    
                                     // Reapply links for previously processed signers
                                     foreach ($processedSigners as $processedSignerId) {
                                         $existingSigner = $data->signers->firstWhere('id', $processedSignerId);
@@ -2672,72 +2688,76 @@ class RequestController extends Controller
                                 // Mark this signer as processed
                                 $processedSigners[] = $signer->id;
                                 break;
-
-                                case 'textinput':
-                                case 'mention':
-                                case 'readonlytext':
-                                    $pdf->SetFont('Helvetica', '', 16);
-                                    $pdf->SetXY($newX, $newY);
-                                    $pdf->MultiCell($width, 10, $field->type == 'textinput' ? $field->answer : $field->question);
-                                    break;
-
-                                case 'radio':
-                                    $radioImagePath = public_path('radio-checked.png');
-                                    $selectedRadioButton = RadioButton::where('field_id', $field->id)->get()[$field->answer] ?? null;
-                                    if ($selectedRadioButton && file_exists($radioImagePath)) {
-                                        $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 8, 8);
-                                    } else {
-                                        $pdf->SetFont('Helvetica', 'B', 10);
-                                        $pdf->Text($newX, $newY, '✓');
-                                    }
-                                    break;
-
-                                case 'checkbox':
-                                    // Set the paths for the checked and unchecked images
-                                    $checkedImagePath = public_path('checked.png');
-                                    $uncheckedImagePath = public_path('unchecked.png');
-
-                                    // Determine the image to use based on the answer
-                                    $imagePath = ($field->answer === 'true') ? $checkedImagePath : $uncheckedImagePath;
-
-                                    // Check if the file exists before adding the image
-                                    if (file_exists($imagePath)) {
-                                        $pdf->Image($imagePath, $newX, $newY, 8, 8); // Adjust the size (8x8) as needed
-                                    } else {
-                                        // Fallback if the image does not exist
-                                        $pdf->SetFont('Helvetica', 'B', 10);
-                                        $pdf->Text($newX, $newY, '✓'); // Placeholder for the checkmark
-                                    }
-                                    break;
-
-
-                                case 'initials':
-
-
-                                    $newY = $newY - 5;
-                                    $newX = $newX - 5;
-                                    //$newY = 192.0875;
-
-                                    if (isset($field->question)) {
-                                        if ($field->question === "center") {
-                                            $newX = 88;
-                                        } elseif ($field->question === "right") {
-                                            $newX = 184;
-                                        }
-
-
-                                    }
-
-
-
-                                    $initials = strtoupper(substr($signer->signerContactDetail->contact_first_name, 0, 1)) . strtoupper(substr($signer->signerContactDetail->contact_last_name, 0, 1));
-                                    $initialsImagePath = $this->createInitialsImage($initials);
-                                    if (file_exists($initialsImagePath)) {
-                                        $pdf->Image($initialsImagePath, $newX, $newY, 40, 20);
-                                    }
-                                    break;
+                    
+                            case 'textinput':
+                            case 'mention':
+                            case 'readonlytext':
+                                $pdf->SetFont('Helvetica', '', 16);
+                                $pdf->SetXY($newX, $newY);
+                                $pdf->MultiCell($width, 10, $field->type == 'textinput' ? $field->answer : $field->question);
+                                break;
+                    
+                            case 'radio':
+                                $radioImagePath = public_path('radio-checked.png');
+                                $selectedRadioButton = RadioButton::where('field_id', $field->id)->get()[$field->answer] ?? null;
+                                if ($selectedRadioButton && file_exists($radioImagePath)) {
+                                    $pdf->Image($radioImagePath, $selectedRadioButton->x * $scaleX, $selectedRadioButton->y * $scaleY, 8, 8);
+                                } else {
+                                    $pdf->SetFont('Helvetica', 'B', 10);
+                                    $pdf->Text($newX, $newY, '✓');
+                                }
+                                break;
+                    
+                            case 'checkbox':
+                                // Set the paths for the checked and unchecked images
+                                $checkedImagePath = public_path('checked.png');
+                                $uncheckedImagePath = public_path('unchecked.png');
+                                
+                               
+                    
+                                // Determine the image to use based on the answer
+                                $imagePath = ($field->answer === 'true') ? $checkedImagePath : $uncheckedImagePath;
+                    
+                                // Check if the file exists before adding the image
+                                if (file_exists($imagePath)) {
+                                    $pdf->Image($imagePath, $newX, $newY, 8, 8); // Adjust the size (8x8) as needed
+                                } else {
+                                    // Fallback if the image does not exist
+                                    $pdf->SetFont('Helvetica', 'B', 10);
+                                    $pdf->Text($newX, $newY, '✓'); // Placeholder for the checkmark
+                                }
+                                break;
+                        }
+                    }
+                    
+                    // Handle initials separately - will process on all pages
+                    if ($field->type == 'initials') {
+                        $newX = $field->x * $scaleX;
+                        $newY = $field->y * $scaleY - 5; // Adjust Y position
+                        $newX = $newX - 5; // Adjust X position
+                    
+                        if (isset($field->question)) {
+                            if ($field->question === "center") {
+                                $newX = 88;
+                            } elseif ($field->question === "right") {
+                                $newX = 184;
                             }
                         }
+                        
+                        
+                        
+                        $initials = strtoupper(substr($signer->signerContactDetail->contact_first_name, 0, 1)) . strtoupper(substr($signer->signerContactDetail->contact_last_name, 0, 1));
+                        $initialsImagePath = $this->createInitialsImage($initials);
+                        
+                       
+                        
+                        if (file_exists($initialsImagePath)) {
+                            $pdf->Image($initialsImagePath, $newX, $newY, 40, 20);
+                        }
+                    }
+                        
+                        
+                        
                     }
                 }elseif($signer->id != $signer_id && $signer->status == 'signed'){
                     
@@ -2803,7 +2823,15 @@ class RequestController extends Controller
                     
                 }
             }
+                 
+                 
+             } catch (\Exception $e) {
+                    \Log::error("Error processing page $pageNumber: " . $e->getMessage());
+                    continue;
+                }
+            
         }
+            
 
         // Save the signed PDF to a temporary location
         $signedFile = tempnam(sys_get_temp_dir(), 'signed_pdf');
