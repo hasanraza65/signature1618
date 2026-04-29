@@ -35,25 +35,26 @@ class SubscriptionController extends Controller
     }
 
 
-    public function index(){
+    public function index()
+    {
 
-        if(Auth::user()->user_role == 1){
-            $subscription = Subscription::with(['plan','plan.planFeatures','userDetail'])->orderBy('id','desc')->get();
-        }else{
+        if (Auth::user()->user_role == 1) {
+            $subscription = Subscription::with(['plan', 'plan.planFeatures', 'userDetail'])->orderBy('id', 'desc')->get();
+        } else {
             // Retrieve the single subscription with its associated plans and plan features
-            $subscription = Subscription::with(['plan', 'plan.planFeatures','teamDetail'])
+            $subscription = Subscription::with(['plan', 'plan.planFeatures', 'teamDetail'])
                 ->where('user_id', Auth::user()->id)
                 ->orderBy('id', 'desc')
                 ->first();
 
-                // Check if the subscription is not null and has a team_id
-                if ($subscription) {
+            // Check if the subscription is not null and has a team_id
+            if ($subscription) {
                 if ($subscription->team_id != null) {
                     $team_data = Team::with(['userDetail', 'memberDetail'])
                         ->where('unique_id', $subscription->team_id)
                         ->whereNot('status', 2)
                         ->first();
-                    
+
                     // Add team data to the subscription object
                     $subscription->team_data = $team_data;
                 } else {
@@ -61,25 +62,25 @@ class SubscriptionController extends Controller
                     $subscription->team_data = null;
                 }
             }
-            
+
         }
-       
+
         return response()->json([
             'data' => $subscription,
             'message' => 'Success'
-        ],200);
+        ], 200);
 
 
     }
 
     public function charge(Request $request)
     {
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-    
+        Stripe::setApiKey(config('services.stripe.secret'));
+
         $token = $request->input('stripeToken');
         $amount = $request->input('amount') * 100;
         $currency = $request->input('currency', 'USD');
-    
+
         // Check if the user has a Stripe customer ID
         if (Auth::user()->stripe_token == null) {
             // Create a new customer on Stripe
@@ -96,8 +97,8 @@ class SubscriptionController extends Controller
             // Use existing customer ID if available
             $customerid = Auth::user()->stripe_token;
         }
-        
-    
+
+
         // Create a charge on Stripe
         $paymentMethodId = $request->payment_method_id;
         $customerId = $customerid;
@@ -118,28 +119,28 @@ class SubscriptionController extends Controller
         $cardExpiryMonth = $card->exp_month;
         $cardExpiryYear = $card->exp_year;
         $cardBrand = $card->brand;
-        
+
         // Get the status of the Payment Intent
         $intentStatus = $intent->status;
-        
+
         // Check if the Payment Intent is succeeded
         if ($intentStatus === 'succeeded') {
-            
+
         } else {
-            
+
             $error = $intent->last_payment_error;
             echo "Payment Error: " . $error->message;
         }
-        
-       // return "chakkkaaa";
+
+        // return "chakkkaaa";
 
         // If it's a new card, add the source
         if ($request->is_new_card == 1) {
             //$chargeParams['source'] = $token;
         }
-    
+
         //$charge = Charge::create($chargeParams);
-    
+
         // Store the transaction details
         $transaction = new Transaction();
         $transaction->user_id = Auth::user()->id;
@@ -149,7 +150,7 @@ class SubscriptionController extends Controller
         $transaction->card_expiry_year = $cardExpiryYear;
         $transaction->card_brand = $cardBrand;
         $transaction->amount = $request->input('amount');
-    
+
         // Add additional transaction details
         $transaction->first_name = $request->input('first_name');
         $transaction->last_name = $request->input('last_name');
@@ -164,12 +165,12 @@ class SubscriptionController extends Controller
         $transaction->state = $request->input('state');
         $transaction->country = $request->input('country');
         $transaction->vat_number = $request->input('vat_number');
-    
+
         $transaction->save();
-    
+
         // Create subscription if necessary
         $this->createSubscribe($request->input('amount'), $transaction->id, $request->plan_id, $request->payment_cycle);
-    
+
         // Return success response
         return response()->json([
             'message' => 'Payment was successful',
@@ -180,22 +181,22 @@ class SubscriptionController extends Controller
     public function createSubscribe($amount, $transaction_id, $plan_id, $payment_cycle)
     {
         $userId = Auth::user()->id;
-    
+
         // Retrieve existing subscription and plan data
         $data = Subscription::where('user_id', $userId)->first();
         $plan_data = Plan::find($plan_id);
-    
+
         // Initialize subscription if it doesn't exist
         if (!$data) {
             $data = new Subscription();
         }
-    
+
         // Check if the plan is a downgrade (e.g., from 4 to any lower plan)
         if ($data->plan_id == 4 && $plan_id < 4) {
             // If downgrading, delete related team data
             Team::where('user_id', $userId)->delete();
         }
-    
+
         // Set subscription properties
         $data->user_id = $userId;
         $data->plan_id = $plan_id;
@@ -203,27 +204,28 @@ class SubscriptionController extends Controller
         $data->payment_cycle = $payment_cycle;
         $data->payment_id = $transaction_id;
         $data->status = 1;
-    
+        $data->promo_id = null;
+
         // Determine subscription duration
         $days = $payment_cycle == "yearly" ? 365 : 30;
         $expirydate = Carbon::now()->addDays($days)->toDateString();
-    
+
         $data->expiry_date = $expirydate;
-    
+
         // Save or update the subscription data
         if ($data->exists) {
             $data->update();
         } else {
             $data->save();
         }
-    
+
         // Update transaction record
         $transaction = Transaction::find($transaction_id);
         if ($transaction) {
             $transaction->plan_id = $plan_id;
             $transaction->update();
         }
-    
+
         // Send subscription confirmation email
         $user = Auth::user();
         $dataUser = [
@@ -236,18 +238,19 @@ class SubscriptionController extends Controller
             'subscription_period' => $payment_cycle,
             'next_billing_date' => $expirydate,
         ];
-    
+
         Mail::to($user->email)->send(new \App\Mail\NewSubscription($dataUser, 'Subscription Confirmed : Signature1618'));
-    
+
         return true;
     }
-    
-    public function cancelSubscription(Request $request){
+
+    public function cancelSubscription(Request $request)
+    {
 
         $userId = getUserId($request);
-        $data = Subscription::where('user_id',$userId)->first();
+        $data = Subscription::where('user_id', $userId)->first();
 
-        if(!$data){
+        if (!$data) {
             return response()->json([
                 'message' => 'No subscription available.'
             ], 400);
@@ -256,20 +259,21 @@ class SubscriptionController extends Controller
         $data->status = 0;
         $data->update();
 
-        $plan = Subscription::with(['plan','plan.planFeatures'])->where('user_id',Auth::user()->id)->first();
+        $plan = Subscription::with(['plan', 'plan.planFeatures'])->where('user_id', Auth::user()->id)->first();
 
         return response()->json([
             'data' => $plan,
-            'message' => 'Subscription has been cancelled. You can use your current plan until '.$data->expiry_date
-        ],200);
+            'message' => 'Subscription has been cancelled. You can use your current plan until ' . $data->expiry_date
+        ], 200);
 
 
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
 
         $data = Subscription::find($id);
-        if(!$data){
+        if (!$data) {
             return response()->json([
                 'message' => 'No data available.'
             ], 400);
@@ -280,7 +284,7 @@ class SubscriptionController extends Controller
         return response()->json([
             'data' => $data,
             'message' => 'Success'
-        ],200);
+        ], 200);
 
     }
 
@@ -322,12 +326,13 @@ class SubscriptionController extends Controller
 
 
 
-    public function completePayment(){
+    public function completePayment()
+    {
 
         return "payment done";
 
     }
-    
+
 
     public function confirmPayment($clientSecret)
     {
@@ -340,7 +345,7 @@ class SubscriptionController extends Controller
             $paymentIntent = $this->stripe->paymentIntents->retrieve($clientSecret);
 
             return $paymentIntent->status;
-            
+
             // Check if the payment was successful
             /*
             if ($paymentIntent->status === 'succeeded') {
@@ -355,11 +360,11 @@ class SubscriptionController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
-    
+
+
     //ending testing stripe
 
-    
+
     public function customCharge()
     {
         try {
@@ -387,29 +392,30 @@ class SubscriptionController extends Controller
         }
     }
 
-    public function checkLimitStatus(){
+    public function checkLimitStatus()
+    {
 
-        $current_plan = Subscription::where('user_id',Auth::user()->id)
-        ->orderBy('id','desc')
-        ->first();
+        $current_plan = Subscription::where('user_id', Auth::user()->id)
+            ->orderBy('id', 'desc')
+            ->first();
 
-        if($current_plan){
+        if ($current_plan) {
 
-            if($current_plan->status == 0){
+            if ($current_plan->status == 0) {
                 return response()->json([
                     'message' => "You don't have any active plan.",
                     'error_code' => 'no_active_plan'
                 ], 200);
             }
 
-            if($current_plan->plan_id == 2){
+            if ($current_plan->plan_id == 2) {
 
                 $total_requests = UserRequest::where('user_id', Auth::user()->id)
-                ->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->count('id');
+                    ->whereMonth('created_at', Carbon::now()->month)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count('id');
 
-                if($total_requests >= 20){
+                if ($total_requests >= 20) {
 
                     return response()->json([
                         'message' => "You have reached your permited number of dossier for this month. Upgrade to Pro or Enterprise plan to send unlimited dossiers.",
@@ -421,9 +427,9 @@ class SubscriptionController extends Controller
             return response()->json([
                 'message' => "Success.",
                 'error_code' => 'success'
-            ], 200); 
-            
-        }else{
+            ], 200);
+
+        } else {
 
             return response()->json([
                 'message' => "You don't have any active plan.",
@@ -437,62 +443,78 @@ class SubscriptionController extends Controller
 
     public function promoSubscription(Request $request)
     {
-
-        $amount = null; 
-
-        $promo_code_data = PromoCode::where('promo_code',$request->promo_code)->first();
-        
+        $amount = null;
 
         $payment_cycle = $request->billing_cycle ?? "monthly";
-        $promo_code = $request->promo_code;
+        $promoCodeInput = $request->promo_code;
 
-        $promo_data = PromoCode::where('promo_code',$promo_code)->where('status',1)->first();
+        // Get promo code (single query, reused)
+        $promo_data = PromoCode::where('promo_code', $promoCodeInput)
+            ->where('status', 1)
+            ->first();
 
-        if(!$promo_data){
-
-            return response()->json(['message'=>"Promo code not available", "error_code"=>"invalid_promo_code"], 400);
+        if (!$promo_data) {
+            return response()->json([
+                'message' => "Promo code not available",
+                'error_code' => "invalid_promo_code"
+            ], 400);
         }
 
-        $plan_id = $promo_data->plan_id; 
-
-        $userId = Auth::user()->id;
-    
-        // Retrieve existing subscription and plan data
-        $data = new Subscription();
+        $plan_id = $promo_data->plan_id;
         $plan_data = Plan::find($plan_id);
-    
-    
-        // Set subscription properties
-        $data->user_id = $userId;
-        $data->plan_id = $plan_id;
-        if($payment_cycle == "yearly"){
-            $data->price = $plan_data->per_year_charges;
-        }else{
-            $data->price = $plan_data->per_month_charges;
-        }   
-        
-        $data->payment_cycle = $payment_cycle;
-        $data->status = 1;
-        $data->promo_id = $promo_data->id;
-        // Determine subscription duration
-        $expirydate = Carbon::now()->addMonths($promo_data->duration_months)->toDateString();
-        $data->expiry_date = $expirydate;
-        // Save or update the subscription data
-        $data->save();
 
+        if (!$plan_data) {
+            return response()->json([
+                'message' => "Plan not found"
+            ], 400);
+        }
 
-        //storing transaction 
+        $user = Auth::user();
 
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE SUBSCRIPTION (FREE PROMO)
+        |--------------------------------------------------------------------------
+        */
+        $subscription = new Subscription();
+        $subscription->user_id = $user->id;
+        $subscription->plan_id = $plan_id;
+
+        $subscription->price = ($payment_cycle == "yearly")
+            ? $plan_data->per_year_charges
+            : $plan_data->per_month_charges;
+
+        $subscription->payment_cycle = $payment_cycle;
+        $subscription->status = 1;
+        $subscription->promo_id = $promo_data->id;
+
+        if ($promo_data->duration_months == -1) {
+            $expirydate = Carbon::now()
+                ->addYears(10)
+                ->toDateString();
+        } else {
+            $expirydate = Carbon::now()
+                ->addMonths($promo_data->duration_months)
+                ->toDateString();
+        }
+
+        $subscription->expiry_date = $expirydate;
+        $subscription->save();
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSACTION (FREE = 0)
+        |--------------------------------------------------------------------------
+        */
         $transaction = new Transaction();
-        $transaction->user_id = Auth::user()->id;
-        $transaction->transaction_id = null; // Use Payment Intent ID as the transaction ID
+        $transaction->user_id = $user->id;
+        $transaction->transaction_id = null;
         $transaction->card_last_4 = null;
         $transaction->card_expiry_month = null;
         $transaction->card_expiry_year = null;
         $transaction->card_brand = null;
         $transaction->amount = 0;
-    
-        // Add additional transaction details
+
         $transaction->first_name = $request->input('first_name');
         $transaction->last_name = $request->input('last_name');
         $transaction->email = $request->input('email');
@@ -506,48 +528,68 @@ class SubscriptionController extends Controller
         $transaction->state = $request->input('state');
         $transaction->country = $request->input('country');
         $transaction->vat_number = $request->input('vat_number');
-    
+
         $transaction->save();
 
-        //ending storing transaction
-
-        //updating user promo used status 
-
-        $user_data = User::find(Auth::user()->id);
-        $user_data->promo_used = 1;
-        $user_data->update();
+        /*
+        |--------------------------------------------------------------------------
+        | USER PROMO USAGE
+        |--------------------------------------------------------------------------
+        */
+        $user->promo_used = 1;
+        $user->save();
 
         UsedPromo::create([
-            'user_id' => Auth::id(),
-            'promo_code' => $promo_code,
+            'user_id' => $user->id,
+            'promo_code' => $promoCodeInput,
         ]);
-        
 
-        $promo_code = PromoCode::where('promo_code',$request->promo_code)->first();
-        $promo_code->status = 2;
-        $promo_code->update();
+        /*
+        |--------------------------------------------------------------------------
+        | MARK PROMO AS USED
+        |--------------------------------------------------------------------------
+        */
+        $promo_data->status = 2;
+        $promo_data->save();
 
-        //ending updating user promo status
-    
-    
-        // Send subscription confirmation email
-        $user = Auth::user();
+        /*
+        |--------------------------------------------------------------------------
+        | REFERRAL LINKING (IMPORTANT FIXED PART)
+        |--------------------------------------------------------------------------
+        */
+        $referrer_id = $promo_data->generated_by;
+
+        if ($referrer_id && !$user->referred_by) {
+            $user->referred_by = $referrer_id;
+            $user->referred_at = now()->toDateString();
+            $user->save();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | EMAIL
+        |--------------------------------------------------------------------------
+        */
         $dataUser = [
             'email' => $user->email,
             'first_name' => $user->name,
             'last_name' => $user->last_name,
-            'invitation_date' => $data->created_at->format('m/d/Y'),
+            'invitation_date' => $subscription->created_at->format('m/d/Y'),
             'plan_name' => $plan_data->plan_name,
             'amount' => $amount,
             'subscription_period' => $payment_cycle,
             'next_billing_date' => $expirydate,
         ];
-    
-        Mail::to($user->email)->send(new \App\Mail\NewSubscription($dataUser, 'Subscription Confirmed : Signature1618'));
-    
+
+        Mail::to($user->email)->send(
+            new \App\Mail\NewSubscription(
+                $dataUser,
+                'Subscription Confirmed : Signature1618'
+            )
+        );
+
         return response()->json([
             'message' => 'Subscription was successful',
         ], 200);
     }
-
 }

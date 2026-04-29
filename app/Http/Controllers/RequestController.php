@@ -2662,7 +2662,8 @@ class RequestController extends Controller
                                 $signatureUrl = 'https://certificate.signature1618.com/?r=' . $data->unique_id . '&s=' . $signer->unique_id;
                             
                                 if (file_exists($signatureImagePath)) {
-                                    $relativePath = str_replace('/home/signature1618/public_html/backend_code/public', '', $signatureImagePath);
+                                    //$relativePath = str_replace('/home/signature1618/public_html/backend_code/public', '', $signatureImagePath);
+                                    $relativePath = $signatureImagePath;
                                     Signer::where('id',$signer_id)->update(['signed_image'=>$relativePath]);
                     
                                     // Reapply links for previously processed signers

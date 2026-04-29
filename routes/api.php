@@ -49,6 +49,7 @@ Route::middleware(['web'])->group(function () {
 Route::post('/join_signup', [AuthController::class, 'registerWithoutOTP']);
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/signin', [AuthController::class, 'login']);
+Route::post('/partner-login', [AuthController::class, 'partnerLogin']);
 Route::post('send-forget-mail', [AuthController::class, 'sendForgetMail']);
 Route::post('verify-otp', [AuthController::class, 'verifyOTP']);
 Route::post('update-password', [AuthController::class, 'updatePassword']);
@@ -108,6 +109,19 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/pdf_images/{imageName}', [App\Http\Controllers\ImageController::class, 'show']);
 
     Route::prefix('user')->middleware(['role:2'])->group(function () {
+
+        Route::post('/update-rib', [App\Http\Controllers\ReferralEarningController::class, 'updateRIB']);
+
+        Route::get('/my-earnings', [App\Http\Controllers\ReferralEarningController::class, 'myEarnings']);
+
+        //withdraw requests
+
+        // Create withdraw request
+        Route::post('/withdraw-request', [App\Http\Controllers\WithdrawRequestController::class, 'store']);
+
+        // List my requests
+        Route::get('/my-withdraw-requests', [App\Http\Controllers\WithdrawRequestController::class, 'myRequests']);
+
 
         Route::post('/generate_api_keys', [App\Http\Controllers\AuthController::class, 'generateMyKeys']); 
 
@@ -210,6 +224,19 @@ Route::middleware('auth:api')->group(function () {
 
     Route::prefix('admin')->middleware(['role:1'])->group(function () {
 
+        //withdraw
+         // All withdraw requests
+        Route::get('/withdraw-requests', [App\Http\Controllers\WithdrawController::class, 'index']);
+
+        // Approve + auto paid
+        Route::post('/withdraw/{id}/approve', [App\Http\Controllers\WithdrawController::class, 'approve']);
+
+        Route::post('/withdraw/manual', [App\Http\Controllers\WithdrawController::class, 'manualWithdraw']);
+
+        // Reject
+        Route::post('/withdraw/{id}/reject', [App\Http\Controllers\WithdrawController::class, 'reject']);
+
+
         Route::resource('/admin_user_request', App\Http\Controllers\RequestController::class);
         Route::resource('/plan', App\Http\Controllers\PlanController::class);
 
@@ -222,6 +249,13 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/admin_dashboard', [App\Http\Controllers\DashboardController::class, 'stat']);
 
         Route::apiResource('promo-codes', App\Http\Controllers\PromoCodeController::class);
+
+
+        Route::get('/all_referral_earnings', [App\Http\Controllers\ReferralEarningController::class, 'index']);
+        Route::get('/user_referral_earnings/{id}', [App\Http\Controllers\ReferralEarningController::class, 'show']);
+
+
+        Route::apiResource('/partners', App\Http\Controllers\PartnerController::class);
 
     } );
 

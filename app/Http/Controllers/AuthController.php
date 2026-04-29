@@ -451,6 +451,46 @@ class AuthController extends Controller
 
         }
 
+
+        if ($usercheck && $usercheck->partner_status == 1) {
+
+            $usercheck->name = $request->name;
+            $usercheck->last_name = $request->last_name;
+            $usercheck->password = bcrypt($request->password);
+            $usercheck->contact_type = 0;
+            $usercheck->company = $request->company;
+            $usercheck->partner_status = 2;
+            $usercheck->update();
+
+            $accessToken = $usercheck->createToken('LaravelAuthApp')->accessToken;
+
+
+
+            //sending email otp verification
+            $otp = new UserOtp();
+            $otp->user_id = $usercheck->id;
+            $otpcode = rand(100000, 999999);
+            $otp->otp = $otpcode;
+            $otp->save();
+
+            $dataUser = [
+                'email' => $usercheck->email,
+                'otp' => $otpcode,
+                'user_name' => $usercheck->name . ' ' . $usercheck->last_name,
+            ];
+
+            $subject = $usercheck->name . " Your Signup One-Time Password";
+
+            Mail::to($usercheck->email)->send(new \App\Mail\OTPEmailSignUp($dataUser, $subject));
+
+            //ending email otp verification sending
+
+
+            //return response(['user' => $usercheck, 'access_token' => $accessToken]);
+            return response(['user' => $usercheck, 'message' => 'OTP sent to your email id']);
+
+        }
+
         //ending check user
 
         $input = $request->all();
@@ -774,6 +814,10 @@ class AuthController extends Controller
             return response()->json(['error' => "You don't have any account here"], 401);
 
         }
+
+        if($usercheck && $usercheck->partner_status == 1){
+            return response()->json(['error' => "You don't have any account here"], 401);
+        }
         //ending check user
 
         $loginField = filter_var($request->input('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -831,6 +875,39 @@ class AuthController extends Controller
                 'user' => $user,
                 'plan' => $plan,
                 'user_global_settings' => $user_global_settings
+            ], 200);
+        } else {
+            return response()->json(['error' => 'Invalid credentials, kindly verify your email and password.'], 401);
+        }
+    }
+
+     public function partnerLogin(Request $request)
+    {
+
+        //check user
+        $usercheck = User::where('email', $request->email)->first();
+        if ($usercheck && $usercheck->partner_status == 0) {
+
+            return response()->json(['error' => "You don't have any account here"], 401);
+
+        }
+        //ending check user
+
+        $loginField = filter_var($request->input('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $data = [
+            $loginField => $request->input('email'),
+            'password' => $request->password,
+        ];
+
+        if (auth()->attempt($data)) {
+            $user = Auth::user();
+
+            $token = $user->createToken('LaravelAuthApp')->accessToken;
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
             ], 200);
         } else {
             return response()->json(['error' => 'Invalid credentials, kindly verify your email and password.'], 401);

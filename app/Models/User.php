@@ -33,6 +33,14 @@ class User extends Authenticatable
         'is_verified',
         'contact_type',
         'promo_used',
+        'referred_by',
+        'api_secret_shown_at',
+        'partner_status',
+        'rib',
+        'bic',
+        'iban',
+        'rib_first_name',
+        'rib_last_name'
     ];
 
     /**
@@ -69,4 +77,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(AIActivity::class);
     }
+
+    public function referredBy(){
+        return $this->belongsTo(User::class,'referred_by');
+    } 
 }
